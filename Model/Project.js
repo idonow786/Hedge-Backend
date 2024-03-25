@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Create a schema for the Project model
 const projectSchema = new mongoose.Schema({
   ID: {
     type: Number,

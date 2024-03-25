@@ -28,6 +28,9 @@ const staffSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  PicUrl: {
+    type: String,
+  },
   DateofBirth: {
     type: Date,
     required: true,

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Create a schema for the Invoices model
 const invoiceSchema = new mongoose.Schema({
   ID: {
     type: Number,
@@ -103,7 +102,6 @@ const invoiceSchema = new mongoose.Schema({
   },
 });
 
-// Create a model based on the schema
 const Invoice = mongoose.model('Invoice', invoiceSchema);
 
 module.exports = Invoice;
