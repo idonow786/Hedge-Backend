@@ -9,6 +9,10 @@ npm-debug.log*
 # Environment variables
 .env
 
+
+Data/
+
+
 # IDE and editor files
 .vscode/
 .idea/

@@ -6,11 +6,18 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 
-// Load environment variables from .env file
+
 dotenv.config();
 
-// Create an Express application
 const app = express();
+
+
+
+
+//    Routes Importing
+const adminRoute=require('./Route/admin') 
+
+
 
 // Connect to MongoDB
 const db = require('./Config/db');
@@ -26,6 +33,13 @@ app.use(morgan('combined'));
 app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
+
+
+
+
+//Routes
+app.use('api/admin',adminRoute)
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
