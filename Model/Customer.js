@@ -3,12 +3,10 @@ const mongoose = require('mongoose');
 const customerSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    required: true,
-    unique: true,
+    
   },
   Name: {
     type: String,
-    required: true,
   },
   PicUrl: {
     type: String,
@@ -19,15 +17,12 @@ const customerSchema = new mongoose.Schema({
   },
   DateofBirth: {
     type: Date,
-    required: true,
   },
   PhoneNo: {
     type: String,
-    required: true,
   },
   Email: {
     type: String,
-    required: true,
     unique: true,
   },
 });
