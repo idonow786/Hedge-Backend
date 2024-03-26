@@ -1,13 +1,7 @@
-const Admin = require('../models/admin');
-const multer = require('multer');
-const { uploadImageToFirebase } = require('../utils/imageUpload');
+const Admin = require('../../Model/Admin');
+const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 20 * 1024 * 1024, 
-  },
-});
+
 
 const updateAdminProfile = async (req, res) => {
   try {
