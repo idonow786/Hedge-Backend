@@ -18,7 +18,7 @@ const upload = multer({
   });
   
 router.post('/expense',verifyToken, addExpense);                                                                 //no test
-router.delete('/expense/remove',verifyToken, deleteExpense);                                                             //no test
+router.delete('/expense/remove',verifyToken, deleteExpense);                                                    //no test
 router.get('/expenses',verifyToken, getExpenses);                                                              //no test
 router.put('/expense/update', verifyToken, updateExpense);                                                    //no test
  
