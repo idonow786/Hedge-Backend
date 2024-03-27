@@ -8,7 +8,7 @@ const updateExpense = async (req, res) => {
       return res.status(400).json({ message: 'ExpenseId is required' });
     }
 
-    const expense = await Expense.findOne({ ID: ExpenseId });
+    const expense = await Expense.findById( ExpenseId );
 
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });

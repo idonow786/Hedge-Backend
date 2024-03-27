@@ -8,7 +8,7 @@ const deleteExpense = async (req, res) => {
       return res.status(400).json({ message: 'ExpenseId is required' });
     }
 
-    const deletedExpense = await Expense.findOneAndRemove({ ID: ExpenseId });
+    const deletedExpense = await Expense.findById(ExpenseId );
 
     if (!deletedExpense) {
       return res.status(404).json({ message: 'Expense not found' });
