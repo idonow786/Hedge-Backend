@@ -20,6 +20,7 @@ const upload = multer({
 router.post('/customer', verifyToken, upload.single('profilePic'), addCustomer);                               //no test
 router.put('/customer/update', verifyToken, upload.single('profilePic'), updateCustomer);                      //no test
 router.delete('/customer/remove', verifyToken, deleteCustomer);                                                //no test
+router.get('/customer', verifyToken, getCustomers);                                                            //no test
  
 module.exports = router;
 

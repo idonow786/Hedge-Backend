@@ -16,6 +16,7 @@ const app = express();
 
 //    Routes Importing
 const adminRoute=require('./Route/adminRoute') 
+const customerRoute=require('./Route/customerRoute') 
 
 
 
@@ -39,6 +40,7 @@ app.get('/', (req, res) => {
 
 //Routes
 app.use('/api/admin',adminRoute)
+app.use('/api/customer',customerRoute)
 
 
 // Error handling middleware
