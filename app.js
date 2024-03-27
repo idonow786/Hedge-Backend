@@ -19,6 +19,7 @@ const adminRoute=require('./Route/adminRoute')
 const customerRoute=require('./Route/customerRoute') 
 const expenseRoute=require('./Route/expenseRoute') 
 const staffRoute=require('./Route/staffRoute') 
+const invoiceRoute=require('./Route/invoiceRoute') 
 
 
 
@@ -45,6 +46,7 @@ app.use('/api/admin',adminRoute)
 app.use('/api/customer',customerRoute)
 app.use('/api/expense',expenseRoute)
 app.use('/api/staff',staffRoute)
+app.use('/api/invoice',invoiceRoute)
 
 
 // Error handling middleware
