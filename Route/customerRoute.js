@@ -18,10 +18,10 @@ const upload = multer({
   });
   
 
-router.post('/customer', verifyToken, upload.single('profilePic'), addCustomer);                               //no test
-router.put('/customer/update', verifyToken, upload.single('profilePic'), updateCustomer);                      //no test
-router.delete('/customer/remove', verifyToken, deleteCustomer);                                                //no test
-router.get('/customer', verifyToken, getCustomers);                                                            //no test
+router.post('/add', verifyToken, upload.single('profilePic'), addCustomer);                           //WORKING
+router.put('/update', verifyToken, upload.single('profilePic'), updateCustomer);                      //Working
+router.delete('/remove', verifyToken, deleteCustomer);                                                //working
+router.get('/get', verifyToken, getCustomers);                                                        //working
  
 module.exports = router;
 

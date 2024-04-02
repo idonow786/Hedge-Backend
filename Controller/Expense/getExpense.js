@@ -23,10 +23,16 @@ const getExpenses = async (req, res) => {
     }
 
     if (search) {
-      query.$or = [
-        { ExpenseTitle: { $regex: search, $options: 'i' } },
-        { Amount: { $regex: search, $options: 'i' } },
-      ];
+      const searchNumber = parseFloat(search);
+
+      if (!isNaN(searchNumber)) {
+        query.$or = [
+          { ExpenseTitle: { $regex: search, $options: 'i' } },
+          { Amount: { $gte: searchNumber } },
+        ];
+      } else {
+        query.ExpenseTitle = { $regex: search, $options: 'i' };
+      }
     }
 
     const expenses = await Expense.find(query);
@@ -41,4 +47,4 @@ const getExpenses = async (req, res) => {
   }
 };
 
-module.exports={getExpenses}
+module.exports = { getExpenses };

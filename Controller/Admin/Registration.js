@@ -3,7 +3,16 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 
+const nodemailer = require('nodemailer');
+const sendinBlue = require('nodemailer-sendinblue-transport');
+
 dotenv.config();
+// Create a transporter
+const transporter = nodemailer.createTransport(
+  new sendinBlue({
+    apiKey: process.env.SENDINBLUE_API_KEY,
+  })
+);
 
 // Signup controller
 const signup = async (req, res) => {
@@ -24,6 +33,22 @@ const signup = async (req, res) => {
     });
 
     const savedAdmin = await newAdmin.save();
+
+    // Send welcome email
+    const mailOptions = {
+      from: process.env.Email_Sender,
+      to: email,
+      subject: 'Welcome to our CRM', 
+      html: `<div style="background-color: #f4f4f4; padding: 20px; border-radius: 10px; font-family: Arial, sans-serif;"> <h2 style="color: #333; margin-bottom: 10px;">Welcome ${username},</h2> <p style="color: #666; font-size: 16px;">We're glad to have you on board.</p> </div>`, 
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log('Error sending email:', error);
+      } else {
+        console.log('Email sent:', info.response);
+      }
+    });
 
     res.status(201).json({ message: 'Admin created successfully', admin: savedAdmin });
   } catch (error) {

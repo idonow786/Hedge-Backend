@@ -20,6 +20,9 @@ const customerRoute=require('./Route/customerRoute')
 const expenseRoute=require('./Route/expenseRoute') 
 const staffRoute=require('./Route/staffRoute') 
 const invoiceRoute=require('./Route/invoiceRoute') 
+const reportRoute=require('./Route/reportRoute') 
+const projectRoute=require('./Route/projectRoute') 
+const dashboardRoute=require('./Route/dashboardRoute') 
 
 
 
@@ -47,6 +50,9 @@ app.use('/api/customer',customerRoute)
 app.use('/api/expense',expenseRoute)
 app.use('/api/staff',staffRoute)
 app.use('/api/invoice',invoiceRoute)
+app.use('/api/project',projectRoute)
+app.use('/api/report',reportRoute)
+app.use('/api/dashboard',dashboardRoute)
 
 
 // Error handling middleware

@@ -3,16 +3,13 @@ const mongoose = require('mongoose');
 const businessSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    required: true,
     unique: true,
   },
   BusinessTitle: {
     type: String,
-    required: true,
   },
   Address: {
     type: String,
-    required: true,
   },
   Date: {
     type: Date,
@@ -20,11 +17,9 @@ const businessSchema = new mongoose.Schema({
   },
   PhoneNo: {
     type: String,
-    required: true,
   },
   Email: {
     type: String,
-    required: true,
     unique: true,
   },
   Description: {

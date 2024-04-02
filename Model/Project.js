@@ -3,12 +3,13 @@ const mongoose = require('mongoose');
 const projectSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    required: true,
     unique: true,
+  },
+  Title: {
+    type: String,
   },
   TotalTask: {
     type: Number,
-    required: true,
   },
   CompletedTask: {
     type: Number,
@@ -30,8 +31,7 @@ const projectSchema = new mongoose.Schema({
     {
       moduleTitle: {
         type: String,
-        required: true,
-      },
+          },
       Date: {
         type: Date,
         default: Date.now,

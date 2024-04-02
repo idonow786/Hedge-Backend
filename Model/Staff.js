@@ -3,21 +3,17 @@ const mongoose = require('mongoose');
 const staffSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    required: true,
     unique: true,
   },
   StaffName: {
     type: String,
-    required: true,
   },
   Gender: {
     type: String,
     enum: ['Male', 'Female', 'Other'],
-    required: true,
   },
   PhoneNo: {
     type: String,
-    required: true,
   },
   Date: {
     type: Date,
@@ -25,7 +21,6 @@ const staffSchema = new mongoose.Schema({
   },
   Email: {
     type: String,
-    required: true,
     unique: true,
   },
   PicUrl: {
@@ -33,7 +28,6 @@ const staffSchema = new mongoose.Schema({
   },
   DateofBirth: {
     type: Date,
-    required: true,
   },
   Description: {
     type: String,

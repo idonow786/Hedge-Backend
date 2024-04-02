@@ -4,7 +4,7 @@ const deleteCustomer = async (req, res) => {
   try {
     const customerId = req.body.Customerid;
 
-    const deletedCustomer = await Customer.findByIdAndRemove(customerId);
+    const deletedCustomer = await Customer.findByIdAndDelete(customerId);
 
     if (!deletedCustomer) {
       return res.status(404).json({ message: 'Customer not found' });

@@ -3,33 +3,18 @@ const mongoose = require('mongoose');
 const socialsSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    required: true,
+    unique: true,
+  },
+  Userid: {
+    type: Number,
     unique: true,
   },
   SocialAccounts: [
     {
-      Title: {
+      Name: {
         type: String,
       },
-      Platform: {
-        type: String,
-      },
-      AccessToken: {
-        type: String,
-      },
-      AccessTokenSecret: {
-        type: String,
-      },
-      ConsumerKey: {
-        type: String,
-      },
-      ConsumerSecret: {
-        type: String,
-      },
-      RefreshToken: {
-        type: String,
-      },
-      ExpiresAt: {
+      dateAdded: {
         type: Date,
       },
     },

@@ -4,7 +4,7 @@ const deletestaff = async (req, res) => {
   try {
     const staffId = req.body.staffid;
 
-    const deletedstaff = await Staff.findByIdAndRemove(staffId);
+    const deletedstaff = await Staff.findByIdAndDelete(staffId);
 
     if (!deletedstaff) {
       return res.status(404).json({ message: 'staff not found' });

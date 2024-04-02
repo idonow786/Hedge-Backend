@@ -10,7 +10,6 @@ const adminSchema = new mongoose.Schema({
   },
   Email: {
     type: String,
-    required: true,
   },
   PicUrl: {
     type: String,
