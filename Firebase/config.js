@@ -12,7 +12,7 @@ const serviceAccount = {
 // Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'mycrm-1988f.appspot.com',
+  storageBucket: 'crem-40ccb.appspot.com',
 });
 
 module.exports = admin;
