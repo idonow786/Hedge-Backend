@@ -5,25 +5,39 @@ const businessSchema = new mongoose.Schema({
     type: Number,
     unique: true,
   },
-  BusinessTitle: {
+  BusinessName: {
     type: String,
+    required: true,
   },
-  Address: {
+  BusinessAddress: {
     type: String,
+    required: true,
   },
   Date: {
     type: Date,
     default: Date.now,
   },
-  PhoneNo: {
+  BusinessPhoneNo: {
     type: String,
   },
-  Email: {
+  BusinessEmail: {
     type: String,
-    unique: true,
   },
-  Description: {
+  CompanyType: {
     type: String,
+  },
+  CompanyActivity: {
+    type: String,
+  },
+  OwnerName: {
+    type: String,
+  },
+  NumberofEmployees: {
+    type: Number,
+    default: 0,
+  },
+  YearofEstablishment: {
+    type: Date,
   },
 });
 

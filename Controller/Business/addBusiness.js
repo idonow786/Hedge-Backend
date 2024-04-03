@@ -2,20 +2,35 @@ const Business = require('../../Model/Business');
 
 const addBusiness = async (req, res) => {
   try {
-    const { BusinessTitle, Address, Date, PhoneNo } = req.body;
+    const {
+      BusinessName,
+      BusinessAddress,
+      BusinessPhoneNo,
+      BusinessEmail,
+      CompanyType,
+      CompanyActivity,
+      OwnerName,
+      NumberofEmployees,
+      YearofEstablishment,
+    } = req.body;
 
-    if (!BusinessTitle || !Address || !Date) {
-      return res.status(400).json({ message: 'BusinessTitle, Address, and Date are required' });
+    if (!BusinessName || !BusinessAddress) {
+      return res.status(400).json({ message: 'BusinessName and BusinessAddress are required' });
     }
 
     const ID = Math.floor(Math.random() * 1000000);
 
     const newBusiness = new Business({
       ID,
-      BusinessTitle,
-      Address,
-      Date,
-      PhoneNo,
+      BusinessName,
+      BusinessAddress,
+      BusinessPhoneNo,
+      BusinessEmail,
+      CompanyType,
+      CompanyActivity,
+      OwnerName,
+      NumberofEmployees,
+      YearofEstablishment,
     });
 
     const savedBusiness = await newBusiness.save();
@@ -30,4 +45,4 @@ const addBusiness = async (req, res) => {
   }
 };
 
-module.exports={addBusiness}
+module.exports = { addBusiness };

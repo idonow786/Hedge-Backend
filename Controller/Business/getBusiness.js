@@ -24,23 +24,26 @@ const getBusinesss = async (req, res) => {
 
     if (search) {
       query.$or = [
-        { BusinessTitle: { $regex: search, $options: 'i' } },
-        { Address: { $regex: search, $options: 'i' } },
-        { PhoneNo: { $regex: search, $options: 'i' } },
-        { Email: { $regex: search, $options: 'i' } },
+        { BusinessName: { $regex: search, $options: 'i' } },
+        { BusinessAddress: { $regex: search, $options: 'i' } },
+        { BusinessPhoneNo: { $regex: search, $options: 'i' } },
+        { BusinessEmail: { $regex: search, $options: 'i' } },
+        { CompanyType: { $regex: search, $options: 'i' } },
+        { CompanyActivity: { $regex: search, $options: 'i' } },
+        { OwnerName: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const Businesss = await Business.find(query);
+    const businesses = await Business.findOne(query);
 
     res.status(200).json({
-      message: 'Businesss retrieved successfully',
-      Businesss,
+      message: 'Businesses retrieved successfully',
+      businesses,
     });
   } catch (error) {
-    console.error('Error retrieving Businesss:', error);
+    console.error('Error retrieving businesses:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-module.exports={getBusinesss}
+module.exports = { getBusinesss };

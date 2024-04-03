@@ -2,25 +2,40 @@ const Business = require('../../Model/Business');
 
 const updateBusiness = async (req, res) => {
   try {
-    const { BusinessId, BusinessTitle,PhoneNo, Address, Date, Description } = req.body;
+    const {
+      businessID,
+      BusinessName,
+      BusinessAddress,
+      BusinessPhoneNo,
+      BusinessEmail,
+      CompanyType,
+      CompanyActivity,
+      OwnerName,
+      NumberofEmployees,
+      YearofEstablishment,
+    } = req.body;
 
-    if (!BusinessId) {
-      return res.status(400).json({ message: 'BusinessId is required' });
+    if (!businessID) {
+      return res.status(400).json({ message: 'ID is required' });
     }
 
-    const Business = await Business.findById(BusinessId );
+    const business = await Business.findById( businessID);
 
-    if (!Business) {
+    if (!business) {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    Business.BusinessTitle = BusinessTitle || Business.BusinessTitle;
-    Business.PhoneNo = PhoneNo || Business.PhoneNo;
-    Business.Date = Date || Business.Date;
-    Business.Description = Description || Business.Description;
-    Business.Address = Address || Business.Address;
+    business.BusinessName = BusinessName || business.BusinessName;
+    business.BusinessAddress = BusinessAddress || business.BusinessAddress;
+    business.BusinessPhoneNo = BusinessPhoneNo || business.BusinessPhoneNo;
+    business.BusinessEmail = BusinessEmail || business.BusinessEmail;
+    business.CompanyType = CompanyType || business.CompanyType;
+    business.CompanyActivity = CompanyActivity || business.CompanyActivity;
+    business.OwnerName = OwnerName || business.OwnerName;
+    business.NumberofEmployees = NumberofEmployees || business.NumberofEmployees;
+    business.YearofEstablishment = YearofEstablishment || business.YearofEstablishment;
 
-    const updatedBusiness = await Business.save();
+    const updatedBusiness = await business.save();
 
     res.status(200).json({
       message: 'Business updated successfully',
@@ -32,4 +47,4 @@ const updateBusiness = async (req, res) => {
   }
 };
 
-module.exports={updateBusiness}
+module.exports = { updateBusiness };

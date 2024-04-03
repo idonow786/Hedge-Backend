@@ -23,6 +23,7 @@ const invoiceRoute=require('./Route/invoiceRoute')
 const reportRoute=require('./Route/reportRoute') 
 const projectRoute=require('./Route/projectRoute') 
 const dashboardRoute=require('./Route/dashboardRoute') 
+const businessRoute=require('./Route/businessRoute') 
 
 
 
@@ -53,6 +54,7 @@ app.use('/api/invoice',invoiceRoute)
 app.use('/api/project',projectRoute)
 app.use('/api/report',reportRoute)
 app.use('/api/dashboard',dashboardRoute)
+app.use('/api/business',businessRoute)
 
 
 // Error handling middleware
