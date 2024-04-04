@@ -3,9 +3,27 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 const addStaff = async (req, res) => {
   try {
-    const { StaffName, Email, PhoneNo, DateJoined, Gender, DateofBirth, Description } = req.body;
-    const adminId = req.adminId
-;
+    const {
+      StaffName,
+      Email,
+      PhoneNo,
+      BackupPhoneNo,
+      DateJoined,
+      Gender,
+      DateofBirth,
+      Description,
+      HomeAddress,
+      PermanentAddress,
+      ReferenceName,
+      ReferenceContact,
+      NationalIDNo,
+      PassportDetails,
+      DateOfJoining,
+      ContractType,
+      JobTitle,
+      SalaryPackage,
+    } = req.body;
+    const adminId = req.adminId;
 
     const ID = Math.floor(Math.random() * 1000000);
 
@@ -27,12 +45,23 @@ const addStaff = async (req, res) => {
       StaffName,
       Email,
       PhoneNo,
+      BackupPhoneNo,
       Date: DateJoined ? new Date(DateJoined) : undefined,
       PicUrl: picUrl,
       Gender,
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       Description,
       AdminID: adminId,
+      HomeAddress,
+      PermanentAddress,
+      ReferenceName,
+      ReferenceContact,
+      NationalIDNo,
+      PassportDetails,
+      DateOfJoining: DateOfJoining ? new Date(DateOfJoining) : undefined,
+      ContractType,
+      JobTitle,
+      SalaryPackage,
     });
 
     const savedStaff = await newStaff.save();

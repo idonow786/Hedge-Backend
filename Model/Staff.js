@@ -15,6 +15,9 @@ const staffSchema = new mongoose.Schema({
   PhoneNo: {
     type: String,
   },
+  BackupPhoneNo: {
+    type: String,
+  },
   Date: {
     type: Date,
     default: Date.now,
@@ -34,6 +37,37 @@ const staffSchema = new mongoose.Schema({
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
+  },
+  HomeAddress: {
+    type: String,
+  },
+  PermanentAddress: {
+    type: String,
+  },
+  ReferenceName: {
+    type: String,
+  },
+  ReferenceContact: {
+    type: String,
+  },
+  NationalIDNo: {
+    type: String,
+  },
+  PassportDetails: {
+    type: String,
+  },
+  DateOfJoining: {
+    type: Date,
+  },
+  ContractType: {
+    type: String,
+    enum: ['Permanent', 'Contractual', 'Freelance', 'Temporary'],
+  },
+  JobTitle: {
+    type: String,
+  },
+  SalaryPackage: {
+    type: String,
   },
 });
 
