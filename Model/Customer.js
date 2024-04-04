@@ -23,7 +23,10 @@ const customerSchema = new mongoose.Schema({
   },
   Email: {
     type: String,
-    unique: true,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
 });
 

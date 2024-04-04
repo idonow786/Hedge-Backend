@@ -3,16 +3,19 @@ const Expense = require('../../Model/Expense');
 const deleteExpense = async (req, res) => {
   try {
     const { ExpenseId } = req.body;
+    const adminId = req.user.adminId;
 
     if (!ExpenseId) {
       return res.status(400).json({ message: 'ExpenseId is required' });
     }
 
-    const deletedExpense = await Expense.findByIdAndDelete(ExpenseId );
+    const expense = await Expense.findOne({ _id: ExpenseId, AdminID: adminId });
 
-    if (!deletedExpense) {
-      return res.status(404).json({ message: 'Expense not found' });
+    if (!expense) {
+      return res.status(404).json({ message: 'Expense not found or not authorized' });
     }
+
+    const deletedExpense = await Expense.findByIdAndDelete(ExpenseId);
 
     res.status(200).json({
       message: 'Expense deleted successfully',
@@ -24,4 +27,4 @@ const deleteExpense = async (req, res) => {
   }
 };
 
-module.exports={deleteExpense}
+module.exports = { deleteExpense };

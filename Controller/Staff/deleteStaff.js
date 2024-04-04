@@ -1,18 +1,25 @@
 const Staff = require('../../Model/Staff');
 
-const deletestaff = async (req, res) => {
+const deleteStaff = async (req, res) => {
   try {
-    const staffId = req.body.staffid;
+    const staffId = req.body.staffId;
+    const adminId = req.user.adminId;
 
-    const deletedstaff = await Staff.findByIdAndDelete(staffId);
-
-    if (!deletedstaff) {
-      return res.status(404).json({ message: 'staff not found' });
+    if (!staffId) {
+      return res.status(400).json({ message: 'Staff ID is required' });
     }
 
+    const staff = await Staff.findOne({ _id: staffId, AdminID: adminId });
+
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff not found or not authorized' });
+    }
+
+    const deletedStaff = await Staff.findByIdAndDelete(staffId);
+
     res.status(200).json({
-      message: 'staff deleted successfully',
-      staff: deletedstaff,
+      message: 'Staff deleted successfully',
+      staff: deletedStaff,
     });
   } catch (error) {
     console.error('Error deleting staff:', error);
@@ -20,5 +27,4 @@ const deletestaff = async (req, res) => {
   }
 };
 
-
-module.exports={deletestaff}
+module.exports = { deleteStaff };

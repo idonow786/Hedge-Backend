@@ -3,8 +3,9 @@ const Customer = require('../../Model/Customer');
 const getCustomers = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
+    const adminId = req.user.adminId;
 
-    let query = {};
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
       query.DateJoined = {
@@ -26,6 +27,7 @@ const getCustomers = async (req, res) => {
       query.$or = [
         { Name: { $regex: search, $options: 'i' } },
         { Email: { $regex: search, $options: 'i' } },
+        { PhoneNo: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -36,10 +38,9 @@ const getCustomers = async (req, res) => {
       customers,
     });
   } catch (error) {
-    console.log('Error retrieving customers:', error);
+    console.error('Error retrieving customers:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-
-module.exports={getCustomers}
+module.exports = { getCustomers };

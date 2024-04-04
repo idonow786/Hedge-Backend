@@ -3,15 +3,16 @@ const mongoose = require('mongoose');
 const businessSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    unique: true,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
   BusinessName: {
     type: String,
-    required: true,
   },
   BusinessAddress: {
     type: String,
-    required: true,
   },
   Date: {
     type: Date,

@@ -6,6 +6,7 @@ const Wallet = require('../../Model/Wallet');
 const generateReports = async (req, res) => {
   try {
     const { startDate, endDate, specificDate, filter } = req.body;
+    const adminId = req.user.adminId;
 
     let dateFilter = {};
 
@@ -26,6 +27,7 @@ const generateReports = async (req, res) => {
       const invoices = await Invoice.find({
         InvoiceDate: dateFilter,
         Status: 'paid',
+        AdminID: adminId,
       }).populate('CustomerId', 'Name');
 
       reportData = invoices.map((invoice) => ({
@@ -37,6 +39,7 @@ const generateReports = async (req, res) => {
     } else if (filter === 'Invoices') {
       const invoices = await Invoice.find({
         InvoiceDate: dateFilter,
+        AdminID: adminId,
       }).populate('CustomerId', 'Name');
 
       reportData = invoices.map((invoice) => ({
@@ -49,6 +52,7 @@ const generateReports = async (req, res) => {
     } else if (filter === 'Expense') {
       const expenses = await Expense.find({
         Date: dateFilter,
+        AdminID: adminId,
       });
 
       reportData = expenses.map((expense) => ({
@@ -64,6 +68,7 @@ const generateReports = async (req, res) => {
         $match: {
           InvoiceDate: dateFilter,
           Status: 'paid',
+          AdminID: adminId,
         },
       },
       {
@@ -80,6 +85,7 @@ const generateReports = async (req, res) => {
       {
         $match: {
           Date: dateFilter,
+          AdminID: adminId,
         },
       },
       {
@@ -97,12 +103,13 @@ const generateReports = async (req, res) => {
 
     const totalInvoices = await Invoice.countDocuments({
       InvoiceDate: dateFilter,
+      AdminID: adminId,
     });
 
-    let wallet = await Wallet.findOne();
+    let wallet = await Wallet.findOne({ AdminID: adminId });
 
     if (!wallet) {
-      wallet = new Wallet();
+      wallet = new Wallet({ AdminID: adminId });
     }
 
     wallet.TotalSales = totalSalesAmount;

@@ -3,6 +3,7 @@ const Project = require('../../Model/Project');
 const getProjects = async (req, res) => {
   try {
     const { activityFilter } = req.body;
+    const adminId = req.user.adminId;
 
     let activityFilterStartDate;
 
@@ -17,7 +18,7 @@ const getProjects = async (req, res) => {
       activityFilterStartDate.setFullYear(activityFilterStartDate.getFullYear() - 1);
     }
 
-    const query = {};
+    const query = { AdminID: adminId };
 
     if (activityFilterStartDate) {
       query['Activity.Date'] = { $gte: activityFilterStartDate };
@@ -37,4 +38,5 @@ const getProjects = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-module.exports={getProjects}
+
+module.exports = { getProjects };

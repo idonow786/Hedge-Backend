@@ -3,13 +3,9 @@ const mongoose = require('mongoose');
 const invoiceSchema = new mongoose.Schema({
   ID: {
     type: Number,
-
-    unique: true,
   },
   OrderNumber: {
     type: String,
-
-    unique: true,
   },
   CustomerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -64,8 +60,6 @@ const invoiceSchema = new mongoose.Schema({
   },
   InvoiceNumber: {
     type: String,
-
-    unique: true,
   },
   Items: [{
     ItemTitle: {
@@ -96,6 +90,10 @@ const invoiceSchema = new mongoose.Schema({
   InvoiceTotal: {
     type: Number,
 
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
   Description: {
     type: String,

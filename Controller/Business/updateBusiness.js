@@ -3,7 +3,6 @@ const Business = require('../../Model/Business');
 const updateBusiness = async (req, res) => {
   try {
     const {
-      businessID,
       BusinessName,
       BusinessAddress,
       BusinessPhoneNo,
@@ -15,11 +14,13 @@ const updateBusiness = async (req, res) => {
       YearofEstablishment,
     } = req.body;
 
-    if (!businessID) {
-      return res.status(400).json({ message: 'ID is required' });
+    const adminId = req.user.adminId;
+
+    if (!adminId) {
+      return res.status(400).json({ message: 'Admin ID is required' });
     }
 
-    const business = await Business.findById( businessID);
+    const business = await Business.findOne({ AdminID: adminId });
 
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });

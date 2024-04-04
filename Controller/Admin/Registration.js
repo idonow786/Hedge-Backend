@@ -1,4 +1,5 @@
 const Admin = require('../../Model/Admin');
+const Business = require('../../Model/Business');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
@@ -7,7 +8,6 @@ const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 
 dotenv.config();
-// Create a transporter
 const transporter = nodemailer.createTransport(
   new sendinBlue({
     apiKey: process.env.SENDINBLUE_API_KEY,
@@ -34,12 +34,20 @@ const signup = async (req, res) => {
 
     const savedAdmin = await newAdmin.save();
 
+    const randomID = Math.floor(10000000 + Math.random() * 90000000);
+    const newBusiness = new Business({
+      ID: randomID,
+      AdminID: savedAdmin._id,
+    });
+
+    await newBusiness.save();
+
     // Send welcome email
     const mailOptions = {
       from: process.env.Email_Sender,
       to: email,
-      subject: 'Welcome to our CRM', 
-      html: `<div style="background-color: #f4f4f4; padding: 20px; border-radius: 10px; font-family: Arial, sans-serif;"> <h2 style="color: #333; margin-bottom: 10px;">Welcome ${username},</h2> <p style="color: #666; font-size: 16px;">We're glad to have you on board.</p> </div>`, 
+      subject: 'Welcome to our CRM',
+      html: `<div style="background-color: #f4f4f4; padding: 20px; border-radius: 10px; font-family: Arial, sans-serif;"> <h2 style="color: #333; margin-bottom: 10px;">Welcome ${username},</h2> <p style="color: #666; font-size: 16px;">We're glad to have you on board.</p> </div>`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {

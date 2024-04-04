@@ -3,20 +3,21 @@ const Expense = require('../../Model/Expense');
 const updateExpense = async (req, res) => {
   try {
     const { ExpenseId, ExpenseTitle, Amount, Date, Description } = req.body;
+    const adminId = req.user.adminId;
 
     if (!ExpenseId) {
       return res.status(400).json({ message: 'ExpenseId is required' });
     }
 
-    const expense = await Expense.findById( ExpenseId );
+    const expense = await Expense.findOne({ _id: ExpenseId, AdminID: adminId });
 
     if (!expense) {
-      return res.status(404).json({ message: 'Expense not found' });
+      return res.status(404).json({ message: 'Expense not found or not authorized' });
     }
 
     expense.ExpenseTitle = ExpenseTitle || expense.ExpenseTitle;
     expense.Amount = Amount || expense.Amount;
-    expense.Date = Date || expense.Date;
+    expense.Date = Date ? new Date(Date) : expense.Date;
     expense.Description = Description || expense.Description;
 
     const updatedExpense = await expense.save();
@@ -31,4 +32,4 @@ const updateExpense = async (req, res) => {
   }
 };
 
-module.exports={updateExpense}
+module.exports = { updateExpense };

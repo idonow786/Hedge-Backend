@@ -21,7 +21,6 @@ const staffSchema = new mongoose.Schema({
   },
   Email: {
     type: String,
-    unique: true,
   },
   PicUrl: {
     type: String,
@@ -31,6 +30,10 @@ const staffSchema = new mongoose.Schema({
   },
   Description: {
     type: String,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
 });
 

@@ -3,11 +3,9 @@ const mongoose = require('mongoose');
 const socialsSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    unique: true,
   },
   Userid: {
     type: Number,
-    unique: true,
   },
   SocialAccounts: [
     {
@@ -26,6 +24,10 @@ const socialsSchema = new mongoose.Schema({
   UpdatedDate: {
     type: Date,
     default: Date.now,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: Admin,
   },
 });
 

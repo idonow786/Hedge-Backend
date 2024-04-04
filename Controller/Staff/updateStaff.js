@@ -1,37 +1,50 @@
 const Staff = require('../../Model/Staff');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
-const updatestaff = async (req, res) => {
+const updateStaff = async (req, res) => {
     try {
         const staffId = req.body.id;
-        const { Name, Email, PhoneNo, DateJoined, DateofBirth } = req.body;
+        const adminId = req.user.adminId;
+        const { StaffName, Email, PhoneNo, DateJoined, DateofBirth, Gender, Description } = req.body;
 
-        const staff = await Staff.findById(staffId);
+        if (!staffId) {
+            return res.status(400).json({ message: 'Staff ID is required' });
+        }
+
+        const staff = await Staff.findOne({ _id: staffId, AdminID: adminId });
 
         if (!staff) {
-            return res.status(404).json({ message: 'staff not found' });
+            return res.status(404).json({ message: 'Staff not found or not authorized' });
         }
-        let picUrl = ''
+
+        let picUrl = staff.PicUrl;
         if (req.file) {
             const base64Image = req.file.buffer.toString('base64');
             const contentType = req.file.mimetype;
 
-            const imageUrl = await uploadImageToFirebase(base64Image, contentType);
-            picUrl = imageUrl;
+            try {
+                const imageUrl = await uploadImageToFirebase(base64Image, contentType);
+                picUrl = imageUrl;
+            } catch (error) {
+                console.error('Error uploading image to Firebase:', error);
+                // Continue with the existing picUrl if image upload fails
+            }
         }
-        staff.Name = Name || staff.Name;
+
+        staff.StaffName = StaffName || staff.StaffName;
         staff.Email = Email || staff.Email;
         staff.PhoneNo = PhoneNo || staff.PhoneNo;
-        staff.DateJoined = DateJoined || staff.DateJoined;
-        staff.DateofBirth = DateofBirth || staff.DateofBirth;
+        staff.Date = DateJoined ? new Date(DateJoined) : staff.Date;
+        staff.DateofBirth = DateofBirth ? new Date(DateofBirth) : staff.DateofBirth;
         staff.PicUrl = picUrl;
+        staff.Gender = Gender || staff.Gender;
+        staff.Description = Description || staff.Description;
 
-
-        const updatedstaff = await staff.save();
+        const updatedStaff = await staff.save();
 
         res.status(200).json({
-            message: 'staff updated successfully',
-            staff: updatedstaff,
+            message: 'Staff updated successfully',
+            staff: updatedStaff,
         });
     } catch (error) {
         console.error('Error updating staff:', error);
@@ -39,4 +52,4 @@ const updatestaff = async (req, res) => {
     }
 };
 
-module.exports={updatestaff}
+module.exports = { updateStaff };

@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const expenseSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    unique: true,
   },
   ExpenseTitle: {
     type: String,
@@ -16,6 +15,10 @@ const expenseSchema = new mongoose.Schema({
   },
   Description: {
     type: String,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
 });
 

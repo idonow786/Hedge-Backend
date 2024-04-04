@@ -1,8 +1,10 @@
 const Project = require('../../Model/Project');
 const ProjectProgress = require('../../Model/ProjectProgress');
+
 const updateProject = async (req, res) => {
   try {
     const { projectId } = req.body;
+    const adminId = req.user.adminId;
     const {
       AboutProject,
       Activity,
@@ -14,10 +16,14 @@ const updateProject = async (req, res) => {
       ProgressPercentage,
     } = req.body;
 
-    const project = await Project.findById(projectId);
+    if (!projectId) {
+      return res.status(400).json({ message: 'Project ID is required' });
+    }
+
+    const project = await Project.findOne({ _id: projectId, AdminID: adminId });
 
     if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
+      return res.status(404).json({ message: 'Project not found or not authorized' });
     }
 
     project.AboutProject = AboutProject || project.AboutProject;
@@ -65,4 +71,4 @@ const updateProject = async (req, res) => {
   }
 };
 
-module.exports={updateProject}
+module.exports = { updateProject };

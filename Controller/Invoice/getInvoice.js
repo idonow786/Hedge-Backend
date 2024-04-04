@@ -4,8 +4,9 @@ const Customer = require('../../Model/Customer');
 const getInvoices = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
+    const adminId = req.user.adminId;
 
-    let query = {};
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
       query.InvoiceDate = {
@@ -26,7 +27,7 @@ const getInvoices = async (req, res) => {
     if (search) {
       let searchRegex = { $regex: search, $options: 'i' };
       let searchNumber = isNaN(Number(search)) ? 0 : Number(search);
-    
+
       query.$or = [
         { InvoiceTotal: searchNumber },
         { Amount: searchNumber },

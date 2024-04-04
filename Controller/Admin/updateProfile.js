@@ -5,7 +5,7 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 const updateAdminProfile = async (req, res) => {
   try {
-    const adminId = req.adminId;
+    const adminId = req.user.adminId;
     const { name, email, gender } = req.body;
 
     const admin = await Admin.findById(adminId);

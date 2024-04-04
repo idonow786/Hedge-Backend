@@ -14,6 +14,7 @@ const addProject = async (req, res) => {
             SpendingAmount,
             ProgressPercentage,
         } = req.body;
+        const adminId = req.user.adminId;
 
         if (!AboutProject || !TeamMembers || !TotalTask) {
             return res.status(400).json({ message: 'Please provide all required fields' });
@@ -32,6 +33,7 @@ const addProject = async (req, res) => {
             Activity,
             AboutProject,
             TeamMembers: [],
+            AdminID: adminId,
         });
 
         const projectProgressRecords = [];
@@ -65,5 +67,4 @@ const addProject = async (req, res) => {
     }
 };
 
-
-module.exports = { addProject }
+module.exports = { addProject };

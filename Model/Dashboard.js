@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const dashboardSchema = new mongoose.Schema({
   Date: {
     type: Date,
-    required: true,
   },
   Sales: {
     type: Number,
@@ -29,23 +28,23 @@ const dashboardSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: Admin,
+  },
   RevenueReport: [
     {
       Month: {
         type: String,
-        required: true,
       },
       NetProfit: {
         type: Number,
-        required: true,
       },
       Revenue: {
         type: Number,
-        required: true,
       },
       FreeCashFlow: {
         type: Number,
-        required: true,
       },
     },
   ],

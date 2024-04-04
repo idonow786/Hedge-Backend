@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const projectSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    unique: true,
   },
   Title: {
     type: String,
@@ -26,6 +25,10 @@ const projectSchema = new mongoose.Schema({
   ProgressPercentage: {
     type: Number,
     default: 0,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
   Activity: [
     {
@@ -66,6 +69,7 @@ const projectSchema = new mongoose.Schema({
       type: Date,
     },
   },
+  
   TeamMembers: [
     {
       StaffId: {

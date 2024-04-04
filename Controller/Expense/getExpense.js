@@ -3,8 +3,9 @@ const Expense = require('../../Model/Expense');
 const getExpenses = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
+    const adminId = req.user.adminId;
 
-    let query = {};
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
       query.Date = {

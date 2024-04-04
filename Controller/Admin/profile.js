@@ -2,7 +2,7 @@ const Admin = require('../../Model/Admin');
 
 const getAdminProfile = async (req, res) => {
   try {
-    const adminId = req.adminId;
+    const adminId = req.user.adminId;
 
     const admin = await Admin.findById(adminId);
 

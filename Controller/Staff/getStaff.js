@@ -1,45 +1,46 @@
 const Staff = require('../../Model/Staff');
 
-const getstaffs = async (req, res) => {
+const getStaffs = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
+    const adminId = req.user.adminId;
 
-    let query = {};
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
-      query.DateJoined = {
+      query.Date = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       };
     } else if (startDate) {
-      query.DateJoined = {
+      query.Date = {
         $gte: new Date(startDate),
         $lte: new Date(startDate),
       };
     } else if (endDate) {
-      query.DateJoined = {
+      query.Date = {
         $lte: new Date(endDate),
       };
     }
 
     if (search) {
       query.$or = [
-        { Name: { $regex: search, $options: 'i' } },
+        { StaffName: { $regex: search, $options: 'i' } },
         { Email: { $regex: search, $options: 'i' } },
+        { PhoneNo: { $regex: search, $options: 'i' } },
       ];
     }
 
     const staffs = await Staff.find(query);
 
     res.status(200).json({
-      message: 'staffs retrieved successfully',
+      message: 'Staffs retrieved successfully',
       staffs,
     });
   } catch (error) {
-    console.log('Error retrieving staffs:', error);
+    console.error('Error retrieving staffs:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-
-module.exports={getstaffs}
+module.exports = { getStaffs };

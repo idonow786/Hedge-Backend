@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const postsSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    unique: true,
   },
   SocialId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +22,10 @@ const postsSchema = new mongoose.Schema({
   CreatedAt: {
     type: Date,
     default: Date.now,
+  },
+  AdminID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
   },
 });
 

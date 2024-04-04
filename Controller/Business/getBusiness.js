@@ -3,8 +3,9 @@ const Business = require('../../Model/Business');
 const getBusinesss = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
+    const adminId = req.user.adminId;
 
-    let query = {};
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
       query.Date = {
@@ -34,14 +35,18 @@ const getBusinesss = async (req, res) => {
       ];
     }
 
-    const businesses = await Business.findOne(query);
+    const business = await Business.findOne(query);
+
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
 
     res.status(200).json({
-      message: 'Businesses retrieved successfully',
-      businesses,
+      message: 'Business retrieved successfully',
+      business,
     });
   } catch (error) {
-    console.error('Error retrieving businesses:', error);
+    console.error('Error retrieving business:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

@@ -4,6 +4,7 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const updateInvoice = async (req, res) => {
     try {
         const { invoiceId } = req.body;
+        const adminId = req.user.adminId;
         const {
             CustomerId,
             InvoiceDate,
@@ -19,10 +20,14 @@ const updateInvoice = async (req, res) => {
             Description,
         } = req.body;
 
-        const invoice = await Invoice.findById(invoiceId);
+        if (!invoiceId) {
+            return res.status(400).json({ message: 'Invoice ID is required' });
+        }
+
+        const invoice = await Invoice.findOne({ _id: invoiceId, AdminID: adminId });
 
         if (!invoice) {
-            return res.status(404).json({ message: 'Invoice not found' });
+            return res.status(404).json({ message: 'Invoice not found or not authorized' });
         }
 
         invoice.CustomerId = CustomerId || invoice.CustomerId;
@@ -62,4 +67,5 @@ const updateInvoice = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-module.exports = { updateInvoice }
+
+module.exports = { updateInvoice };

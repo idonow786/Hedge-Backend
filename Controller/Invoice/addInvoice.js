@@ -27,6 +27,7 @@ const createInvoice = async (req, res) => {
       InvoiceTotal,
       Description,
     } = req.body;
+    const adminId = req.user.adminId;
 
     if (
       !CustomerId ||
@@ -62,13 +63,13 @@ const createInvoice = async (req, res) => {
     if (req.file) {
       const base64Image = req.file.buffer.toString('base64');
       const contentType = req.file.mimetype;
-    
-    try {
-      PicUrl = await uploadImageToFirebase(base64Image, contentType);
-    } catch (error) {
-      console.error('Error uploading picture:', error);
-      return res.status(500).json({ message: 'Failed to upload picture' });
-    }
+
+      try {
+        PicUrl = await uploadImageToFirebase(base64Image, contentType);
+      } catch (error) {
+        console.error('Error uploading picture:', error);
+        return res.status(500).json({ message: 'Failed to upload picture' });
+      }
     }
 
     const newInvoice = new Invoice({
@@ -88,6 +89,7 @@ const createInvoice = async (req, res) => {
       Vat,
       InvoiceTotal,
       Description,
+      AdminID: adminId,
     });
 
     const savedInvoice = await newInvoice.save();
@@ -105,5 +107,4 @@ const createInvoice = async (req, res) => {
   }
 };
 
-
-module.exports={createInvoice}
+module.exports = { createInvoice };
