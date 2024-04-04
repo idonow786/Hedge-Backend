@@ -40,7 +40,7 @@ const businessSchema = new mongoose.Schema({
     default: 0,
   },
   YearofEstablishment: {
-    type: Date,
+    type: String,
   },
 });
 
