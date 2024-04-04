@@ -18,6 +18,9 @@ const expenseSchema = new mongoose.Schema({
   Description: {
     type: String,
   },
+  ExpenseType: {
+    type: String,
+  },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',

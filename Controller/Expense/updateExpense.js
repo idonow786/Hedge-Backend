@@ -2,7 +2,7 @@ const Expense = require('../../Model/Expense');
 
 const updateExpense = async (req, res) => {
   try {
-    const { ExpenseId, ExpenseTitle, Amount, expenseDate, Description } = req.body;
+    const { ExpenseId, ExpenseTitle, Amount, expenseDate, Description, expenseType } = req.body;
     const adminId = req.adminId;
 
     if (!ExpenseId) {
@@ -31,6 +31,8 @@ const updateExpense = async (req, res) => {
     }
 
     expense.Description = Description || expense.Description;
+    expense.ExpenseType = expenseType || expense.ExpenseType;
+
 
     const updatedExpense = await expense.save();
 
