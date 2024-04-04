@@ -4,7 +4,8 @@ const Customer = require('../../Model/Customer');
 const getInvoices = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     let query = { AdminID: adminId };
 

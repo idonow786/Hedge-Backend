@@ -3,7 +3,8 @@ const Staff = require('../../Model/Staff');
 const getStaffs = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     let query = { AdminID: adminId };
 

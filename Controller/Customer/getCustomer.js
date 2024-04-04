@@ -3,7 +3,8 @@ const Customer = require('../../Model/Customer');
 const getCustomers = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     let query = { AdminID: adminId };
 

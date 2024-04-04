@@ -37,7 +37,8 @@ const addCustomer = async (req, res) => {
       DateJoined: DateJoined ? new Date(DateJoined) : undefined,
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       PicUrl: picUrl,
-      AdminID: req.user.adminId,
+      AdminID: req.adminId
+,
     });
 
     const savedCustomer = await newCustomer.save();

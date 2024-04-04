@@ -2,8 +2,9 @@ const Admin = require('../../Model/Admin');
 
 const getAdminProfile = async (req, res) => {
   try {
-    const adminId = req.user.adminId;
-
+    const adminId = req.adminId
+;
+    console.log(adminId)
     const admin = await Admin.findById(adminId);
 
     if (!admin) {
@@ -12,13 +13,7 @@ const getAdminProfile = async (req, res) => {
 
     res.status(200).json({
       message: 'Admin profile retrieved successfully',
-      profile: {
-        id: admin._id,
-        name: admin.Name,
-        email: admin.Email,
-        picUrl: admin.PicUrl,
-        gender: admin.Gender,
-      },
+      admin
     });
   } catch (error) {
     console.error('Error retrieving admin profile:', error);

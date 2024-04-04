@@ -4,7 +4,8 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const addStaff = async (req, res) => {
   try {
     const { StaffName, Email, PhoneNo, DateJoined, Gender, DateofBirth, Description } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     const ID = Math.floor(Math.random() * 1000000);
 

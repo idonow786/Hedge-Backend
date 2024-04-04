@@ -14,7 +14,8 @@ const updateBusiness = async (req, res) => {
       YearofEstablishment,
     } = req.body;
 
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     if (!adminId) {
       return res.status(400).json({ message: 'Admin ID is required' });

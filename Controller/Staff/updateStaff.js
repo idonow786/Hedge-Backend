@@ -4,7 +4,8 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const updateStaff = async (req, res) => {
     try {
         const staffId = req.body.id;
-        const adminId = req.user.adminId;
+        const adminId = req.adminId
+;
         const { StaffName, Email, PhoneNo, DateJoined, DateofBirth, Gender, Description } = req.body;
 
         if (!staffId) {

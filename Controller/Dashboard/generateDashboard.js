@@ -5,7 +5,8 @@ const Wallet = require('../../Model/Wallet');
 
 const generateDashboardData = async (req, res) => {
   try {
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
     const today = new Date();
     const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 

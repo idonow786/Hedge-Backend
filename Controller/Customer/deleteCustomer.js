@@ -3,7 +3,8 @@ const Customer = require('../../Model/Customer');
 const deleteCustomer = async (req, res) => {
   try {
     const customerId = req.body.Customerid;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 

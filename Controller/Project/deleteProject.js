@@ -4,7 +4,8 @@ const ProjectProgress = require('../../Model/ProjectProgress');
 const deleteProject = async (req, res) => {
     try {
         const { projectId } = req.body;
-        const adminId = req.user.adminId;
+        const adminId = req.adminId
+;
 
         if (!projectId) {
             return res.status(400).json({ message: 'Project ID is required' });

@@ -27,7 +27,8 @@ const createInvoice = async (req, res) => {
       InvoiceTotal,
       Description,
     } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     if (
       !CustomerId ||

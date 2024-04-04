@@ -4,7 +4,8 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const updateInvoice = async (req, res) => {
     try {
         const { invoiceId } = req.body;
-        const adminId = req.user.adminId;
+        const adminId = req.adminId
+;
         const {
             CustomerId,
             InvoiceDate,

@@ -3,7 +3,8 @@ const Invoice = require('../../Model/Invoices');
 const deleteInvoice = async (req, res) => {
   try {
     const { invoiceId } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     if (!invoiceId) {
       return res.status(400).json({ message: 'Invoice ID is required' });

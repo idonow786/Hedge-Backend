@@ -6,7 +6,8 @@ const Wallet = require('../../Model/Wallet');
 const generateReports = async (req, res) => {
   try {
     const { startDate, endDate, specificDate, filter } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     let dateFilter = {};
 

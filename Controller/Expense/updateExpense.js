@@ -3,7 +3,8 @@ const Expense = require('../../Model/Expense');
 const updateExpense = async (req, res) => {
   try {
     const { ExpenseId, ExpenseTitle, Amount, Date, Description } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     if (!ExpenseId) {
       return res.status(400).json({ message: 'ExpenseId is required' });

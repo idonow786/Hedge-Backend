@@ -3,7 +3,8 @@ const Staff = require('../../Model/Staff');
 const deleteStaff = async (req, res) => {
   try {
     const staffId = req.body.staffId;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     if (!staffId) {
       return res.status(400).json({ message: 'Staff ID is required' });

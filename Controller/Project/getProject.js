@@ -3,7 +3,8 @@ const Project = require('../../Model/Project');
 const getProjects = async (req, res) => {
   try {
     const { activityFilter } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
 
     let activityFilterStartDate;
 

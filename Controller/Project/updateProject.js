@@ -4,7 +4,8 @@ const ProjectProgress = require('../../Model/ProjectProgress');
 const updateProject = async (req, res) => {
   try {
     const { projectId } = req.body;
-    const adminId = req.user.adminId;
+    const adminId = req.adminId
+;
     const {
       AboutProject,
       Activity,

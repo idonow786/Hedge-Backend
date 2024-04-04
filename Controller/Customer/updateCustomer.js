@@ -5,7 +5,8 @@ const updateCustomer = async (req, res) => {
     try {
         const customerId = req.body.id;
         const { Name, Email, PhoneNo, DateJoined, DateofBirth } = req.body;
-        const adminId = req.user.adminId;
+        const adminId = req.adminId
+;
 
         const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 
