@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 
 const adminSchema = new mongoose.Schema({
-  ID: {
-    type: Number,
-  },
+ ID: {
+  type: Number,
+  default: () => Math.floor(Math.random() * 1000000),
+},
+
   Name: {
     type: String,
   },

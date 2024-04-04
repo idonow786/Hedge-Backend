@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 
 const postsSchema = new mongoose.Schema({
-  ID: {
-    type: Number,
-  },
+ ID: {
+  type: Number,
+  default: () => Math.floor(Math.random() * 1000000),
+},
+
   SocialId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Socials',
