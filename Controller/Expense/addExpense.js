@@ -2,21 +2,29 @@ const Expense = require('../../Model/Expense');
 
 const addExpense = async (req, res) => {
   try {
-    const { ExpenseTitle, Amount, Date, Description } = req.body;
-    const adminId = req.adminId
-;
+    const { ExpenseTitle, Amount, expenseDate, Description } = req.body;
+    const adminId = req.adminId;
 
-    if (!ExpenseTitle || !Amount || !Date) {
-      return res.status(400).json({ message: 'ExpenseTitle, Amount, and Date are required' });
+    if (!ExpenseTitle || !Amount || !expenseDate) {
+      return res.status(400).json({ message: 'ExpenseTitle, Amount, and expenseDate are required' });
     }
 
     const ID = Math.floor(Math.random() * 1000000);
+
+    let formattedDate;
+    if (typeof expenseDate === 'string') {
+      formattedDate = new Date(expenseDate.trim());
+    } else if (typeof expenseDate === 'number') {
+      formattedDate = new Date(expenseDate);
+    } else {
+      formattedDate = expenseDate;
+    }
 
     const newExpense = new Expense({
       ID,
       ExpenseTitle,
       Amount,
-      Date: new Date(Date),
+      Date: formattedDate,
       Description,
       AdminID: adminId,
     });

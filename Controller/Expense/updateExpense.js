@@ -2,9 +2,8 @@ const Expense = require('../../Model/Expense');
 
 const updateExpense = async (req, res) => {
   try {
-    const { ExpenseId, ExpenseTitle, Amount, Date, Description } = req.body;
-    const adminId = req.adminId
-;
+    const { ExpenseId, ExpenseTitle, Amount, expenseDate, Description } = req.body;
+    const adminId = req.adminId;
 
     if (!ExpenseId) {
       return res.status(400).json({ message: 'ExpenseId is required' });
@@ -18,7 +17,19 @@ const updateExpense = async (req, res) => {
 
     expense.ExpenseTitle = ExpenseTitle || expense.ExpenseTitle;
     expense.Amount = Amount || expense.Amount;
-    expense.Date = Date ? new Date(Date) : expense.Date;
+
+    if (expenseDate) {
+      let formattedDate;
+      if (typeof expenseDate === 'string') {
+        formattedDate = new Date(expenseDate.trim());
+      } else if (typeof expenseDate === 'number') {
+        formattedDate = new Date(expenseDate);
+      } else {
+        formattedDate = expenseDate;
+      }
+      expense.Date = formattedDate;
+    }
+
     expense.Description = Description || expense.Description;
 
     const updatedExpense = await expense.save();
