@@ -5,6 +5,7 @@ const Wallet = require('../../Model/Wallet');
 
 const generateDashboardData = async (req, res) => {
   try {
+    const adminId = req.user.adminId;
     const today = new Date();
     const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -14,6 +15,7 @@ const generateDashboardData = async (req, res) => {
         $lte: today,
       },
       Status: 'paid',
+      AdminID: adminId,
     });
 
     const revenue = await Invoice.aggregate([
@@ -24,6 +26,7 @@ const generateDashboardData = async (req, res) => {
             $lte: today,
           },
           Status: 'paid',
+          AdminID: adminId,
         },
       },
       {
@@ -41,6 +44,7 @@ const generateDashboardData = async (req, res) => {
         $gte: lastWeek,
         $lte: today,
       },
+      AdminID: adminId,
     });
 
     const newCustomers = await Invoice.distinct('CustomerId', {
@@ -49,6 +53,7 @@ const generateDashboardData = async (req, res) => {
         $lte: today,
       },
       Status: 'paid',
+      AdminID: adminId,
     }).length;
 
     const conversion = leads > 0 ? (newCustomers / leads) * 100 : 0;
@@ -58,6 +63,7 @@ const generateDashboardData = async (req, res) => {
         $gte: lastWeek,
         $lte: today,
       },
+      AdminID: adminId,
     });
 
     const revenueReportData = await Invoice.aggregate([
@@ -68,6 +74,7 @@ const generateDashboardData = async (req, res) => {
             $lte: today,
           },
           Status: 'paid',
+          AdminID: adminId,
         },
       },
       {
@@ -92,12 +99,13 @@ const generateDashboardData = async (req, res) => {
       },
     ]);
 
-    const wallet = await Wallet.findOne();
+    const wallet = await Wallet.findOne({ AdminID: adminId });
     const totalOrders = await Invoice.countDocuments({
       InvoiceDate: {
         $gte: lastWeek,
         $lte: today,
       },
+      AdminID: adminId,
     });
     const totalExpenses = wallet ? wallet.TotalExpenses : 0;
     const profit = totalRevenue - totalExpenses;
@@ -113,7 +121,7 @@ const generateDashboardData = async (req, res) => {
       ReturnRate: returnRate,
     };
 
-    let dashboardData = await Dashboard.findOne({ Date: today });
+    let dashboardData = await Dashboard.findOne({ AdminID: adminId });
 
     if (!dashboardData) {
       dashboardData = new Dashboard({
@@ -126,8 +134,10 @@ const generateDashboardData = async (req, res) => {
         TotalInvoices: totalInvoices,
         RevenueReport: revenueReportData,
         Statistics: statisticsData,
+        AdminID: adminId,
       });
     } else {
+      dashboardData.Date = today;
       dashboardData.Sales = sales;
       dashboardData.Revenue = totalRevenue;
       dashboardData.Conversion = conversion;

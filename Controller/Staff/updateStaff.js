@@ -27,7 +27,6 @@ const updateStaff = async (req, res) => {
                 picUrl = imageUrl;
             } catch (error) {
                 console.error('Error uploading image to Firebase:', error);
-                // Continue with the existing picUrl if image upload fails
             }
         }
 

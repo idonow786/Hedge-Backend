@@ -30,7 +30,7 @@ const dashboardSchema = new mongoose.Schema({
   },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: Admin,
+    ref: 'Admin',
   },
   RevenueReport: [
     {
