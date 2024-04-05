@@ -2,10 +2,10 @@ const Expense = require('../../Model/Expense');
 
 const addExpense = async (req, res) => {
   try {
-    const { ExpenseTitle, Amount, expenseDate, Description,expenseType } = req.body;
+    const { ExpenseTitle, Amount, expenseDate, Description, expenseType } = req.body;
     const adminId = req.adminId;
 
-    if (!ExpenseTitle || !Amount || !expenseDate||!expenseType) {
+    if (!ExpenseTitle || !Amount || !expenseDate || !expenseType) {
       return res.status(400).json({ message: 'ExpenseTitle, Amount,expenseType, and expenseDate are required' });
     }
 
@@ -26,7 +26,7 @@ const addExpense = async (req, res) => {
       Amount,
       Date: formattedDate,
       Description,
-      ExpenseType:expenseType,
+      ExpenseType: expenseType,
       AdminID: adminId,
     });
 

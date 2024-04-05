@@ -61,7 +61,6 @@ const staffSchema = new mongoose.Schema({
   },
   ContractType: {
     type: String,
-    enum: ['Permanent', 'Contractual', 'Freelance', 'Temporary'],
   },
   JobTitle: {
     type: String,
