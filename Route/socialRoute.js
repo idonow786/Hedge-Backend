@@ -1,6 +1,7 @@
 const express = require('express');
+const router = express.Router();
+
 const multer = require('multer');
-const { getSocial,postSocial } = require('../Controller/Social');
 const {facebookAuthCallback,AuthFacebook  } = require('../Controller/Social/facebook');
 const { verifyToken } = require('../Middleware/jwt');
 
@@ -11,15 +12,14 @@ const upload = multer({ storage: storage });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/social/accounts',  getSocial);
-app.post('/post-social', upload.single('image'), postSocial);
+
 
 
 
 
 
 //FACEBOOK
-app.post('/auth/facebook/callback',verifyToken,  facebookAuthCallback);
-app.post('/auth/facebook',verifyToken,  AuthFacebook);
+router.post('/auth/facebook',verifyToken,  AuthFacebook);
+router.post('/auth/facebook/callback',verifyToken,  facebookAuthCallback);
 
 module.exports = router;

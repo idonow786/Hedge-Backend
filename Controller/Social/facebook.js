@@ -1,7 +1,5 @@
-const express = require('express');
-const FacebookUser = require('./facebookUser');
+const FacebookUser = require('../../Model/Facebook');
 
-const router = express.Router();
 
 const AuthFacebook= (req, res) => {
   try {
