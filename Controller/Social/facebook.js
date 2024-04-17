@@ -34,34 +34,8 @@ const facebookCallback = async (req, res) => {
   }
 };
 
-const postToFacebook = async (req, res) => {
-  try {
-    const { message, pictureUrl } = req.body;
-    const userId = req.user.id; 
 
-    const facebookUser = await FacebookUser.findOne({ userId });
-    if (!facebookUser) {
-      return res.status(404).json({ success: false, error: 'Facebook account not found' });
-    }
-
-    const { accessToken } = facebookUser;
-
-    // Post content to Facebook
-    const response = await axios.post(`https://graph.facebook.com/me/photos?access_token=${accessToken}`, {
-      message,
-      url: pictureUrl,
-    });
-
-    res.status(200).json({ success: true, postId: response.data.id });
-  } catch (error) {
-    console.error('Error posting to Facebook:', error);
-    res.status(500).json({ success: false, error: 'Failed to post to Facebook' });
-  }
-};
-
-
-
-module.exports={facebookAuth,facebookCallback,postToFacebook}
+module.exports={facebookAuth,facebookCallback}
 
 
 

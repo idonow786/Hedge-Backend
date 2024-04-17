@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const multer = require('multer');
-const {facebookAuth,facebookCallback,postToFacebook  } = require('../Controller/Social/facebook');
+const {facebookAuth,facebookCallback  } = require('../Controller/Social/facebook');
 const { verifyToken } = require('../Middleware/jwt');
 
 const app = express();
