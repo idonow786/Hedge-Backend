@@ -14,7 +14,6 @@ const getAuthUrl = async (req, res) => {
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
     );
 
-    // Store the codeVerifier and state in the session for later use
     req.session.twitterAuth = {
       codeVerifier,
       state,
@@ -33,7 +32,12 @@ const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
 
-    if (state !== req.session.state) {
+    if (!req.session.twitterAuth) {
+      return res.status(400).json({ error: 'Invalid session data' });
+    }
+
+    if (state !== req.session.twitterAuth.state) {
+      delete req.session.twitterAuth;
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
 
@@ -48,7 +52,7 @@ const handleCallback = async (req, res) => {
       refreshToken,
     } = await client.loginWithOAuth2({
       code,
-      codeVerifier: req.session.codeVerifier,
+      codeVerifier: req.session.twitterAuth.codeVerifier,
       redirectUri: process.env.TWITTER_CALLBACK_URL,
     });
 
@@ -69,6 +73,8 @@ const handleCallback = async (req, res) => {
       twitter.refreshToken = refreshToken;
       await twitter.save();
     }
+
+    // Clear the twitterAuth data from the session
     delete req.session.twitterAuth;
 
     res.redirect('/dashboard');
@@ -77,6 +83,7 @@ const handleCallback = async (req, res) => {
     res.status(500).json({ error: 'Failed to handle Twitter callback' });
   }
 };
+
 
 
 const postTweet = async (req, res) => {
