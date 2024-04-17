@@ -5,16 +5,15 @@ const Twitter = require('../../Model/Twitter');
 const getAuthUrl = async (req, res) => {
   try {
     const client = new TwitterApi({
-      appKey: process.env.TWITTER_CONSUMER_KEY,
-      appSecret: process.env.TWITTER_CONSUMER_SECRET,
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
     });
 
-    const { url, codeVerifier, state } = client.generateOAuth2AuthLink(
+    const { url, codeVerifier, state } = await client.generateOAuth2AuthLink(
       process.env.TWITTER_CALLBACK_URL,
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
     );
 
-    // Store the codeVerifier and state in the session for later use
     req.session.codeVerifier = codeVerifier;
     req.session.state = state;
 
@@ -25,6 +24,7 @@ const getAuthUrl = async (req, res) => {
   }
 };
 
+
 const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
@@ -34,14 +34,14 @@ const handleCallback = async (req, res) => {
     }
 
     const client = new TwitterApi({
-      appKey: process.env.TWITTER_CONSUMER_KEY,
-      appSecret: process.env.TWITTER_CONSUMER_SECRET,
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
     });
 
     const {
       client: loggedClient,
       accessToken,
-      accessSecret,
+      refreshToken,
     } = await client.loginWithOAuth2({
       code,
       codeVerifier: req.session.codeVerifier,
@@ -57,12 +57,12 @@ const handleCallback = async (req, res) => {
         userId: req.user._id,
         twitterId: data.id,
         accessToken,
-        accessTokenSecret: accessSecret,
+        refreshToken,
       });
       await twitter.save();
     } else {
       twitter.accessToken = accessToken;
-      twitter.accessTokenSecret = accessSecret;
+      twitter.refreshToken = refreshToken;
       await twitter.save();
     }
 
@@ -72,6 +72,7 @@ const handleCallback = async (req, res) => {
     res.status(500).json({ error: 'Failed to handle Twitter callback' });
   }
 };
+
 
 const postTweet = async (req, res) => {
   try {

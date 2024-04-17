@@ -28,7 +28,7 @@ router.get('/auth/facebook/callback',  facebookCallback);
 
 
 //TWITTER
-router.get('/auth/twitter',  getAuthUrl);
+router.post('/auth/twitter',  getAuthUrl);
 router.get('/auth/twitter/callback',  handleCallback);
 
 module.exports = router;

@@ -15,7 +15,7 @@ const twitterSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  accessTokenSecret: {
+  refreshToken: {
     type: String,
     required: true,
   },
@@ -24,6 +24,7 @@ const twitterSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
 
 const Twitter = mongoose.model('Twitter', twitterSchema);
 
