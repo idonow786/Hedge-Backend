@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const multer = require('multer');
-const {facebookAuthCallback,AuthFacebook  } = require('../Controller/Social/facebook');
+const {facebookAuth,facebookCallback,postToFacebook  } = require('../Controller/Social/facebook');
 const { verifyToken } = require('../Middleware/jwt');
 
 const app = express();
@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 //FACEBOOK
-router.post('/auth/facebook',verifyToken,  AuthFacebook);
-router.get('/auth/facebook/callback',  facebookAuthCallback);
+router.post('/auth/facebook',verifyToken,  facebookAuth);
+router.get('/auth/facebook/callback',  facebookCallback);
 
 module.exports = router;

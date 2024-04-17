@@ -1,72 +1,66 @@
-const FacebookUser = require('../../Model/Facebook');
 const axios = require('axios');
+const FacebookUser = require('../../Model/Facebook');
 
-const AuthFacebook = (req, res) => {
+const facebookAuth = (req, res) => {
+  const FACEBOOK_REDIRECT_URI='https://crm-m3ck.onrender.com/api/social/auth/facebook/callback'
+  const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=pages_manage_posts,pages_read_engagement`;
+  res.redirect(authUrl);
+};
+
+const facebookCallback = async (req, res) => {
   try {
-    const appId = process.env.FACEBOOK_APP_ID;
-    const adminId = req.adminId;
-    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback`;
-    const scope = ['email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts'].join(',');
-    const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
+    const { code } = req.query;
+    const FACEBOOK_REDIRECT_URI='https://crm-m3ck.onrender.com/api/social/auth/facebook/callback'
+    const accessTokenUrl = `https://graph.facebook.com/v10.0/oauth/access_token?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&client_secret=${process.env.FACEBOOK_APP_SECRET}&code=${code}`;
+    const response = await axios.get(accessTokenUrl);
+    const accessToken = response.data.access_token;
 
-    res.json({ authUrl });
+    const userInfoUrl = `https://graph.facebook.com/me?fields=id,name,email&access_token=${accessToken}`;
+    const userInfoResponse = await axios.get(userInfoUrl);
+    const { id: facebookId, name, email } = userInfoResponse.data;
+
+    const userId = req.user.id; 
+    const facebookUser = await FacebookUser.findOneAndUpdate(
+      { userId },
+      { facebookId, accessToken, name, email },
+      { upsert: true, new: true }
+    );
+
+    res.redirect('/dashboard');
   } catch (error) {
-    console.error('Error generating Facebook authentication link:', error);
-    res.status(500).json({ error: 'An error occurred while generating the Facebook authentication link' });
+    console.error('Error in Facebook callback:', error);
+    res.status(500).json({ success: false, error: 'Failed to authenticate with Facebook' });
   }
 };
 
-const facebookAuthCallback = async (req, res) => {
+const postToFacebook = async (req, res) => {
   try {
-    const { code, adminId } = req.query;
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback`;
+    const { message, pictureUrl } = req.body;
+    const userId = req.user.id; 
 
-    const tokenResponse = await axios.get(`https://graph.facebook.com/v10.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`);
-    const accessToken = tokenResponse.data.access_token;
-
-    const userResponse = await axios.get(`https://graph.facebook.com/me?fields=id,name,email&access_token=${accessToken}`);
-    const { id: facebookId, name, email } = userResponse.data;
-
-    const existingUser = await FacebookUser.findOne({ facebookId });
-
-    if (existingUser) {
-      existingUser.accessToken = accessToken;
-      await existingUser.save();
-      res.json({ message: 'User details updated successfully' });
-    } else {
-      const newUser = new FacebookUser({
-        userId: adminId,
-        facebookId,
-        accessToken,
-        name,
-        email
-      });
-      await newUser.save();
-      res.json({ message: 'User details saved successfully' });
+    const facebookUser = await FacebookUser.findOne({ userId });
+    if (!facebookUser) {
+      return res.status(404).json({ success: false, error: 'Facebook account not found' });
     }
+
+    const { accessToken } = facebookUser;
+
+    // Post content to Facebook
+    const response = await axios.post(`https://graph.facebook.com/me/photos?access_token=${accessToken}`, {
+      message,
+      url: pictureUrl,
+    });
+
+    res.status(200).json({ success: true, postId: response.data.id });
   } catch (error) {
-    console.error('Error handling Facebook callback:', error);
-    res.status(500).json({ error: 'An error occurred while handling the Facebook callback' });
+    console.error('Error posting to Facebook:', error);
+    res.status(500).json({ success: false, error: 'Failed to post to Facebook' });
   }
 };
 
-module.exports = { facebookAuthCallback, AuthFacebook };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+module.exports={facebookAuth,facebookCallback,postToFacebook}
 
 
 
