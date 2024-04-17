@@ -19,7 +19,7 @@ const getAuthUrl = async (req, res) => {
       state,
     };
 
-    console.log('Session data stored:', req.session.twitterAuth);
+    console.log('Session data stored:', req.session);
 
     res.json({ url });
   } catch (error) {
@@ -37,7 +37,7 @@ const handleCallback = async (req, res) => {
 
     console.log('Session ID:', req.sessionID);
     console.log('Cookies:', req.headers.cookie);
-    console.log('Session data retrieved:', req.session.twitterAuth);
+    console.log('Session data retrieved:', req.session);
     if (!req.session.twitterAuth) {
       console.error('Invalid session data');
       return res.status(400).json({ error: 'Invalid session data' });
