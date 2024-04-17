@@ -1,3 +1,4 @@
+// models/facebookUser.js
 const mongoose = require('mongoose');
 
 const facebookUserSchema = new mongoose.Schema({

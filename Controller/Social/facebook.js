@@ -1,36 +1,64 @@
-const axios = require('axios');
+// controllers/facebookController.js
+const Facebook = require('facebook-node-sdk');
 const FacebookUser = require('../../Model/Facebook');
 
 const facebookAuth = (req, res) => {
-  const adminID = req.adminId;
-  const FACEBOOK_REDIRECT_URI=`https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminID}`
- const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=pages_manage_posts,pages_read_engagement`;
-  res.send(authUrl);
+  try {
+    const facebook = new Facebook({
+      appID: process.env.FACEBOOK_APP_ID,
+      secret: process.env.FACEBOOK_APP_SECRET
+    });
+
+    const authUrl = facebook.getLoginUrl({
+      scope: 'email,pages_show_list,pages_manage_posts',
+      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback'
+    });
+
+    res.status(200).json({ authUrl });
+  } catch (error) {
+    console.error('Error generating Facebook auth URL:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 const facebookCallback = async (req, res) => {
   try {
-    const { code, adminId } = req.query;
-    const FACEBOOK_REDIRECT_URI = `https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminId}`;
-    const accessTokenUrl = `https://graph.facebook.com/v10.0/oauth/access_token?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&client_secret=${process.env.FACEBOOK_APP_SECRET}&code=${code}`;
-    const response = await axios.get(accessTokenUrl);
-    const accessToken = response.data.access_token;
+    const { code } = req.query;
 
-    const userInfoUrl = `https://graph.facebook.com/me?fields=id,name,email&access_token=${accessToken}`;
-    const userInfoResponse = await axios.get(userInfoUrl);
-    const { id: facebookId, name, email } = userInfoResponse.data;
+    const facebook = new Facebook({
+      appID: process.env.FACEBOOK_APP_ID,
+      secret: process.env.FACEBOOK_APP_SECRET
+    });
 
-    const userId = adminId;
-    const facebookUser = await FacebookUser.findOneAndUpdate(
-      { userId },
-      { facebookId, accessToken, name, email },
-      { upsert: true, new: true }
-    );
+    const { access_token } = await facebook.api('oauth/access_token', {
+      client_id: process.env.FACEBOOK_APP_ID,
+      client_secret: process.env.FACEBOOK_APP_SECRET,
+      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+      code
+    });
 
-    res.redirect('/dashboard');
+    const { id, name, email } = await facebook.api('/me', { fields: 'id,name,email', access_token });
+
+    let facebookUser = await FacebookUser.findOne({ facebookId: id });
+
+    if (!facebookUser) {
+      facebookUser = new FacebookUser({
+        userId: req.user._id,
+        facebookId: id,
+        accessToken: access_token,
+        name,
+        email
+      });
+      await facebookUser.save();
+    } else {
+      facebookUser.accessToken = access_token;
+      await facebookUser.save();
+    }
+
+    res.status(200).json({ message: 'Facebook account connected successfully' });
   } catch (error) {
-    console.error('Error in Facebook callback:', error);
-    res.status(500).json({ success: false, error: 'Failed to authenticate with Facebook' });
+    console.error('Error handling Facebook callback:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
