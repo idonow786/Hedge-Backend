@@ -5,7 +5,7 @@ const AuthFacebook = (req, res) => {
   try {
     const appId = process.env.FACEBOOK_APP_ID;
     const adminId = req.adminId;
-    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback?adminId=${adminId}`;
+    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback`;
     const scope = ['email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts'].join(',');
     const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
 
@@ -21,7 +21,7 @@ const facebookAuthCallback = async (req, res) => {
     const { code, adminId } = req.query;
     const appId = process.env.FACEBOOK_APP_ID;
     const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback?adminId=${adminId}`;
+    const redirectUri = `https://crm-m3ck.onrender.com/auth/facebook/callback`;
 
     const tokenResponse = await axios.get(`https://graph.facebook.com/v10.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`);
     const accessToken = tokenResponse.data.access_token;
