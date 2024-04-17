@@ -29,7 +29,10 @@ const getAuthUrl = async (req, res) => {
 const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
+    console.log('Callback state:', state);
+    console.log('Callback code:', code);
 
+    // Find the OAuth data in the database based on the state
     const oauthData = await OAuthData.findOne({ state });
 
     if (!oauthData) {
@@ -37,10 +40,14 @@ const handleCallback = async (req, res) => {
       return res.status(400).json({ error: 'Invalid OAuth data' });
     }
 
+    console.log('OAuth data:', oauthData);
+
     const client = new TwitterApi({
       clientId: process.env.TWITTER_CLIENT_ID,
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
     });
+
+    console.log('Twitter client initialized');
 
     const {
       client: loggedClient,
@@ -52,7 +59,11 @@ const handleCallback = async (req, res) => {
       redirectUri: process.env.TWITTER_CALLBACK_URL,
     });
 
+    console.log('Logged in with OAuth2');
+
     const { data } = await loggedClient.v2.me();
+
+    console.log('User data:', data);
 
     let twitter = await Twitter.findOne({ twitterId: data.id });
 
@@ -64,12 +75,15 @@ const handleCallback = async (req, res) => {
         refreshToken,
       });
       await twitter.save();
+      console.log('New Twitter account saved');
     } else {
       twitter.accessToken = accessToken;
       twitter.refreshToken = refreshToken;
       await twitter.save();
+      console.log('Twitter account updated');
     }
 
+    // Remove the OAuth data from the database
     await OAuthData.deleteOne({ _id: oauthData._id });
 
     res.redirect('/dashboard');
