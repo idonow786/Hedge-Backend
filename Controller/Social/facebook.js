@@ -3,8 +3,8 @@ const FacebookUser = require('../../Model/Facebook');
 
 const facebookAuth = (req, res) => {
   const adminID = req.adminId;
-  const FACEBOOK_REDIRECT_URI = `https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminID}`;
-  const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=pages_manage_posts,pages_read_engagement`;
+  const FACEBOOK_REDIRECT_URI=`https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminId}`
+ const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=pages_manage_posts,pages_read_engagement`;
   res.send(authUrl);
 };
 
