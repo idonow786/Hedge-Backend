@@ -35,8 +35,9 @@ const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
 
-    console.log('Session data retrieved:', req.session);
     console.log('Session ID:', req.sessionID);
+    console.log('Cookies:', req.headers.cookie);
+    console.log('Session data retrieved:', req.session.twitterAuth);
     if (!req.session.twitterAuth) {
       console.error('Invalid session data');
       return res.status(400).json({ error: 'Invalid session data' });

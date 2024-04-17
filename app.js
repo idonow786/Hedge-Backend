@@ -46,9 +46,12 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000, 
+      domain: 'https://crm-m3ck.onrender.com',
+      path: '/api/social/auth/twitter/callback',
     },
   })
 );
+
 
 // Routes
 app.get('/', (req, res) => {
