@@ -14,8 +14,11 @@ const getAuthUrl = async (req, res) => {
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
     );
 
-    req.session.codeVerifier = codeVerifier;
-    req.session.state = state;
+    // Store the codeVerifier and state in the session for later use
+    req.session.twitterAuth = {
+      codeVerifier,
+      state,
+    };
 
     res.json({ url });
   } catch (error) {
@@ -23,6 +26,7 @@ const getAuthUrl = async (req, res) => {
     res.status(500).json({ error: 'Failed to generate Twitter auth URL' });
   }
 };
+
 
 
 const handleCallback = async (req, res) => {
@@ -65,6 +69,7 @@ const handleCallback = async (req, res) => {
       twitter.refreshToken = refreshToken;
       await twitter.save();
     }
+    delete req.session.twitterAuth;
 
     res.redirect('/dashboard');
   } catch (error) {
