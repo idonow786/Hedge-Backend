@@ -69,7 +69,6 @@ const handleCallback = async (req, res) => {
 
     if (!twitter) {
       twitter = new Twitter({
-        userId: req.user._id,
         twitterId: data.id,
         accessToken,
         refreshToken,
