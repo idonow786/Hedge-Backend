@@ -3,9 +3,7 @@ const mongoose = require('mongoose');
 
 const twitterSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+    type: String,
   },
   twitterId: {
     type: String,
@@ -25,7 +23,16 @@ const twitterSchema = new mongoose.Schema({
   },
 });
 
-
 const Twitter = mongoose.model('Twitter', twitterSchema);
 
-module.exports = Twitter;
+const OAuthDataSchema = new mongoose.Schema({
+  state: String,
+  codeVerifier: String,
+});
+
+const OAuthData = mongoose.model('OAuthData', OAuthDataSchema);
+
+module.exports = {
+  Twitter,
+  OAuthData,
+};

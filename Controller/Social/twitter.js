@@ -1,6 +1,6 @@
 // twitterController.js
 const { TwitterApi } = require('twitter-api-v2');
-const Twitter = require('../../Model/Twitter');
+const { Twitter, OAuthData } = require('../../Model/Twitter');
 
 const getAuthUrl = async (req, res) => {
   try {
@@ -14,12 +14,10 @@ const getAuthUrl = async (req, res) => {
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
     );
 
-    req.session.twitterAuth = {
-      codeVerifier,
+    await OAuthData.create({
       state,
-    };
-
-    console.log('Session data stored:', req.session);
+      codeVerifier,
+    });
 
     res.json({ url });
   } catch (error) {
@@ -28,25 +26,15 @@ const getAuthUrl = async (req, res) => {
   }
 };
 
-
-
-
 const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
 
-    console.log('Session ID:', req.sessionID);
-    console.log('Cookies:', req.headers.cookie);
-    console.log('Session data retrieved:', req.session);
-    if (!req.session.twitterAuth) {
-      console.error('Invalid session data');
-      return res.status(400).json({ error: 'Invalid session data' });
-    }
+    const oauthData = await OAuthData.findOne({ state });
 
-    if (state !== req.session.twitterAuth.state) {
-      console.error('Invalid state parameter');
-      delete req.session.twitterAuth;
-      return res.status(400).json({ error: 'Invalid state parameter' });
+    if (!oauthData) {
+      console.error('Invalid OAuth data');
+      return res.status(400).json({ error: 'Invalid OAuth data' });
     }
 
     const client = new TwitterApi({
@@ -60,7 +48,7 @@ const handleCallback = async (req, res) => {
       refreshToken,
     } = await client.loginWithOAuth2({
       code,
-      codeVerifier: req.session.twitterAuth.codeVerifier,
+      codeVerifier: oauthData.codeVerifier,
       redirectUri: process.env.TWITTER_CALLBACK_URL,
     });
 
@@ -82,8 +70,7 @@ const handleCallback = async (req, res) => {
       await twitter.save();
     }
 
-    // Clear the twitterAuth data from the session
-    delete req.session.twitterAuth;
+    await OAuthData.deleteOne({ _id: oauthData._id });
 
     res.redirect('/dashboard');
   } catch (error) {
@@ -91,8 +78,6 @@ const handleCallback = async (req, res) => {
     res.status(500).json({ error: 'Failed to handle Twitter callback' });
   }
 };
-
-
 
 const postTweet = async (req, res) => {
   try {
@@ -105,10 +90,10 @@ const postTweet = async (req, res) => {
     }
 
     const client = new TwitterApi({
-      appKey: process.env.TWITTER_CONSUMER_KEY,
-      appSecret: process.env.TWITTER_CONSUMER_SECRET,
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
       accessToken: twitter.accessToken,
-      accessSecret: twitter.accessTokenSecret,
+      refreshToken: twitter.refreshToken,
     });
 
     let mediaId;
@@ -128,6 +113,7 @@ const postTweet = async (req, res) => {
     res.status(500).json({ error: 'Failed to post tweet' });
   }
 };
+
 
 module.exports = {
   getAuthUrl,
