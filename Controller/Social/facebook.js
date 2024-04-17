@@ -1,19 +1,17 @@
 // controllers/facebookController.js
-const Facebook = require('facebook-node-sdk');
+const Facebook = require('facebook-js-sdk');
 const FacebookUser = require('../../Model/Facebook');
 
 const facebookAuth = (req, res) => {
   try {
     const facebook = new Facebook({
-      appID: process.env.FACEBOOK_APP_ID,
-      secret: process.env.FACEBOOK_APP_SECRET
+      appId: process.env.FACEBOOK_APP_ID,
+      appSecret: process.env.FACEBOOK_APP_SECRET,
+      redirectUrl: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+      graphVersion: 'v19.0'
     });
 
-    const authUrl = facebook.getLoginUrl({
-      scope: 'email,pages_show_list,pages_manage_posts',
-      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback'
-    });
-
+    const authUrl = facebook.getLoginUrl();
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Facebook auth URL:', error);
@@ -25,40 +23,53 @@ const facebookCallback = async (req, res) => {
   try {
     const { code } = req.query;
 
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is missing' });
+    }
+
     const facebook = new Facebook({
-      appID: process.env.FACEBOOK_APP_ID,
-      secret: process.env.FACEBOOK_APP_SECRET
+      appId: process.env.FACEBOOK_APP_ID,
+      appSecret: process.env.FACEBOOK_APP_SECRET,
+      redirectUrl: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+      graphVersion: 'v19.0'
     });
 
-    const { access_token } = await facebook.api('oauth/access_token', {
-      client_id: process.env.FACEBOOK_APP_ID,
-      client_secret: process.env.FACEBOOK_APP_SECRET,
-      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
-      code
-    });
+    const accessToken = await facebook.callback(code);
 
-    const { id, name, email } = await facebook.api('/me', { fields: 'id,name,email', access_token });
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Failed to obtain access token' });
+    }
 
-    let facebookUser = await FacebookUser.findOne({ facebookId: id });
+    const profile = await facebook.get('/me', { fields: 'id,name,email' });
+
+    if (!profile || !profile.id || !profile.name || !profile.email) {
+      return res.status(400).json({ error: 'Incomplete profile data received from Facebook' });
+    }
+
+    let facebookUser = await FacebookUser.findOne({ facebookId: profile.id });
 
     if (!facebookUser) {
       facebookUser = new FacebookUser({
         userId: req.user._id,
-        facebookId: id,
-        accessToken: access_token,
-        name,
-        email
+        facebookId: profile.id,
+        accessToken: accessToken,
+        name: profile.name,
+        email: profile.email
       });
       await facebookUser.save();
     } else {
-      facebookUser.accessToken = access_token;
+      facebookUser.accessToken = accessToken;
       await facebookUser.save();
     }
 
     res.status(200).json({ message: 'Facebook account connected successfully' });
   } catch (error) {
     console.error('Error handling Facebook callback:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    if (error.response && error.response.data && error.response.data.error) {
+      res.status(error.response.status).json({ error: error.response.data.error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };
 
