@@ -19,6 +19,8 @@ const getAuthUrl = async (req, res) => {
       state,
     };
 
+    console.log('Session data stored:', req.session.twitterAuth);
+
     res.json({ url });
   } catch (error) {
     console.error('Error generating Twitter auth URL:', error);
@@ -28,15 +30,20 @@ const getAuthUrl = async (req, res) => {
 
 
 
+
 const handleCallback = async (req, res) => {
   try {
     const { state, code } = req.query;
 
+    console.log('Session data retrieved:', req.session.twitterAuth);
+
     if (!req.session.twitterAuth) {
+      console.error('Invalid session data');
       return res.status(400).json({ error: 'Invalid session data' });
     }
 
     if (state !== req.session.twitterAuth.state) {
+      console.error('Invalid state parameter');
       delete req.session.twitterAuth;
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
