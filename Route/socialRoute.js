@@ -20,6 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 
 //FACEBOOK
 router.post('/auth/facebook',verifyToken,  AuthFacebook);
-router.get('/auth/facebook/callback',verifyToken,  facebookAuthCallback);
+router.get('/auth/facebook/callback',  facebookAuthCallback);
 
 module.exports = router;
