@@ -2,16 +2,16 @@ const axios = require('axios');
 const FacebookUser = require('../../Model/Facebook');
 
 const facebookAuth = (req, res) => {
-  const adminID=req.adminId;
-  const FACEBOOK_REDIRECT_URI=`https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminID}`
+  const adminID = req.adminId;
+  const FACEBOOK_REDIRECT_URI = `https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminID}`;
   const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=pages_manage_posts,pages_read_engagement`;
   res.send(authUrl);
 };
 
 const facebookCallback = async (req, res) => {
   try {
-    const { code,adminId } = req.query;
-    const FACEBOOK_REDIRECT_URI='https://crm-m3ck.onrender.com/api/social/auth/facebook/callback'
+    const { code, adminId } = req.query;
+    const FACEBOOK_REDIRECT_URI = `https://crm-m3ck.onrender.com/api/social/auth/facebook/callback?adminId=${adminId}`;
     const accessTokenUrl = `https://graph.facebook.com/v10.0/oauth/access_token?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&client_secret=${process.env.FACEBOOK_APP_SECRET}&code=${code}`;
     const response = await axios.get(accessTokenUrl);
     const accessToken = response.data.access_token;
@@ -20,7 +20,7 @@ const facebookCallback = async (req, res) => {
     const userInfoResponse = await axios.get(userInfoUrl);
     const { id: facebookId, name, email } = userInfoResponse.data;
 
-    const userId =adminId; 
+    const userId = adminId;
     const facebookUser = await FacebookUser.findOneAndUpdate(
       { userId },
       { facebookId, accessToken, name, email },
@@ -34,11 +34,7 @@ const facebookCallback = async (req, res) => {
   }
 };
 
-
-module.exports={facebookAuth,facebookCallback}
-
-
-
+module.exports = { facebookAuth, facebookCallback };
 
 // //
 // const express = require('express');
