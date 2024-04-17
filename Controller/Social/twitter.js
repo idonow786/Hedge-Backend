@@ -32,7 +32,6 @@ const handleCallback = async (req, res) => {
     console.log('Callback state:', state);
     console.log('Callback code:', code);
 
-    // Find the OAuth data in the database based on the state
     const oauthData = await OAuthData.findOne({ state });
 
     if (!oauthData) {
