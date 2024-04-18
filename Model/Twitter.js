@@ -28,6 +28,7 @@ const Twitter = mongoose.model('Twitter', twitterSchema);
 const OAuthDataSchema = new mongoose.Schema({
   state: String,
   codeVerifier: String,
+  userId: String,
 });
 
 const OAuthData = mongoose.model('OAuthData', OAuthDataSchema);

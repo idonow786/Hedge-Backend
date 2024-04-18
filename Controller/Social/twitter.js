@@ -10,14 +10,14 @@ const getAuthUrl = async (req, res) => {
     });
 
     const { url, codeVerifier, state } = await client.generateOAuth2AuthLink(
-      `${process.env.TWITTER_CALLBACK_URL}?adminId=${req.adminId}`,
+      process.env.TWITTER_CALLBACK_URL,
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
     );
 
     await OAuthData.create({
       state,
       codeVerifier,
-      adminId: req.adminId,
+      userId: req.adminId,
     });
 
     res.json({ url });
@@ -29,14 +29,14 @@ const getAuthUrl = async (req, res) => {
 
 const handleCallback = async (req, res) => {
   try {
-    const { state, code, adminId } = req.query;
+    const { state, code } = req.query;
+
     console.log('Callback state:', state);
     console.log('Callback code:', code);
-    console.log('Callback adminId:', adminId);
 
     const oauthData = await OAuthData.findOne({ state });
 
-    if (!oauthData || oauthData.adminId !== adminId) {
+    if (!oauthData) {
       console.error('Invalid OAuth data');
       return res.status(400).json({ error: 'Invalid OAuth data' });
     }
@@ -66,11 +66,11 @@ const handleCallback = async (req, res) => {
 
     console.log('User data:', data);
 
-    let twitter = await Twitter.findOne({ twitterId: data.id, userId: adminId });
+    let twitter = await Twitter.findOne({ twitterId: data.id, userId: oauthData.userId });
 
     if (!twitter) {
       twitter = new Twitter({
-        userId: adminId,
+        userId: oauthData.userId,
         twitterId: data.id,
         accessToken,
         refreshToken,
