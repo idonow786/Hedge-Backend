@@ -1,17 +1,27 @@
+
 // controllers/facebookController.js
 const Facebook = require('facebook-js-sdk');
-const FacebookUser = require('../../Model/Facebook');
+const {OAuthDataFacebook,FacebookUser} = require('../../Model/Facebook');
 
-const facebookAuth = (req, res) => {
+
+const facebookAuth = async (req, res) => {
   try {
     const facebook = new Facebook({
       appId: process.env.FACEBOOK_APP_ID,
       appSecret: process.env.FACEBOOK_APP_SECRET,
       redirectUrl: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
-      graphVersion: 'v19.0'
+      graphVersion: 'v19.0',
     });
 
     const authUrl = facebook.getLoginUrl();
+    const state = new URL(authUrl).searchParams.get('state');
+
+    const oauthData = new OAuthDataFacebook({
+      state,
+      userId: req.adminId,
+    });
+    await oauthData.save();
+
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Facebook auth URL:', error);
@@ -21,17 +31,23 @@ const facebookAuth = (req, res) => {
 
 const facebookCallback = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
 
-    if (!code) {
-      return res.status(400).json({ error: 'Authorization code is missing' });
+    if (!code || !state) {
+      return res.status(400).json({ error: 'Authorization code or state is missing' });
+    }
+
+    const oauthData = await OAuthDataFacebook.findOne({ state });
+
+    if (!oauthData) {
+      return res.status(400).json({ error: 'Invalid OAuth data' });
     }
 
     const facebook = new Facebook({
       appId: process.env.FACEBOOK_APP_ID,
       appSecret: process.env.FACEBOOK_APP_SECRET,
       redirectUrl: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
-      graphVersion: 'v19.0'
+      graphVersion: 'v19.0',
     });
 
     const accessToken = await facebook.callback(code);
@@ -46,21 +62,23 @@ const facebookCallback = async (req, res) => {
       return res.status(400).json({ error: 'Incomplete profile data received from Facebook' });
     }
 
-    let facebookUser = await FacebookUser.findOne({ facebookId: profile.id });
+    let facebookUser = await FacebookUser.findOne({ facebookId: profile.id, userId: oauthData.userId });
 
     if (!facebookUser) {
       facebookUser = new FacebookUser({
-        userId: req.user._id,
+        userId: oauthData.userId,
         facebookId: profile.id,
         accessToken: accessToken,
         name: profile.name,
-        email: profile.email
+        email: profile.email,
       });
       await facebookUser.save();
     } else {
       facebookUser.accessToken = accessToken;
       await facebookUser.save();
     }
+
+    await OAuthData.deleteOne({ _id: oauthData._id });
 
     res.status(200).json({ message: 'Facebook account connected successfully' });
   } catch (error) {
@@ -72,6 +90,7 @@ const facebookCallback = async (req, res) => {
     }
   }
 };
+
 
 module.exports = { facebookAuth, facebookCallback };
 

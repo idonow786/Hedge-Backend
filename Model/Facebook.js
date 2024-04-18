@@ -1,35 +1,41 @@
-// models/facebookUser.js
 const mongoose = require('mongoose');
 
 const facebookUserSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
-    unique: true
   },
   facebookId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   accessToken: {
     type: String,
-    required: true
+    required: true,
   },
   name: {
     type: String,
-    required: true
+    required: true,
   },
   email: {
     type: String,
-    required: true
+    required: true,
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
-
 const FacebookUser = mongoose.model('FacebookUser', facebookUserSchema);
 
-module.exports = FacebookUser;
+const OAuthDataFacebookSchema = new mongoose.Schema({
+  state: String,
+  userId: String,
+});
+
+const OAuthDataFacebook = mongoose.model('OAuthDataFacebook', OAuthDataFacebookSchema);
+
+
+
+module.exports = {FacebookUser,OAuthDataFacebook};
