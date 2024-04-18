@@ -84,7 +84,7 @@ const handleCallback = async (req, res) => {
     // Remove the OAuth data from the database
     await OAuthData.deleteOne({ _id: oauthData._id });
 
-    res.redirect('/dashboard');
+    res.status(200).json({ message: `Twitter Connected Successfully!` });
   } catch (error) {
     console.error('Error handling Twitter callback:', error);
     res.status(500).json({ error: 'Failed to handle Twitter callback' });
