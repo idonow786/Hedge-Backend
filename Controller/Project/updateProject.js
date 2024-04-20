@@ -1,20 +1,16 @@
 const Project = require('../../Model/Project');
-const ProjectProgress = require('../../Model/ProjectProgress');
 
 const updateProject = async (req, res) => {
   try {
     const { projectId } = req.body;
-    const adminId = req.adminId
-;
+    const adminId = req.adminId;
     const {
-      AboutProject,
-      Activity,
-      TeamMembers,
-      TotalTask,
-      CompletedTask,
-      HoursSpend,
-      SpendingAmount,
-      ProgressPercentage,
+      Description,
+      Title,
+      StartDate,
+      Deadline,
+      Budget,
+      DynamicFields,
     } = req.body;
 
     if (!projectId) {
@@ -27,37 +23,14 @@ const updateProject = async (req, res) => {
       return res.status(404).json({ message: 'Project not found or not authorized' });
     }
 
-    project.AboutProject = AboutProject || project.AboutProject;
-    project.Activity = Activity || project.Activity;
-    project.TotalTask = TotalTask || project.TotalTask;
-    project.CompletedTask = CompletedTask || project.CompletedTask;
-    project.HoursSpend = HoursSpend || project.HoursSpend;
-    project.SpendingAmount = SpendingAmount || project.SpendingAmount;
-    project.ProgressPercentage = ProgressPercentage || project.ProgressPercentage;
+    project.Description = Description || project.Description;
+    project.Title = Title || project.Title;
+    project.StartDate = StartDate || project.StartDate;
+    project.Deadline = Deadline || project.Deadline;
+    project.Budget = Budget || project.Budget;
 
-    if (TeamMembers) {
-      await ProjectProgress.deleteMany({ ProjectId: project._id });
-      project.TeamMembers = [];
-
-      const projectProgressRecords = [];
-      for (const member of TeamMembers) {
-        const projectProgress = new ProjectProgress({
-          StaffId: member.StaffId,
-          StaffName: member.StaffName,
-          ProjectId: project._id,
-          Status: 'In Progress',
-          Time: 0,
-          Modules: [],
-        });
-
-        projectProgressRecords.push(projectProgress);
-        project.TeamMembers.push({
-          StaffId: member.StaffId,
-          ProjectProgressId: projectProgress._id,
-        });
-      }
-
-      await ProjectProgress.insertMany(projectProgressRecords);
+    if (DynamicFields) {
+      project.DynamicFields = DynamicFields;
     }
 
     const updatedProject = await project.save();

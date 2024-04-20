@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
 const businessSchema = new mongoose.Schema({
- ID: {
-  type: Number,
-  default: () => Math.floor(Math.random() * 1000000),
-},
-
+  ID: {
+    type: Number,
+    default: () => Math.floor(Math.random() * 1000000),
+  },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
@@ -42,6 +41,20 @@ const businessSchema = new mongoose.Schema({
   YearofEstablishment: {
     type: String,
   },
+  BusinessType: {
+    type: String,
+    enum: ['Services', 'Product'],
+  },
+  Services: [
+    {
+      type: String,
+    },
+  ],
+  Products: [
+    {
+      type: String,
+    },
+  ],
 });
 
 const Business = mongoose.model('Business', businessSchema);

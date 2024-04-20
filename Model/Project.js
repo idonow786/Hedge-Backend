@@ -1,86 +1,40 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
- ID: {
-  type: Number,
-  default: () => Math.floor(Math.random() * 1000000),
-},
-
+  ID: {
+    type: Number,
+    default: () => Math.floor(Math.random() * 1000000),
+  },
+  Description: {
+    type: String,
+  },
   Title: {
     type: String,
   },
-  TotalTask: {
-    type: Number,
+  StartDate: {
+    type: Date,
   },
-  CompletedTask: {
-    type: Number,
-    default: 0,
-  },
-  HoursSpend: {
-    type: Number,
-    default: 0,
-  },
-  SpendingAmount: {
-    type: Number,
-    default: 0,
-  },
-  ProgressPercentage: {
-    type: Number,
-    default: 0,
+  Deadline: {
+    type: Date,
   },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
   },
-  Activity: [
-    {
-      moduleTitle: {
-        type: String,
-          },
-      Date: {
-        type: Date,
-        default: Date.now,
-      },
-      Status: {
-        type: String,
-        enum: ['Pending', 'In Progress', 'Completed'],
-        default: 'Pending',
-      },
-    },
-  ],
-  AboutProject: {
-    BackgroundInformation: {
-      type: String,
-    },
-    ExistingWebsiteLink: {
-      type: String,
-    },
-    ProjectBrief: {
-      type: String,
-    },
-    ProjectOwner: {
-      type: String,
-    },
-    Budget: {
-      type: Number,
-    },
-    StartDate: {
-      type: Date,
-    },
-    Deadline: {
-      type: Date,
-    },
+  BusinessID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
   },
-  
-  TeamMembers: [
+  Budget: {
+    type: Number,
+  },
+  DynamicFields: [
     {
-      StaffId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Staff',
+      key: {
+        type: String,
       },
-      ProjectProgressId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ProjectProgress',
+      value: {
+        type: String,
       },
     },
   ],

@@ -26,8 +26,7 @@ const getProjects = async (req, res) => {
     }
 
     const projects = await Project.find(query)
-      .populate('TeamMembers.StaffId', 'Name')
-      .populate('TeamMembers.ProjectProgressId')
+      .populate('Title')
       .sort({ 'Activity.Date': -1 });
 
     res.status(200).json({

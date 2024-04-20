@@ -12,10 +12,21 @@ const addBusiness = async (req, res) => {
       OwnerName,
       NumberofEmployees,
       YearofEstablishment,
+      BusinessType,
+      Services,
+      Products,
     } = req.body;
 
-    if (!BusinessName || !BusinessAddress) {
-      return res.status(400).json({ message: 'BusinessName and BusinessAddress are required' });
+    if (!BusinessName || !BusinessAddress || !BusinessType) {
+      return res.status(400).json({ message: 'BusinessName, BusinessAddress, and BusinessType are required' });
+    }
+
+    if (BusinessType === 'Services' && (!Services || Services.length === 0)) {
+      return res.status(400).json({ message: 'At least one service must be provided for a service-based business' });
+    }
+
+    if (BusinessType === 'Product' && (!Products || Products.length === 0)) {
+      return res.status(400).json({ message: 'At least one product must be provided for a product-based business' });
     }
 
     const ID = Math.floor(Math.random() * 1000000);
@@ -31,6 +42,9 @@ const addBusiness = async (req, res) => {
       OwnerName,
       NumberofEmployees,
       YearofEstablishment,
+      BusinessType,
+      Services: BusinessType === 'Services' ? Services : [],
+      Products: BusinessType === 'Product' ? Products : [],
     });
 
     const savedBusiness = await newBusiness.save();

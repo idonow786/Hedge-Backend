@@ -12,10 +12,12 @@ const updateBusiness = async (req, res) => {
       OwnerName,
       NumberofEmployees,
       YearofEstablishment,
+      BusinessType,
+      Services,
+      Products,
     } = req.body;
 
-    const adminId = req.adminId
-;
+    const adminId = req.adminId;
 
     if (!adminId) {
       return res.status(400).json({ message: 'Admin ID is required' });
@@ -36,6 +38,13 @@ const updateBusiness = async (req, res) => {
     business.OwnerName = OwnerName || business.OwnerName;
     business.NumberofEmployees = NumberofEmployees || business.NumberofEmployees;
     business.YearofEstablishment = YearofEstablishment || business.YearofEstablishment;
+    business.BusinessType = BusinessType || business.BusinessType;
+
+    if (BusinessType === 'Services') {
+      business.Services = Services || business.Services;
+    } else if (BusinessType === 'Product') {
+      business.Products = Products || business.Products;
+    }
 
     const updatedBusiness = await business.save();
 
