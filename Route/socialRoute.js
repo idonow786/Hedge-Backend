@@ -45,6 +45,6 @@ router.get('/auth/linkedin/callback',  linkedinCallback);
 
 
 //Tiktok
-router.get('/auth/tiktok',verifyToken,  tiktokAuth);
+router.post('/auth/tiktok',verifyToken,  tiktokAuth);
 router.get('/auth/tiktok/callback',  tiktokCallback);
 module.exports = router;
