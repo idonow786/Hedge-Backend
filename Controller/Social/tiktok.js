@@ -1,10 +1,13 @@
 // controllers/tiktokController.js
 const axios = require('axios');
-const {OAuthTiktokData,TikTokUser} = require('../../Model/Tiktok');
+const { OAuthTiktokData, TikTokUser } = require('../../Model/Tiktok');
+const dotenv = require('dotenv');
+dotenv.config();
+
 const tiktokAuth = async (req, res) => {
   try {
     const csrfState = Math.random().toString(36).substring(7);
-    const authUrl = `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic&response_type=code&redirect_uri=${process.env.TIKTOK_REDIRECT_URI}&state=${csrfState}`;
+    const authUrl = `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.TIKTOK_REDIRECT_URI}&state=${csrfState}`;
 
     const oauthData = new OAuthTiktokData({
       state: csrfState,
@@ -44,15 +47,25 @@ const tiktokCallback = async (req, res) => {
 
     const { access_token, refresh_token, open_id } = accessTokenResponse.data.data;
 
-    let tiktokUser = await TikTokUser.findOne({ openId: open_id, userId: oauthData.userId });
+    const userInfoResponse = await axios.get('https://open-api.tiktok.com/user/info/', {
+      params: {
+        access_token: access_token,
+        open_id: open_id,
+      },
+    });
+
+    const { unique_id, nickname } = userInfoResponse.data.data.user;
+
+    let tiktokUser = await TikTokUser.findOne({ tiktokId: unique_id, userId: oauthData.userId });
 
     if (!tiktokUser) {
       tiktokUser = new TikTokUser({
         userId: oauthData.userId,
-        tiktokId: open_id,
+        tiktokId: unique_id,
         accessToken: access_token,
         refreshToken: refresh_token,
         openId: open_id,
+        username: nickname,
       });
       await tiktokUser.save();
     } else {
@@ -74,6 +87,4 @@ const tiktokCallback = async (req, res) => {
   }
 };
 
-
-
-module.exports={tiktokAuth,tiktokCallback}
+module.exports = { tiktokAuth, tiktokCallback };
