@@ -8,9 +8,12 @@ const morgan = require('morgan');
 const session = require('express-session');
 
 
-dotenv.config();
 
 const app = express();
+
+
+dotenv.config();
+
 
 
 
@@ -38,20 +41,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(morgan('combined'));
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000, 
-    },
+    saveUninitialized: false,
   })
 );
-
-
-
 // Routes
 app.get('/', (req, res) => {
   res.send('Hello, world!');

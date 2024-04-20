@@ -78,7 +78,7 @@ const facebookCallback = async (req, res) => {
       await facebookUser.save();
     }
 
-    await OAuthData.deleteOne({ _id: oauthData._id });
+    await OAuthDataFacebook.deleteOne({ _id: oauthData._id });
 
     res.status(200).json({ message: 'Facebook account connected successfully' });
   } catch (error) {

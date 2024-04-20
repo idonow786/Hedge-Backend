@@ -5,7 +5,11 @@ const multer = require('multer');
 const {facebookAuth,facebookCallback  } = require('../Controller/Social/facebook');
 const {  getAuthUrl,
     handleCallback,
-    postTweet,  } = require('../Controller/Social/twitter');
+    postTweet  } = require('../Controller/Social/twitter');
+const { linkedinCallback,linkedinAuth} = require('../Controller/Social/linkedin');
+const {tiktokAuth,tiktokCallback} = require('../Controller/Social/tiktok');
+
+
 const { verifyToken } = require('../Middleware/jwt');
 
 const app = express();
@@ -31,4 +35,16 @@ router.get('/auth/facebook/callback',  facebookCallback);
 router.post('/auth/twitter',verifyToken,  getAuthUrl);
 router.get('/auth/twitter/callback',  handleCallback);
 
+
+
+
+//LINKEDIN
+router.get('/auth/linkedin',verifyToken,  linkedinAuth);
+router.get('/auth/linkedin/callback',  linkedinCallback);
+
+
+
+//Tiktok
+router.get('/auth/tiktok',verifyToken,  tiktokAuth);
+router.get('/auth/tiktok/callback',  tiktokCallback);
 module.exports = router;
