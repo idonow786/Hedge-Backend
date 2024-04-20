@@ -1,19 +1,12 @@
 // controllers/tiktokController.js
 const axios = require('axios');
-const { OAuthTiktokData, TikTokUser } = require('../../Model/Tiktok');
+const { TikTokUser } = require('../../Model/Tiktok');
 const dotenv = require('dotenv');
 dotenv.config();
 
 const tiktokAuth = async (req, res) => {
   try {
-    const csrfState = Math.random().toString(36).substring(7);
-    const authUrl = `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.TIKTOK_REDIRECT_URI}&state=${csrfState}`;
-
-    const oauthData = new OAuthTiktokData({
-      state: csrfState,
-      userId: req.adminId,
-    });
-    await oauthData.save();
+    const authUrl = `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.TIKTOK_REDIRECT_URI}`;
 
     res.status(200).json({ authUrl });
   } catch (error) {
@@ -24,16 +17,10 @@ const tiktokAuth = async (req, res) => {
 
 const tiktokCallback = async (req, res) => {
   try {
-    const { code, state } = req.query;
+    const { code } = req.query;
 
-    if (!code || !state) {
-      return res.status(400).json({ error: 'Authorization code or state is missing' });
-    }
-
-    const oauthData = await OAuthTiktokData.findOne({ state });
-
-    if (!oauthData) {
-      return res.status(400).json({ error: 'Invalid OAuth data' });
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is missing' });
     }
 
     const accessTokenResponse = await axios.post('https://open-api.tiktok.com/oauth/access_token/', null, {
@@ -56,11 +43,11 @@ const tiktokCallback = async (req, res) => {
 
     const { unique_id, nickname } = userInfoResponse.data.data.user;
 
-    let tiktokUser = await TikTokUser.findOne({ tiktokId: unique_id, userId: oauthData.userId });
+    let tiktokUser = await TikTokUser.findOne({ tiktokId: unique_id, userId: req.adminId });
 
     if (!tiktokUser) {
       tiktokUser = new TikTokUser({
-        userId: oauthData.userId,
+        userId: 'req.adminId',
         tiktokId: unique_id,
         accessToken: access_token,
         refreshToken: refresh_token,
@@ -73,8 +60,6 @@ const tiktokCallback = async (req, res) => {
       tiktokUser.refreshToken = refresh_token;
       await tiktokUser.save();
     }
-
-    await OAuthTiktokData.deleteOne({ _id: oauthData._id });
 
     res.status(200).json({ message: 'TikTok account connected successfully' });
   } catch (error) {
