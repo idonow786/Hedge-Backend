@@ -1,4 +1,5 @@
 const Invoice = require('../../Model/Invoices');
+const Project = require('../../Model/Project');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 const updateInvoice = async (req, res) => {
@@ -14,6 +15,7 @@ const updateInvoice = async (req, res) => {
             InvoiceNumber,
             SubTotal,
             Vat,
+            ProjectId,
             InvoiceTotal,
             Description,
         } = req.body;
@@ -28,6 +30,13 @@ const updateInvoice = async (req, res) => {
             return res.status(404).json({ message: 'Invoice not found or not authorized' });
         }
 
+        if (ProjectId) {
+            const project = await Project.findOne({ _id: ProjectId, AdminID: adminId });
+            if (!project) {
+                return res.status(404).json({ message: 'Project not found or does not belong to the admin' });
+            }
+        }
+
         invoice.CustomerId = CustomerId || invoice.CustomerId;
         invoice.InvoiceDate = InvoiceDate || invoice.InvoiceDate;
         invoice.Quantity = Quantity !== undefined ? Quantity : invoice.Quantity;
@@ -35,6 +44,7 @@ const updateInvoice = async (req, res) => {
         invoice.Status = Status || invoice.Status;
         invoice.InvoiceNumber = InvoiceNumber || invoice.InvoiceNumber;
         invoice.SubTotal = SubTotal !== undefined ? SubTotal : invoice.SubTotal;
+        invoice.ProjectId = ProjectId !== undefined ? ProjectId : invoice.ProjectId;
         invoice.Vat = Vat !== undefined ? Vat : invoice.Vat;
         invoice.InvoiceTotal = InvoiceTotal !== undefined ? InvoiceTotal : invoice.InvoiceTotal;
         invoice.Description = Description || invoice.Description;

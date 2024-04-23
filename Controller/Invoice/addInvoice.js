@@ -1,4 +1,5 @@
 const Invoice = require('../../Model/Invoices');
+const Project = require('../../Model/Project');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 function generateOrderNumber() {
@@ -10,12 +11,12 @@ function generateInvoiceNumber() {
   const randomCharacters = Math.random().toString(36).substring(2, 4).toUpperCase();
   return randomNumbers + randomCharacters;
 }
-
 const createInvoice = async (req, res) => {
   try {
     const {
       CustomerId,
       InvoiceDate,
+      ProjectId,
       Quantity,
       Amount,
       Status,
@@ -34,9 +35,15 @@ const createInvoice = async (req, res) => {
       !Status ||
       !SubTotal ||
       !Vat ||
-      !InvoiceTotal
+      !InvoiceTotal ||
+      !ProjectId 
     ) {
       return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
+    const project = await Project.findOne({ _id: ProjectId, AdminID: adminId });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found or does not belong to the admin' });
     }
 
     const ID = Math.floor(Math.random() * 1000000);
@@ -68,6 +75,7 @@ const createInvoice = async (req, res) => {
       InvoiceNumber,
       SubTotal,
       Vat,
+      ProjectId,
       InvoiceTotal,
       Description,
       AdminID: adminId,

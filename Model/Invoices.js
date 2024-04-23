@@ -27,7 +27,9 @@ const invoiceSchema = new mongoose.Schema({
   },
   Amount: {
     type: Number,
-
+  },
+  ProjectId: {
+    type: String,
   },
   Status: {
     type: String,
