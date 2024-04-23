@@ -1,11 +1,9 @@
 const Invoice = require('../../Model/Invoices');
-const Customer = require('../../Model/Customer');
 
 const getInvoices = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.adminId
-;
+    const adminId = req.adminId;
 
     let query = { AdminID: adminId };
 
@@ -17,7 +15,6 @@ const getInvoices = async (req, res) => {
     } else if (startDate) {
       query.InvoiceDate = {
         $gte: new Date(startDate),
-        $lte: new Date(startDate),
       };
     } else if (endDate) {
       query.InvoiceDate = {
@@ -30,32 +27,21 @@ const getInvoices = async (req, res) => {
       let searchNumber = isNaN(Number(search)) ? 0 : Number(search);
 
       query.$or = [
+        { ID: searchNumber },
         { InvoiceTotal: searchNumber },
         { Amount: searchNumber },
-        { 'From.Email': searchRegex },
-        { 'To.Email': searchRegex },
-        { 'From.Address': searchRegex },
-        { 'To.Address': searchRegex },
+        { OrderNumber: searchRegex },
+        { InvoiceNumber: searchRegex },
       ];
     }
 
-    const invoices = await Invoice.find(query).populate('CustomerId', 'Name PicUrl');
-
-    const invoicesWithCustomerDetails = invoices.map((invoice) => {
-      const { CustomerId, ...invoiceData } = invoice.toObject();
-      const customerName = CustomerId ? CustomerId.Name : '';
-      const customerPicUrl = CustomerId ? CustomerId.PicUrl : '';
-
-      return {
-        ...invoiceData,
-        customerName,
-        customerPicUrl,
-      };
-    });
+    const invoices = await Invoice.find(query)
+      .populate('CustomerId', 'Name')
+      .lean();
 
     res.status(200).json({
       message: 'Invoices retrieved successfully',
-      invoices: invoicesWithCustomerDetails,
+      invoices,
     });
   } catch (error) {
     console.error('Error retrieving invoices:', error);

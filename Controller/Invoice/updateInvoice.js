@@ -4,17 +4,14 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const updateInvoice = async (req, res) => {
     try {
         const { invoiceId } = req.body;
-        const adminId = req.adminId
-;
+        const adminId = req.adminId;
         const {
             CustomerId,
             InvoiceDate,
             Quantity,
             Amount,
             Status,
-            From,
-            To,
-            Items,
+            InvoiceNumber,
             SubTotal,
             Vat,
             InvoiceTotal,
@@ -33,15 +30,13 @@ const updateInvoice = async (req, res) => {
 
         invoice.CustomerId = CustomerId || invoice.CustomerId;
         invoice.InvoiceDate = InvoiceDate || invoice.InvoiceDate;
-        invoice.Quantity = Quantity || invoice.Quantity;
-        invoice.Amount = Amount || invoice.Amount;
+        invoice.Quantity = Quantity !== undefined ? Quantity : invoice.Quantity;
+        invoice.Amount = Amount !== undefined ? Amount : invoice.Amount;
         invoice.Status = Status || invoice.Status;
-        invoice.From = From || invoice.From;
-        invoice.To = To || invoice.To;
-        invoice.Items = Items || invoice.Items;
-        invoice.SubTotal = SubTotal || invoice.SubTotal;
-        invoice.Vat = Vat || invoice.Vat;
-        invoice.InvoiceTotal = InvoiceTotal || invoice.InvoiceTotal;
+        invoice.InvoiceNumber = InvoiceNumber || invoice.InvoiceNumber;
+        invoice.SubTotal = SubTotal !== undefined ? SubTotal : invoice.SubTotal;
+        invoice.Vat = Vat !== undefined ? Vat : invoice.Vat;
+        invoice.InvoiceTotal = InvoiceTotal !== undefined ? InvoiceTotal : invoice.InvoiceTotal;
         invoice.Description = Description || invoice.Description;
 
         if (req.file) {

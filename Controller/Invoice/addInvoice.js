@@ -19,16 +19,12 @@ const createInvoice = async (req, res) => {
       Quantity,
       Amount,
       Status,
-      From,
-      To,
-      Items,
       SubTotal,
       Vat,
       InvoiceTotal,
       Description,
     } = req.body;
-    const adminId = req.adminId
-;
+    const adminId = req.adminId;
 
     if (
       !CustomerId ||
@@ -36,24 +32,11 @@ const createInvoice = async (req, res) => {
       !Quantity ||
       !Amount ||
       !Status ||
-      !From ||
-      !To ||
-      !Items ||
       !SubTotal ||
       !Vat ||
       !InvoiceTotal
     ) {
       return res.status(400).json({ message: 'Please provide all required fields' });
-    }
-
-    // Validate "From" section
-    if (!From.Address || !From.Email) {
-      return res.status(400).json({ message: 'Please provide all required fields for the "From" section' });
-    }
-
-    // Validate "To" section
-    if (!To.Address || !To.Email) {
-      return res.status(400).json({ message: 'Please provide all required fields for the "To" section' });
     }
 
     const ID = Math.floor(Math.random() * 1000000);
@@ -82,10 +65,7 @@ const createInvoice = async (req, res) => {
       Quantity,
       Amount,
       Status,
-      From,
-      To,
       InvoiceNumber,
-      Items,
       SubTotal,
       Vat,
       InvoiceTotal,

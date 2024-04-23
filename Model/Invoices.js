@@ -34,53 +34,11 @@ const invoiceSchema = new mongoose.Schema({
     enum: ['paid', 'due'],
 
   },
-  From: {
-    Address: {
-      type: String,
-
-    },
-    PhoneNo: [{
-      type: String,
-    }],
-    Email: {
-      type: String,
-
-    },
-  },
-  To: {
-    Address: {
-      type: String,
-
-    },
-    PhoneNo: [{
-      type: String,
-    }],
-    Email: {
-      type: String,
-
-    },
-  },
+ 
   InvoiceNumber: {
     type: String,
   },
-  Items: [{
-    ItemTitle: {
-      type: String,
-
-    },
-    Quantity: {
-      type: Number,
-
-    },
-    Price: {
-      type: Number,
-
-    },
-    Total: {
-      type: Number,
-
-    },
-  }],
+ 
   SubTotal: {
     type: Number,
 
