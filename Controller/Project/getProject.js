@@ -39,4 +39,27 @@ const getProjects = async (req, res) => {
   }
 };
 
-module.exports = { getProjects };
+
+const getProjectsByCustomerId = async (req, res) => {
+  try {
+    const { CustomerId } = req.body;
+    const adminId = req.adminId;
+
+    if (!CustomerId) {
+      return res.status(400).json({ message: 'Customer ID is required' });
+    }
+
+    const projects = await Project.find({ CustomerId, AdminID: adminId });
+
+    res.status(200).json({
+      message: 'Projects retrieved successfully',
+      projects,
+    });
+  } catch (error) {
+    console.error('Error retrieving projects:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+module.exports = { getProjects,getProjectsByCustomerId };

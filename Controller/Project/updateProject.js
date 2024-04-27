@@ -1,8 +1,9 @@
 const Project = require('../../Model/Project');
+const Customer = require('../../Model/Customer');
 
 const updateProject = async (req, res) => {
   try {
-    const { projectId } = req.body;
+    const { projectId, CustomerId } = req.body;
     const adminId = req.adminId;
     const {
       Description,
@@ -21,6 +22,16 @@ const updateProject = async (req, res) => {
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found or not authorized' });
+    }
+
+    if (CustomerId) {
+      const customer = await Customer.findById(CustomerId);
+
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+
+      project.CustomerId = CustomerId;
     }
 
     project.Description = Description || project.Description;

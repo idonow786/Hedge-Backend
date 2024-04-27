@@ -12,7 +12,6 @@ const invoiceSchema = new mongoose.Schema({
   CustomerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Customer',
-
   },
   PicUrl: {
     type: String,
