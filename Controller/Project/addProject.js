@@ -14,11 +14,25 @@ const addProject = async (req, res) => {
       CustomerId,
     } = req.body;
     const adminId = req.adminId;
-
-    if (!Description || !Title || !StartDate || !Deadline || !Budget || !CustomerId) {
-      return res.status(400).json({ message: 'Please provide all required fields' });
+    console.log('req.body', req.body);
+    if (!Description) {
+      return res.status(400).json({ message: 'Description is required' });
     }
-
+    if (!Title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    if (!StartDate) {
+      return res.status(400).json({ message: 'StartDate is required' });
+    }
+    if (!Deadline) {
+      return res.status(400).json({ message: 'Deadline is required' });
+    }
+    if (!Budget) {
+      return res.status(400).json({ message: 'Budget is required' });
+    }
+    if (!CustomerId) {
+      return res.status(400).json({ message: 'CustomerId is required' });
+    }
     const ID = Math.floor(Math.random() * 1000000);
 
     const business = await Business.findOne({ AdminID: adminId });

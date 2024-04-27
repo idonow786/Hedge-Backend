@@ -15,7 +15,7 @@ const projectSchema = new mongoose.Schema({
     type: String,
   },
   Deadline: {
-    type: Date,
+    type: String,
   },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
