@@ -12,7 +12,7 @@ const projectSchema = new mongoose.Schema({
     type: String,
   },
   StartDate: {
-    type: Date,
+    type: String,
   },
   Deadline: {
     type: Date,
@@ -30,7 +30,7 @@ const projectSchema = new mongoose.Schema({
     ref: 'Business',
   },
   Budget: {
-    type: Number,
+    type: String,
   },
   DynamicFields: [
     {
