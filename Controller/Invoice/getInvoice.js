@@ -1,4 +1,7 @@
 const Invoice = require('../../Model/Invoices');
+const Project = require('../../Model/Project');
+const Customer = require('../../Model/Customer');
+const Business = require('../../Model/Business');
 
 const getInvoices = async (req, res) => {
   try {
@@ -37,11 +40,25 @@ const getInvoices = async (req, res) => {
 
     const invoices = await Invoice.find(query)
       .populate('CustomerId', 'Name')
+      .populate('ProjectId', 'Title')
       .lean();
+
+    const invoicesWithDetails = await Promise.all(
+      invoices.map(async (invoice) => {
+        const project = await Project.findById(invoice.ProjectId).populate('BusinessID', 'Name');
+        const customer = await Customer.findById(invoice.CustomerId);
+
+        return {
+          ...invoice,
+          Project: project,
+          Customer: customer,
+        };
+      })
+    );
 
     res.status(200).json({
       message: 'Invoices retrieved successfully',
-      invoices,
+      invoices: invoicesWithDetails,
     });
   } catch (error) {
     console.error('Error retrieving invoices:', error);

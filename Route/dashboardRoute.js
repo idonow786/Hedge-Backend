@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { generateDashboardData } = require('../Controller/Dashboard/generateDashboard')
-const { getDashboardData } = require('../Controller/Dashboard/getDashboard')
+const { getDashboardData } = require('../Controller/Dashboard/generateDashboard')
+// const { getDashboardData } = require('../Controller/Dashboard/getDashboard')
 const { verifyToken } = require('../Middleware/jwt');
 const multer = require('multer');
 
@@ -15,8 +15,8 @@ const upload = multer({
   },
 });
  
-router.post('/generate', verifyToken, generateDashboardData);                                                                                //working
-router.get('/get', verifyToken, getDashboardData);                                                                                           //no test
+router.post('/generate', verifyToken, getDashboardData);                                                                                //working
+// router.get('/get', verifyToken, getDashboardData);        .                                                                                   //no test
 
 
 

@@ -1,6 +1,8 @@
 const Invoice = require('../../Model/Invoices');
 const Project = require('../../Model/Project');
+const Customer = require('../../Model/Customer');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
 const updateInvoice = async (req, res) => {
     try {
@@ -63,6 +65,130 @@ const updateInvoice = async (req, res) => {
         }
 
         const updatedInvoice = await invoice.save();
+
+        const customer = await Customer.findById(invoice.CustomerId);
+
+        const defaultClient = SibApiV3Sdk.ApiClient.instance;
+        const apiKey = defaultClient.authentications['api-key'];
+        apiKey.apiKey = process.env.SENDINBLUE_API_KEY;
+
+        const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+        sendSmtpEmail.subject = 'Updated Invoice Details';
+        sendSmtpEmail.htmlContent = `
+          <html>
+            <head>
+              <style>
+                body {
+                  font-family: Arial, sans-serif;
+                  background-color: #f4f4f4;
+                  margin: 0;
+                  padding: 20px;
+                }
+                .container {
+                  max-width: 600px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 5px;
+                  padding: 20px;
+                  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                }
+                h2 {
+                  color: #333333;
+                  margin-top: 0;
+                }
+                p {
+                  margin-bottom: 20px;
+                }
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-top: 20px;
+                }
+                th, td {
+                  padding: 10px;
+                  text-align: left;
+                  border-bottom: 1px solid #dddddd;
+                }
+                th {
+                  background-color: #f5f5f5;
+                  font-weight: bold;
+                }
+                .total {
+                  font-weight: bold;
+                }
+                .footer {
+                  margin-top: 20px;
+                  text-align: center;
+                  color: #888888;
+                  font-size: 12px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Updated Invoice Details</h2>
+                <p>Please note that the previous invoice has been updated. Consider the following invoice details:</p>
+                <table>
+                  <tr>
+                    <th>Invoice Number</th>
+                    <td>${updatedInvoice.InvoiceNumber}</td>
+                  </tr>
+                  <tr>
+                    <th>Invoice Date</th>
+                    <td>${updatedInvoice.InvoiceDate}</td>
+                  </tr>
+                  <tr>
+                    <th>Quantity</th>
+                    <td>${updatedInvoice.Quantity}</td>
+                  </tr>
+                  <tr>
+                    <th>Amount</th>
+                    <td>${updatedInvoice.Amount}</td>
+                  </tr>
+                  <tr>
+                    <th>Status</th>
+                    <td>${updatedInvoice.Status}</td>
+                  </tr>
+                  <tr>
+                    <th>Subtotal</th>
+                    <td>${updatedInvoice.SubTotal}</td>
+                  </tr>
+                  <tr>
+                    <th>VAT</th>
+                    <td>${updatedInvoice.Vat}</td>
+                  </tr>
+                  <tr class="total">
+                    <th>Total</th>
+                    <td>${updatedInvoice.InvoiceTotal}</td>
+                  </tr>
+                  <tr>
+                    <th>Description</th>
+                    <td>${updatedInvoice.Description}</td>
+                  </tr>
+                </table>
+                <div class="footer">
+                  Thank you for your business!
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+
+        sendSmtpEmail.sender = {
+          name: 'CRM',
+          email: 'noreply@crm.com',
+        };
+
+        sendSmtpEmail.to = [
+          {
+            email: customer.Email,
+            name: customer.Name,
+          },
+        ];
+
+        await apiInstance.sendTransacEmail(sendSmtpEmail);
 
         res.status(200).json({
             message: 'Invoice updated successfully',
