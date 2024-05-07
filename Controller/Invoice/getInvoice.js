@@ -47,11 +47,13 @@ const getInvoices = async (req, res) => {
       invoices.map(async (invoice) => {
         const project = await Project.findById(invoice.ProjectId).populate('BusinessID', 'Name');
         const customer = await Customer.findById(invoice.CustomerId);
+        const business = await Business.findById(project.BusinessID);
 
         return {
           ...invoice,
           Project: project,
           Customer: customer,
+          Business: business,
         };
       })
     );

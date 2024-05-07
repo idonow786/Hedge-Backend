@@ -1,4 +1,5 @@
 const Customer = require('../../Model/Customer');
+const Wallet = require('../../Model/Wallet');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 const addCustomer = async (req, res) => {
@@ -38,10 +39,33 @@ const addCustomer = async (req, res) => {
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       PicUrl: picUrl,
       AdminID: req.adminId
-,
     });
 
     const savedCustomer = await newCustomer.save();
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    let wallet = await Wallet.findOne({
+      AdminID: req.adminId,
+      period: {
+        $gte: new Date(currentYear, currentMonth, 1),
+        $lt: new Date(currentYear, currentMonth + 1, 1),
+      },
+    });
+
+    if (wallet) {
+      wallet.TotalCustomers = (parseInt(wallet.TotalCustomers) + 1).toString();
+    } else {
+      wallet = new Wallet({
+        TotalCustomers: '1',
+        AdminID: req.adminId,
+        period: new Date(currentYear, currentMonth, 1),
+      });
+    }
+
+    await wallet.save();
 
     res.status(201).json({
       message: 'Customer added successfully',

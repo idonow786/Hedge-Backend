@@ -1,6 +1,7 @@
 const Invoice = require('../../Model/Invoices');
 const Project = require('../../Model/Project');
 const Customer = require('../../Model/Customer');
+const Wallet = require('../../Model/Wallet');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 
@@ -91,7 +92,32 @@ const createInvoice = async (req, res) => {
 
     const savedInvoice = await newInvoice.save();
 
-    // Send email to customer
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    let wallet = await Wallet.findOne({
+      AdminID: adminId,
+      period: {
+        $gte: new Date(currentYear, currentMonth, 1),
+        $lt: new Date(currentYear, currentMonth + 1, 1),
+      },
+    });
+
+    if (wallet) {
+      wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) + 1).toString();
+      wallet.TotalInvoices = (parseInt(wallet.TotalInvoices) + 1).toString();
+    } else {
+      wallet = new Wallet({
+        UnPaidInvoices: '1',
+        TotalInvoices: '1',
+        AdminID: adminId,
+        period: new Date(currentYear, currentMonth, 1),
+      });
+    }
+
+    await wallet.save();
+
     const defaultClient = SibApiV3Sdk.ApiClient.instance;
     const apiKey = defaultClient.authentications['api-key'];
     apiKey.apiKey = process.env.SENDINBLUE_API_KEY;
@@ -197,10 +223,9 @@ const createInvoice = async (req, res) => {
         </div>
       </div>
     </body>
-  </html>
-  
+    </html>
+    
     `;
-
     sendSmtpEmail.sender = {
       name: 'CRM',
       email: 'noreply@crm.com',
@@ -229,3 +254,19 @@ const createInvoice = async (req, res) => {
 };
 
 module.exports = { createInvoice };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

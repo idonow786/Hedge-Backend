@@ -2,28 +2,50 @@ const mongoose = require('mongoose');
 
 const walletSchema = new mongoose.Schema({
   TotalSales: {
-    type: Number,
-    default: 0,
+    type: String,
+    default: '0',
   },
   TotalRevenue: {
-    type: Number,
-    default: 0,
+    type: String,
+    default: '0',
   },
   TotalInvoices: {
-    type: Number,
-    default: 0,
+    type: String,
+    default: '0',
   },
   TotalExpenses: {
-    type: Number,
-    default: 0,
+    type: String,
+    default: '0',
   },
+  TotalOrders: {
+    type: String,
+    default:'0',
+  },
+  TotalCustomers: {
+    type: String,
+    default:'0',
+  },
+  PaidInvoices: {
+    type: String,
+    default:'0',
+  },
+  UnPaidInvoices: {
+    type: String,
+    default:'0',
+  },
+
   Profit: {
-    type: Number,
-    default: 0,
+    type: String,
+    default: function() {
+      return (parseFloat(this.TotalRevenue) - parseFloat(this.TotalExpenses)).toString();
+    }
   },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
+  },
+  period: {
+    type: Date,
   },
   CreatedAt: {
     type: Date,
@@ -34,3 +56,15 @@ const walletSchema = new mongoose.Schema({
 const Wallet = mongoose.model('Wallet', walletSchema);
 
 module.exports = Wallet;
+
+
+
+// Expenses - All Expenses value -----      done
+// Profit -> Revenue - Expenses -----       done
+// Orders - Number of current projects ---  done
+// Customers - number of customers     ---  done
+// Sales - Number of invoices (Paid)    --done
+// Revenue - (amount after deducting VAT%) ---done
+// Earnings - Including VAT - matlab total amount  --done
+// Paid Invocies / UnPaid invoices (Count)  --done
+// all invoices objects

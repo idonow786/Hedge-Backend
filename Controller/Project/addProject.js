@@ -1,6 +1,7 @@
 const Project = require('../../Model/Project');
 const Business = require('../../Model/Business');
 const Customer = require('../../Model/Customer');
+const Wallet = require('../../Model/Wallet');
 
 const addProject = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ const addProject = async (req, res) => {
       CustomerId,
     } = req.body;
     const adminId = req.adminId;
-    console.log('req.body', req.body);
+
     if (!Description) {
       return res.status(400).json({ message: 'Description is required' });
     }
@@ -33,6 +34,7 @@ const addProject = async (req, res) => {
     if (!CustomerId) {
       return res.status(400).json({ message: 'CustomerId is required' });
     }
+
     const ID = Math.floor(Math.random() * 1000000);
 
     const business = await Business.findOne({ AdminID: adminId });
@@ -61,6 +63,30 @@ const addProject = async (req, res) => {
     });
 
     const savedProject = await newProject.save();
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    let wallet = await Wallet.findOne({
+      AdminID: adminId,
+      period: {
+        $gte: new Date(currentYear, currentMonth, 1),
+        $lt: new Date(currentYear, currentMonth + 1, 1),
+      },
+    });
+
+    if (wallet) {
+      wallet.TotalOrders = (parseInt(wallet.TotalOrders) + 1).toString();
+    } else {
+      wallet = new Wallet({
+        TotalOrders: '1',
+        AdminID: adminId,
+        period: new Date(currentYear, currentMonth, 1),
+      });
+    }
+
+    await wallet.save();
 
     res.status(201).json({
       message: 'Project added successfully',
