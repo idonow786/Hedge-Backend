@@ -30,10 +30,10 @@ const getDashboardData = async (req, res) => {
 
     const wallet = await Wallet.findOne({
       AdminID: adminId,
-      // period: {
-      //   $gte: new Date(currentYear, monthNumber, 1),
-      //   $lt: new Date(currentYear, monthNumber + 1, 1),
-      // },
+      period: {
+        $gte: new Date(currentYear, monthNumber, 1),
+        $lt: new Date(currentYear, monthNumber + 1, 1),
+      },
     });
 
     if (!wallet) {
