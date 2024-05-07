@@ -68,38 +68,40 @@ const updateInvoice = async (req, res) => {
     }
 
     const updatedInvoice = await invoice.save();
+    console.log(updatedInvoice)
+    const invoiceMonth = new Date(InvoiceDate).getMonth();
+    const invoiceYear = new Date(InvoiceDate).getFullYear();
 
-    // Find the wallet for the admin based on the invoice's month
-    const invoiceMonth = new Date(updatedInvoice.InvoiceDate).getMonth();
-    const invoiceYear = new Date(updatedInvoice.InvoiceDate).getFullYear();
-    console.log(invoiceMonth)
-    console.log(invoiceYear)
     let wallet = await Wallet.findOne({
       AdminID: adminId,
-      period: {
-        $gte: new Date(invoiceYear, invoiceMonth, 1),
-        $lt: new Date(invoiceYear, invoiceMonth + 1, 1),
-      },
+      period: new Date(invoiceYear, invoiceMonth, 1),
     });
     console.log(wallet)
-    if (wallet) {
-      if (previousStatus !== 'paid' && updatedInvoice.Status === 'paid') {
-        // If the invoice status changed from unpaid to paid
-        wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) + 1).toString();
-        wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) - 1).toString();
-        wallet.TotalSales = (parseInt(wallet.TotalSales) + 1).toString();
-        wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) + parseFloat(updatedInvoice.SubTotal)).toString();
-        wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
-      } else if (previousStatus === 'paid' && updatedInvoice.Status !== 'paid') {
-        // If the invoice status changed from paid to unpaid
-        wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) - 1).toString();
-        wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) + 1).toString();
-        wallet.TotalSales = (parseInt(wallet.TotalSales) - 1).toString();
-        wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) - parseFloat(updatedInvoice.SubTotal)).toString();
-        wallet.Earnings = (parseFloat(wallet.Earnings) - parseFloat(updatedInvoice.InvoiceTotal)).toString();
-      }
-      await wallet.save();
+    if (!wallet) {
+      wallet = new Wallet({
+        AdminID: adminId,
+        period: new Date(invoiceYear, invoiceMonth, 1),
+      });
     }
+    console.log(previousStatus)
+    console.log(updatedInvoice.Status)
+    if (previousStatus !== 'paid' && updatedInvoice.Status === 'paid') {
+      console.log('inside if 1st')
+      wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) + 1).toString();
+      wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) - 1).toString();
+      wallet.TotalSales = (parseInt(wallet.TotalSales) + 1).toString();
+      wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) + parseFloat(updatedInvoice.SubTotal)).toString();
+      wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
+    } else if (previousStatus === 'paid' && updatedInvoice.Status !== 'paid') {
+      console.log('inside if 2nd')
+      wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) - 1).toString();
+      wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) + 1).toString();
+      wallet.TotalSales = (parseInt(wallet.TotalSales) - 1).toString();
+      wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) - parseFloat(updatedInvoice.SubTotal)).toString();
+      wallet.Earnings = (parseFloat(wallet.Earnings) - parseFloat(updatedInvoice.InvoiceTotal)).toString();
+    }
+    console.log("wallet ",wallet)
+    await wallet.save();
 
     const customer = await Customer.findById(invoice.CustomerId);
 
