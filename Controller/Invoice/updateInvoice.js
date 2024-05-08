@@ -92,6 +92,7 @@ const updateInvoice = async (req, res) => {
       wallet.TotalSales = (parseInt(wallet.TotalSales) + 1).toString();
       wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) + parseFloat(updatedInvoice.SubTotal)).toString();
       wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
+      wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
     } else if (previousStatus === 'paid' && updatedInvoice.Status !== 'paid') {
       console.log('inside if 2nd')
       wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) - 1).toString();

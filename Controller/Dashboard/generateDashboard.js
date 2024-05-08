@@ -28,7 +28,7 @@ const getDashboardData = async (req, res) => {
 
     const currentYear = new Date().getFullYear();
 
-    const wallet = await Wallet.findOne({
+    let wallet = await Wallet.findOne({
       AdminID: adminId,
       period: {
         $gte: new Date(currentYear, monthNumber, 1),
@@ -37,15 +37,21 @@ const getDashboardData = async (req, res) => {
     });
 
     if (!wallet) {
-      return res.status(404).json({ message: 'Wallet not found for the specified month' });
+      wallet = new Wallet({
+        AdminID: adminId,
+        period: new Date(currentYear, monthNumber, 1)
+      });
     }
+
+    wallet.Profit = (parseFloat(wallet.TotalRevenue) - parseFloat(wallet.TotalExpenses)).toString();
+    await wallet.save();
 
     const profitArray = new Array(12).fill(0);
     const expenseArray = new Array(12).fill(0);
     const revenueArray = new Array(12).fill(0);
 
     for (let monthNumber = 0; monthNumber < 12; monthNumber++) {
-      const wallet = await Wallet.findOne({
+      const walletData = await Wallet.findOne({
         AdminID: adminId,
         period: {
           $gte: new Date(currentYear, monthNumber, 1),
@@ -53,17 +59,19 @@ const getDashboardData = async (req, res) => {
         },
       });
 
-      if (wallet) {
-        profitArray[monthNumber] = parseFloat(wallet.Profit);
-        expenseArray[monthNumber] = parseFloat(wallet.TotalExpenses);
-        revenueArray[monthNumber] = parseFloat(wallet.TotalRevenue);
+      if (walletData) {
+        profitArray[monthNumber] = parseFloat(walletData.Profit);
+        expenseArray[monthNumber] = parseFloat(walletData.TotalExpenses);
+        revenueArray[monthNumber] = parseFloat(walletData.TotalRevenue);
       }
     }
 
     const invoices = await Invoice.find({ AdminID: adminId });
     const staff = await Staff.find({ AdminID: adminId });
+
     res.status(200).json({
-      wallet, profitArray,
+      wallet,
+      profitArray,
       expenseArray,
       revenueArray,
       invoices,
@@ -74,7 +82,5 @@ const getDashboardData = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
-
 
 module.exports = { getDashboardData };
