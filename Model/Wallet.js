@@ -17,6 +17,10 @@ const walletSchema = new mongoose.Schema({
     type: String,
     default: '0',
   },
+  TotalEarnings: {
+    type: String,
+    default: '0',
+  },
   TotalOrders: {
     type: String,
     default:'0',

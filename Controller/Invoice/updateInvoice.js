@@ -91,15 +91,14 @@ const updateInvoice = async (req, res) => {
       wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) - 1).toString();
       wallet.TotalSales = (parseInt(wallet.TotalSales) + 1).toString();
       wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) + parseFloat(updatedInvoice.SubTotal)).toString();
-      wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
-      wallet.Earnings = (parseFloat(wallet.Earnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
+      wallet.TotalEarnings = (parseFloat(wallet.TotalEarnings) + parseFloat(updatedInvoice.InvoiceTotal)).toString();
     } else if (previousStatus === 'paid' && updatedInvoice.Status !== 'paid') {
       console.log('inside if 2nd')
       wallet.PaidInvoices = (parseInt(wallet.PaidInvoices) - 1).toString();
       wallet.UnPaidInvoices = (parseInt(wallet.UnPaidInvoices) + 1).toString();
       wallet.TotalSales = (parseInt(wallet.TotalSales) - 1).toString();
       wallet.TotalRevenue = (parseFloat(wallet.TotalRevenue) - parseFloat(updatedInvoice.SubTotal)).toString();
-      wallet.Earnings = (parseFloat(wallet.Earnings) - parseFloat(updatedInvoice.InvoiceTotal)).toString();
+      wallet.TotalEarnings = (parseFloat(wallet.TotalEarnings) - parseFloat(updatedInvoice.InvoiceTotal)).toString();
     }
     console.log("wallet ",wallet)
     await wallet.save();
