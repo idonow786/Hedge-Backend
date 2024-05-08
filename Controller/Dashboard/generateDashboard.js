@@ -46,34 +46,31 @@ const getDashboardData = async (req, res) => {
     wallet.Profit = (parseFloat(wallet.TotalRevenue) - parseFloat(wallet.TotalExpenses)).toString();
     await wallet.save();
 
-    const profitArray = new Array(12).fill(0);
-    const expenseArray = new Array(12).fill(0);
-    const revenueArray = new Array(12).fill(0);
+    const previousMonthNumber = monthNumber === 0 ? 11 : monthNumber - 1;
+    const previousMonthWallet = await Wallet.findOne({
+      AdminID: adminId,
+      period: {
+        $gte: new Date(currentYear, previousMonthNumber, 1),
+        $lt: new Date(currentYear, previousMonthNumber + 1, 1),
+      },
+    });
 
-    for (let monthNumber = 0; monthNumber < 12; monthNumber++) {
-      const walletData = await Wallet.findOne({
-        AdminID: adminId,
-        period: {
-          $gte: new Date(currentYear, monthNumber, 1),
-          $lt: new Date(currentYear, monthNumber + 1, 1),
-        },
-      });
-
-      if (walletData) {
-        profitArray[monthNumber] = parseFloat(walletData.Profit);
-        expenseArray[monthNumber] = parseFloat(walletData.TotalExpenses);
-        revenueArray[monthNumber] = parseFloat(walletData.TotalRevenue);
-      }
-    }
+    const ratios = {
+      TotalSales: calculateRatio(wallet.TotalSales, previousMonthWallet?.TotalSales),
+      TotalRevenue: calculateRatio(wallet.TotalRevenue, previousMonthWallet?.TotalRevenue),
+      TotalInvoices: calculateRatio(wallet.TotalInvoices, previousMonthWallet?.TotalInvoices),
+      TotalExpenses: calculateRatio(wallet.TotalExpenses, previousMonthWallet?.TotalExpenses),
+      TotalEarnings: calculateRatio(wallet.TotalEarnings, previousMonthWallet?.TotalEarnings),
+      TotalOrders: calculateRatio(wallet.TotalOrders, previousMonthWallet?.TotalOrders),
+      TotalCustomers: calculateRatio(wallet.TotalCustomers, previousMonthWallet?.TotalCustomers),
+    };
 
     const invoices = await Invoice.find({ AdminID: adminId });
     const staff = await Staff.find({ AdminID: adminId });
 
     res.status(200).json({
       wallet,
-      profitArray,
-      expenseArray,
-      revenueArray,
+      ratios,
       invoices,
       staff,
     });
@@ -82,5 +79,17 @@ const getDashboardData = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+function calculateRatio(currentValue, previousValue) {
+  if (previousValue === undefined || previousValue === '0') {
+    return '0';
+  }
+
+  const current = parseFloat(currentValue);
+  const previous = parseFloat(previousValue);
+
+  const ratio = ((current - previous) / previous) * 100;
+  return `${ratio > 0 ? '+' : ''}${ratio.toFixed(2)}%`;
+}
 
 module.exports = { getDashboardData };
