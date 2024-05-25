@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const {signup,signin} = require('../Controller/Admin/Registration');
-const {getAdminProfile} = require('../Controller/Admin/profile');
+const { verifyOtp,generateOtp,updatePassword } = require('../Controller/Admin/ForgetPassword');
+const {deletePayment,updatePayment,addPayment,getPayments} = require('../Controller/Admin/paymentController');
+const {getAdminProfile,getAllUsersWithBusinesses} = require('../Controller/Admin/profile');
 const {updateAdminProfile} = require('../Controller/Admin/updateProfile');
 const {verifyToken} = require('../Middleware/jwt');
 const multer = require('multer');
@@ -16,9 +18,30 @@ const upload = multer({
     },
   });
   
-router.post('/signup', signup);                                                                                   //working
+
+
+
+  
+
+router.post('/signup',verifyToken, signup);                                                                                   //working
 router.post('/signin', signin);                                                                                   //working
 router.get('/profile',verifyToken, getAdminProfile);                                                              //working
 router.put('/profile/update', verifyToken, upload.single('profilePic'), updateAdminProfile);                      //working
- 
+
+
+
+
+router.post('/generate/otp', generateOtp);                                                                          //working
+router.post('/verify/otp', verifyOtp);                                                                               //working
+router.post('/update/password', updatePassword);                                                                     //working
+
+router.post('/all/users',verifyToken, getAllUsersWithBusinesses);                                                                          //working
+
+
+router.post('/payment',verifyToken, addPayment);                                                                          //working
+router.put('/payment/update',verifyToken, updatePayment);                                                                          //working
+router.delete('/payment/delete',verifyToken, deletePayment);                                                                          //working
+router.get('/payment',verifyToken, getPayments);                                                                          //working
+
+
 module.exports = router;

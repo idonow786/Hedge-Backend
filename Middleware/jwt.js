@@ -10,18 +10,21 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: 'No token provided' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  const decodedToken = jwt.decode(token);
+  const secretKey = decodedToken.role === 'superadmin' ? process.env.JWT_SECRET_Super : process.env.JWT_SECRET;
+
+  jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    req.adminId = decoded.adminId;
+    req.adminId = decoded.userId;
     req.username = decoded.username;
     req.email = decoded.email;
+    req.role = decoded.role;
 
     next();
   });
 };
 
-
-module.exports={verifyToken}
+module.exports = { verifyToken };

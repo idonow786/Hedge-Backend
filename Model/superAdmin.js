@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
-const adminSchema = new mongoose.Schema({
+const superAdminSchema = new mongoose.Schema({
  ID: {
   type: Number,
   default: () => Math.floor(Math.random() * 1000000),
 },
-
   Name: {
     type: String,
   },
@@ -18,23 +17,20 @@ const adminSchema = new mongoose.Schema({
   Password: {
     type: String,
   },
-  Gender: {
-    type: String,
-    enum: ['Male', 'Female', 'Other'],
-  },
   Otp: {
     type: String,
   },
   role: {
     type: String,
-    default:'admin'
+    default:'superadmin'
   },
   
   OtpVerified: {
     type: Boolean,
   },
+  
 });
 
-const Admin = mongoose.model('Admin', adminSchema);
+const SuperAdmin = mongoose.model('SuperAdmin', superAdminSchema);
 
-module.exports = Admin;
+module.exports = SuperAdmin;
