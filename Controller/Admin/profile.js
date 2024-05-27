@@ -2,6 +2,8 @@ const Admin = require('../../Model/Admin');
 const SuperAdmin = require('../../Model/superAdmin');
 const Business = require('../../Model/Business');
 const Payment = require('../../Model/Payment');
+const Staff = require('../../Model/Staff');
+const Project = require('../../Model/Project');
 
 const getAdminProfile = async (req, res) => {
   try {
@@ -55,7 +57,35 @@ const getAllUsersWithBusinesses = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+const DeleteUser = async (req, res) => {
+  try {
+    if (req.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmins can delete users.' });
+    }
+
+    const adminId = req.body.adminId;
+
+    // Delete the admin
+    const deletedAdmin = await Admin.findByIdAndDelete(adminId);
+    if (!deletedAdmin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    // Delete associated businesses
+    await Business.deleteMany({ AdminID: adminId });
+
+    // Delete associated payments
+    await Payment.deleteMany({ UserID: adminId });
+    await Staff.deleteMany({ AdminID: adminId });
+    await Project.deleteMany({ AdminID: adminId });
+
+    res.status(200).json({ message: 'Admin and associated data deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting admin and associated data:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 
 
-module.exports={getAdminProfile,getAllUsersWithBusinesses}
+module.exports={getAdminProfile,getAllUsersWithBusinesses,DeleteUser}
