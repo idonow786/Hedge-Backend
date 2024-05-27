@@ -28,13 +28,20 @@ const updatePayment = async (req, res) => {
   try {
     if (req.role !== 'superadmin') {
         return res.status(400).json({ message: 'You are not Super Admin' });
-      }
-    const { paymentId } = req.body;
-    const { SubscriptionMonth, Amount, Currency, PaymentMethod, Status } = req.body;
+    }
+
+    const { paymentId, SubscriptionMonth, Amount, Currency, PaymentMethod, Status } = req.body;
+
+    const updateFields = {};
+    if (SubscriptionMonth !== undefined) updateFields.SubscriptionMonth = SubscriptionMonth;
+    if (Amount !== undefined) updateFields.Amount = Amount;
+    if (Currency !== undefined) updateFields.Currency = Currency;
+    if (PaymentMethod !== undefined) updateFields.PaymentMethod = PaymentMethod;
+    if (Status !== undefined) updateFields.Status = Status;
 
     const updatedPayment = await Payment.findByIdAndUpdate(
       paymentId,
-      { SubscriptionMonth, Amount, Currency, PaymentMethod, Status },
+      updateFields,
       { new: true }
     );
 
@@ -48,6 +55,7 @@ const updatePayment = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 const deletePayment = async (req, res) => {
