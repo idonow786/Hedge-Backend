@@ -4,6 +4,7 @@ const Business = require('../../Model/Business');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const Payment = require('../../Model/Payment');
 
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
@@ -123,9 +124,15 @@ const signin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    if (user.role != 'superadmin') {
+      const payment = await Payment.findOne({ UserID: user._id });
+      if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
+        return res.status(404).json({ message: 'Payment not completed' });
+      }
+    }
 
     const token = jwt.sign(
-      { userId: user._id, username: user.Name, email: user.Email,role:user.role },
+      { userId: user._id, username: user.Name, email: user.Email, role: user.role },
       secretKey,
       { expiresIn: '30d' }
     );
@@ -136,5 +143,6 @@ const signin = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 module.exports = { signup, signin };

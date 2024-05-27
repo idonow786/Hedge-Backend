@@ -45,6 +45,7 @@ const getAllUsersWithBusinesses = async (req, res) => {
       return {
         ...user.toObject(),
         status,
+        payments
       };
     }));
 
