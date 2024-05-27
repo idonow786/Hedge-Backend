@@ -38,9 +38,13 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const usersWithPayments = await Promise.all(users.map(async (user) => {
       const payments = await Payment.find({ UserID: user._id });
+      let status = 'No Payments';
+      if (payments.length > 0) {
+        status = payments[0].Status;
+      }
       return {
         ...user.toObject(),
-        payments,
+        status,
       };
     }));
 
@@ -50,6 +54,7 @@ const getAllUsersWithBusinesses = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 module.exports={getAdminProfile,getAllUsersWithBusinesses}
