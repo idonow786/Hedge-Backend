@@ -1,6 +1,7 @@
 const Admin = require('../../Model/Admin');
 const SuperAdmin = require('../../Model/superAdmin');
 const Business = require('../../Model/Business');
+const Payment = require('../../Model/Payment');
 
 const getAdminProfile = async (req, res) => {
   try {
@@ -35,7 +36,15 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const users = [...admins, ...superAdmins];
 
-    res.status(200).json({ users });
+    const usersWithPayments = await Promise.all(users.map(async (user) => {
+      const payments = await Payment.find({ UserID: user._id });
+      return {
+        ...user.toObject(),
+        payments,
+      };
+    }));
+
+    res.status(200).json({ users: usersWithPayments });
   } catch (error) {
     console.error('Error getting users with businesses:', error);
     res.status(500).json({ message: 'Internal server error' });
