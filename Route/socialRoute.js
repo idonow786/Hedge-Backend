@@ -109,11 +109,6 @@ router.get('/auth/facebook', verifyToken, (req, res) => {
 
 
 
-//TWITTER
-router.post('/auth/twitter', verifyToken, getAuthUrl);
-router.get('/auth/twitter/callback', handleCallback);
-
-
 
 
 
@@ -149,9 +144,31 @@ router.get('/failure', (req, res) => res.send('Failed to connect social account'
 
 
 
-//Tiktok
-router.post('/auth/tiktok', verifyToken, tiktokAuth);
-router.get('/auth/tiktok/callback', tiktokCallback);
+//--------============================
+
+//TWITTER
+// router.post('/auth/twitter', verifyToken, getAuthUrl);
+// router.get('/auth/twitter/callback', handleCallback);
+
+
+
+
+
+// Twitter Authentication
+router.get('/auth/twitter', verifyToken, (req, res) => {
+  const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${req.adminId}`;
+  res.status(200).json({ authUrl });
+});
+
+router.get('/auth/twitter/callback',
+  passport.authenticate('twitter', { failureRedirect: '/failure' }),
+  (req, res) => {
+    res.redirect('/success');
+  }
+);
+
+router.get('/success', (req, res) => res.send('Social account connected successfully'));
+router.get('/failure', (req, res) => res.send('Failed to connect social account'));
 
 
 
@@ -160,8 +177,7 @@ router.get('/auth/tiktok/callback', tiktokCallback);
 
 
 
-
-
+// ========================================================
 
 
 

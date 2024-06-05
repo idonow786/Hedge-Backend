@@ -1,19 +1,33 @@
-// twitterModel.js
+// models/Twitter.js
 const mongoose = require('mongoose');
 
-const twitterSchema = new mongoose.Schema({
+const TwitterUserSchema = new mongoose.Schema({
+  adminId: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
+    required: true,
   },
   twitterId: {
     type: String,
     required: true,
+    unique: true,
   },
   accessToken: {
     type: String,
     required: true,
   },
-  refreshToken: {
+  accessTokenSecret: {
+    type: String,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  username: {
     type: String,
     required: true,
   },
@@ -23,17 +37,6 @@ const twitterSchema = new mongoose.Schema({
   },
 });
 
-const Twitter = mongoose.model('Twitter', twitterSchema);
+const TwitterUser = mongoose.model('TwitterUser', TwitterUserSchema);
 
-const OAuthDataSchema = new mongoose.Schema({
-  state: String,
-  codeVerifier: String,
-  userId: String,
-});
-
-const OAuthData = mongoose.model('OAuthData', OAuthDataSchema);
-
-module.exports = {
-  Twitter,
-  OAuthData,
-};
+module.exports = { TwitterUser };

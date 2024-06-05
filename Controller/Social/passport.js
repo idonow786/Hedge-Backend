@@ -3,6 +3,7 @@ const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const InstagramStrategy = require('passport-instagram').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+const TwitterStrategy = require('passport-twitter').Strategy;
 const { FacebookUser } = require('../../Model/Facebook');
 const { InstagramUser } = require('../../Model/Instagram');
 require('dotenv').config();
@@ -111,13 +112,53 @@ async (req, accessToken, refreshToken, profile, done) => {
   }
 }));
 
+
+
+
+
+// Twitter Strategy
+passport.use(new TwitterStrategy({
+  consumerKey: process.env.TWITTER_CONSUMER_KEY,
+  consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+  passReqToCallback: true // Pass the request object to the callback
+},
+async (req, token, tokenSecret, profile, done) => {
+  try {
+    const adminId = req.query.state;
+
+    let user = await TwitterUser.findOne({ twitterId: profile.id });
+
+    if (!user) {
+      user = new TwitterUser({
+        adminId: adminId,
+        userId: profile.id,
+        twitterId: profile.id,
+        accessToken: token,
+        accessTokenSecret: tokenSecret,
+        name: profile.displayName,
+        username: profile.username,
+      });
+      await user.save();
+    } else {
+      user.accessToken = token;
+      user.accessTokenSecret = tokenSecret;
+      await user.save();
+    }
+
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await LinkedInUser.findById(id);
+    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await TwitterUser.findById(id);
     done(null, user);
   } catch (error) {
     done(error, null);
