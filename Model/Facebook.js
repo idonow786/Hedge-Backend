@@ -1,6 +1,11 @@
+// models/Facebook.js
 const mongoose = require('mongoose');
 
 const facebookUserSchema = new mongoose.Schema({
+  adminId: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
     required: true,
@@ -27,6 +32,7 @@ const facebookUserSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
 const FacebookUser = mongoose.model('FacebookUser', facebookUserSchema);
 
 const OAuthDataFacebookSchema = new mongoose.Schema({
@@ -36,6 +42,4 @@ const OAuthDataFacebookSchema = new mongoose.Schema({
 
 const OAuthDataFacebook = mongoose.model('OAuthDataFacebook', OAuthDataFacebookSchema);
 
-
-
-module.exports = {FacebookUser,OAuthDataFacebook};
+module.exports = { FacebookUser, OAuthDataFacebook };

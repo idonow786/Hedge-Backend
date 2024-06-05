@@ -1,6 +1,11 @@
+// models/Instagram.js
 const mongoose = require('mongoose');
 
 const InstagramUserSchema = new mongoose.Schema({
+  adminId: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
     required: true,
@@ -27,6 +32,7 @@ const InstagramUserSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
 const InstagramUser = mongoose.model('InstagramUser', InstagramUserSchema);
 
 const OAuthDataInstagramSchema = new mongoose.Schema({
@@ -36,6 +42,4 @@ const OAuthDataInstagramSchema = new mongoose.Schema({
 
 const OAuthDataInstagram = mongoose.model('OAuthDataInstagram', OAuthDataInstagramSchema);
 
-
-
-module.exports = {InstagramUser,OAuthDataInstagram};
+module.exports = { InstagramUser, OAuthDataInstagram };

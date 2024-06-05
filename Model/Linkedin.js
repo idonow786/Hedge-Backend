@@ -1,6 +1,11 @@
+// models/LinkedIn.js
 const mongoose = require('mongoose');
 
-const linkedinUserSchema = new mongoose.Schema({
+const LinkedInUserSchema = new mongoose.Schema({
+  adminId: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
     required: true,
@@ -14,11 +19,7 @@ const linkedinUserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  firstName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
+  name: {
     type: String,
     required: true,
   },
@@ -32,13 +33,7 @@ const linkedinUserSchema = new mongoose.Schema({
   },
 });
 
-const LinkedInUser = mongoose.model('LinkedInUser', linkedinUserSchema);
+const LinkedInUser = mongoose.model('LinkedInUser', LinkedInUserSchema);
 
-const OAuthDataLinkedinSchema = new mongoose.Schema({
-  state: String,
-  userId: String,
-});
+module.exports = { LinkedInUser };
 
-const OAuthDataLinkedin = mongoose.model('OAuthDataLinkedin', OAuthDataLinkedinSchema);
-
-module.exports = {OAuthDataLinkedin,LinkedInUser};

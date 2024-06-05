@@ -2,15 +2,28 @@ const express = require('express');
 const router = express.Router();
 
 const multer = require('multer');
-const {facebookAuth,facebookCallback  } = require('../Controller/Social/facebook');
-const {  getAuthUrl,
+const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
+const { getAuthUrl,
     handleCallback,
-    postTweet  } = require('../Controller/Social/twitter');
-const { linkedinCallback,linkedinAuth} = require('../Controller/Social/linkedin');
-const {tiktokAuth,tiktokCallback} = require('../Controller/Social/tiktok');
+    postTweet } = require('../Controller/Social/twitter');
+const { linkedinCallback, linkedinAuth } = require('../Controller/Social/linkedin');
+const { tiktokAuth, tiktokCallback } = require('../Controller/Social/tiktok');
 
 
 const { verifyToken } = require('../Middleware/jwt');
+
+
+const passport = require('../Controller/Social/passport');
+
+
+
+
+
+
+
+
+
+
 
 const app = express();
 const storage = multer.memoryStorage()
@@ -25,26 +38,136 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
+
+///////////////-----------------------------------facebook passport---------------------////////////////////////
+
+
 //FACEBOOK
-router.post('/auth/facebook',verifyToken,  facebookAuth);
-router.get('/auth/facebook/callback',  facebookCallback);
+// router.post('/auth/facebook', verifyToken, facebookAuth);
+// router.get('/auth/facebook/callback', facebookCallback);
+
+
+
+
+
+//facebook passport
+router.get('/auth/facebook', verifyToken, (req, res) => {
+    // Generate the Facebook authentication URL with the adminId in the state parameter
+    const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
+  
+    // Send the URL back to the client
+    res.status(200).json({ authUrl });
+  });
+  
+  router.get('/auth/facebook/callback',
+    passport.authenticate('facebook', { failureRedirect: '/failure' }),
+    (req, res) => {
+      res.redirect('/success');
+    }
+  );
+  
+  router.get('/success', (req, res) => res.send('Facebook account connected successfully'));
+  router.get('/failure', (req, res) => res.send('Failed to connect Facebook account'));
+  
+
+
+// --------------------------------------------------------////////////////////////
+
+
+
+
+
+
+
+//--------------------------------------------Instagram passport---------------------////////////////////////
+
+
+// router.get('/auth/instagram', verifyToken, (req, res) => {
+//   // Generate the Instagram authentication URL with the adminId in the state parameter
+//   const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:3000/api/social/auth/instagram/callback')}&state=${req.adminId}&scope=user_profile,user_media`;
+
+//   // Send the URL back to the client
+//   res.status(200).json({ authUrl });
+// });
+
+// router.get('/auth/instagram/callback',
+//   passport.authenticate('instagram', { failureRedirect: '/failure' }),
+//   (req, res) => {
+//     res.redirect('/success');
+//   }
+// );
+
+// router.get('/success', (req, res) => res.send('Instagram account connected successfully'));
+// router.get('/failure', (req, res) => res.send('Failed to connect Instagram account'));
+
+
+
+// --------------------------------------------------------////////////////////////
+
+
+
 
 
 
 //TWITTER
-router.post('/auth/twitter',verifyToken,  getAuthUrl);
-router.get('/auth/twitter/callback',  handleCallback);
+router.post('/auth/twitter', verifyToken, getAuthUrl);
+router.get('/auth/twitter/callback', handleCallback);
 
 
 
 
-//LINKEDIN
-router.get('/auth/linkedin',verifyToken,  linkedinAuth);
-router.get('/auth/linkedin/callback',  linkedinCallback);
+
+
+
+
+//==========================================LINKEDIN
+// router.get('/auth/linkedin', verifyToken, linkedinAuth);
+// router.get('/auth/linkedin/callback', linkedinCallback);
+
+// LinkedIn Authentication
+router.get('/auth/linkedin', verifyToken, (req, res) => {
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=r_emailaddress,r_liteprofile,w_member_social`;
+  res.status(200).json({ authUrl });
+});
+
+router.get('/auth/linkedin/callback',
+  passport.authenticate('linkedin', { failureRedirect: '/failure' }),
+  (req, res) => {
+    res.redirect('/success');
+  }
+);
+
+router.get('/success', (req, res) => res.send('Social account connected successfully'));
+router.get('/failure', (req, res) => res.send('Failed to connect social account'));
+
+
+// ===============================================
+
+
+
+
 
 
 
 //Tiktok
-router.post('/auth/tiktok',verifyToken,  tiktokAuth);
-router.get('/auth/tiktok/callback',  tiktokCallback);
+router.post('/auth/tiktok', verifyToken, tiktokAuth);
+router.get('/auth/tiktok/callback', tiktokCallback);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = router;

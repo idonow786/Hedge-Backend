@@ -1,8 +1,6 @@
-
 // controllers/facebookController.js
 const Facebook = require('facebook-js-sdk');
-const {OAuthDataFacebook,FacebookUser} = require('../../Model/Facebook');
-
+const { OAuthDataFacebook, FacebookUser } = require('../../Model/Facebook');
 
 const facebookAuth = async (req, res) => {
   try {
@@ -91,8 +89,8 @@ const facebookCallback = async (req, res) => {
   }
 };
 
-
 module.exports = { facebookAuth, facebookCallback };
+
 
 // //
 // const express = require('express');

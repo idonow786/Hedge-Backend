@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const session = require('express-session');
-
+const passport = require('./Controller/Social/passport');
 
 
 const app = express();
@@ -49,6 +49,8 @@ app.use(
     saveUninitialized: false,
   })
 );
+app.use(passport.initialize());
+app.use(passport.session());
 // Routes
 app.get('/', (req, res) => {
   res.send('Hello, world!');
