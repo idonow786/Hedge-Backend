@@ -155,9 +155,9 @@ router.get('/failure', (req, res) => res.send('Failed to connect social account'
 
 
 // Twitter Authentication
+// Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
-  const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${req.adminId}`;
-  res.status(200).json({ authUrl });
+  passport.authenticate('twitter', { state: req.adminId })(req, res);
 });
 
 router.get('/auth/twitter/callback',
