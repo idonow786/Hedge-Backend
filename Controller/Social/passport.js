@@ -11,7 +11,7 @@ require('dotenv').config();
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback',
   profileFields: ['id', 'displayName', 'emails'],
   passReqToCallback: true // Pass the request object to the callback
 },
@@ -80,7 +80,7 @@ async (req, accessToken, refreshToken, profile, done) => {
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback',
   scope: ['r_emailaddress', 'r_liteprofile', 'w_member_social'], 
   passReqToCallback: true // Pass the request object to the callback
 },
