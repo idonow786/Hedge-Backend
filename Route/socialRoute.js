@@ -53,7 +53,7 @@ app.use(express.urlencoded({ extended: true }));
 //facebook passport
 router.get('/auth/facebook', verifyToken, (req, res) => {
     // Generate the Facebook authentication URL with the adminId in the state parameter
-    const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
+    const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
   
     // Send the URL back to the client
     res.status(200).json({ authUrl });
@@ -126,7 +126,7 @@ router.get('/auth/twitter/callback', handleCallback);
 
 // LinkedIn Authentication
 router.get('/auth/linkedin', verifyToken, (req, res) => {
-  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=r_emailaddress,r_liteprofile,w_member_social`;
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=r_emailaddress,r_liteprofile,w_member_social`;
   res.status(200).json({ authUrl });
 });
 
