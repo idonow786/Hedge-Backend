@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+const OAuth = require('oauth').OAuth;
 const multer = require('multer');
 const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
 const { getAuthUrl,
@@ -156,8 +157,16 @@ router.get('/failure', (req, res) => res.send('Failed to connect social account'
 
 // Twitter Authentication
 // Twitter Authentication
+
+// Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
-  passport.authenticate('twitter', { state: req.adminId })(req, res);
+  OAuth.getOAuthRequestToken({ oauth_callback: `https://crm-m3ck.onrender.com/api/social/auth/twitter/callback?state=${req.adminId}` }, (error, oauthToken, oauthTokenSecret, results) => {
+    if (error) {
+      return res.status(500).json({ error: 'Error getting OAuth request token' });
+    }
+    const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauthToken}`;
+    res.status(200).json({ authUrl });
+  });
 });
 
 router.get('/auth/twitter/callback',
@@ -169,8 +178,6 @@ router.get('/auth/twitter/callback',
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 router.get('/failure', (req, res) => res.send('Failed to connect social account'));
-
-
 
 
 
