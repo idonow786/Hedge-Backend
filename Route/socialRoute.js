@@ -126,7 +126,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 
 // LinkedIn Authentication
 router.get('/auth/linkedin', verifyToken, (req, res) => {
-  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=r_liteprofile%20email%20w_member_social`;
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=profile%20email%20w_member_social`;
   res.status(200).json({ authUrl });
 });
 
