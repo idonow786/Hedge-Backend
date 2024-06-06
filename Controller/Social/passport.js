@@ -124,8 +124,8 @@ async (req, accessToken, refreshToken, profile, done) => {
 
 // Twitter Strategy
 passport.use(new TwitterStrategy({
-  consumerKey: process.env.TWITTER_CLIENT_ID,
-  consumerSecret: process.env.TWITTER_CLIENT_SECRET,
+  consumerKey: process.env.TWITTER_CONSUMER_KEY,
+  consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
