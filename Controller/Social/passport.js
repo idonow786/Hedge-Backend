@@ -20,7 +20,7 @@ async (req, accessToken, refreshToken, profile, done) => {
   try {
     // Extract adminId from the state parameter
     const adminId = req.query.state;
-
+    console.log("app client secret: ",process.env.FACEBOOK_APP_SECRET)
     let user = await FacebookUser.findOne({ facebookId: profile.id });
 
     if (!user) {
@@ -109,6 +109,7 @@ async (req, accessToken, refreshToken, profile, done) => {
 
     return done(null, user);
   } catch (error) {
+    console.error('Error during LinkedIn authentication:', error);
     return done(error, null);
   }
 }));

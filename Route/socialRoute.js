@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const OAuth = require('oauth').OAuth;
 
 const multer = require('multer');
 const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
@@ -132,6 +133,7 @@ router.get('/auth/linkedin/callback',
     res.redirect('/success');
   }
 );
+
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 router.get('/failure', (req, res) => res.send('Failed to connect social account'));
