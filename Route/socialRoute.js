@@ -52,23 +52,23 @@ app.use(express.urlencoded({ extended: true }));
 
 //facebook passport
 router.get('/auth/facebook', verifyToken, (req, res) => {
-    // Generate the Facebook authentication URL with the adminId in the state parameter
-    const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
-  
-    // Send the URL back to the client
-    res.status(200).json({ authUrl });
-  });
-  
-  router.get('/auth/facebook/callback',
-    passport.authenticate('facebook', { failureRedirect: '/failure' }),
-    (req, res) => {
-      res.redirect('/success');
-    }
-  );
-  
-  router.get('/success', (req, res) => res.send('Facebook account connected successfully'));
-  router.get('/failure', (req, res) => res.send('Failed to connect Facebook account'));
-  
+  // Generate the Facebook authentication URL with the adminId in the state parameter
+  const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
+
+  // Send the URL back to the client
+  res.status(200).json({ authUrl });
+});
+
+router.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { failureRedirect: '/failure' }),
+  (req, res) => {
+    res.redirect('/success');
+  }
+);
+
+router.get('/success', (req, res) => res.send('Facebook account connected successfully'));
+router.get('/failure', (req, res) => res.send('Failed to connect Facebook account'));
+
 
 
 // --------------------------------------------------------////////////////////////

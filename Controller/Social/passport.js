@@ -18,6 +18,7 @@ passport.use(new FacebookStrategy({
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
+    // Extract adminId from the state parameter
     const adminId = req.query.state;
 
     let user = await FacebookUser.findOne({ facebookId: profile.id });
