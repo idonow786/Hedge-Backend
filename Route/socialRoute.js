@@ -52,6 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //facebook passport
 router.get('/auth/facebook', verifyToken, (req, res) => {
+  console.log("APPID :",process.env.FACEBOOK_APP_ID)
   // Generate the Facebook authentication URL with the adminId in the state parameter
   const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
 
