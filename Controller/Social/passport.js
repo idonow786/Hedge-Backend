@@ -88,6 +88,7 @@ passport.use(new LinkedInStrategy({
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
   scope: ['openid', 'profile', 'email', 'w_member_social'],
+  profileFields: ['id', 'first-name', 'last-name', 'email-address'],
   passReqToCallback: true
 },
 async (req, accessToken, refreshToken, profile, done) => {
