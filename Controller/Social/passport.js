@@ -124,39 +124,40 @@ async (req, accessToken, refreshToken, profile, done) => {
 
 // Twitter Strategy
 passport.use(new TwitterStrategy({
-  consumerKey: process.env.TWITTER_CONSUMER_KEY,
-  consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+  consumerKey: process.env.TWITTER_CLIENT_ID,
+  consumerSecret: process.env.TWITTER_CLIENT_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
-  passReqToCallback: true // Pass the request object to the callback
+  passReqToCallback: true
 },
-  async (req, token, tokenSecret, profile, done) => {
-    try {
-      const adminId = req.query.state;
+async (req, accessToken, refreshToken, profile, done) => {
+  try {
+    const adminId = req.query.state;
 
-      let user = await TwitterUser.findOne({ twitterId: profile.id });
+    let user = await TwitterUser.findOne({ twitterId: profile.id });
 
-      if (!user) {
-        user = new TwitterUser({
-          adminId: adminId,
-          userId: profile.id,
-          twitterId: profile.id,
-          accessToken: token,
-          accessTokenSecret: tokenSecret,
-          name: profile.displayName,
-          username: profile.username,
-        });
-        await user.save();
-      } else {
-        user.accessToken = token;
-        user.accessTokenSecret = tokenSecret;
-        await user.save();
-      }
-
-      return done(null, user);
-    } catch (error) {
-      return done(error, null);
+    if (!user) {
+      user = new TwitterUser({
+        adminId: adminId,
+        userId: profile.id,
+        twitterId: profile.id,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        name: profile.displayName,
+        username: profile.username,
+      });
+      await user.save();
+    } else {
+      user.accessToken = accessToken;
+      user.refreshToken = refreshToken;
+      await user.save();
     }
-  }));
+
+    return done(null, user);
+  } catch (error) {
+    console.error('Error during Twitter authentication:', error);
+    return done(error, null);
+  }
+}));
 
 passport.serializeUser((user, done) => {
   done(null, user.id);

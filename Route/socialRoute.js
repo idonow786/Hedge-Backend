@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const OAuth = require('oauth').OAuth;
+const crypto = require('crypto');
 
 const multer = require('multer');
 const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
@@ -164,9 +165,14 @@ router.get('/failure', (req, res) => res.send('Failed to connect social account'
 
 // Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
-  passport.authenticate('twitter', { state: req.adminId })(req, res);
+  try {
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${req.adminId}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+    res.status(200).json({ authUrl });
+  } catch (error) {
+    console.error('Error generating Twitter authentication URL:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
-
 
 router.get('/auth/twitter/callback',
   passport.authenticate('twitter', { failureRedirect: '/failure' }),
@@ -178,6 +184,31 @@ router.get('/auth/twitter/callback',
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 router.get('/failure', (req, res) => res.send('Failed to connect social account'));
 
+
+// Helper function to generate code challenge for PKCE
+function generateCodeChallenge() {
+  const codeVerifier = generateRandomString(128);
+  const codeChallenge = base64URLEncode(crypto.createHash('sha256').update(codeVerifier).digest());
+  return codeChallenge;
+}
+
+// Helper function to generate random string for code verifier
+function generateRandomString(length) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+// Helper function to base64URL encode a string
+function base64URLEncode(str) {
+  return str.toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
 
 
 
