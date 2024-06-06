@@ -86,14 +86,13 @@ passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-  scope: ['openid','profile', 'email', 'w_member_social'], 
+  scope: ['openid', 'profile', 'email', 'w_member_social'],
   passReqToCallback: true
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
+    // Process the user profile and access token here
     const adminId = req.query.state;
-    console.log("profile : ",profile)
-    console.log("accessToken : ",accessToken)
     let user = await LinkedInUser.findOne({ linkedinId: profile.id });
 
     if (!user) {
