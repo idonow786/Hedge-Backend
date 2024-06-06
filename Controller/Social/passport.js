@@ -81,42 +81,41 @@ passport.use(new FacebookStrategy({
 
 // LinkedIn Strategy
 
-require('dotenv').config();
 
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-  scope: ['r_emailaddress', 'r_liteprofile', 'w_member_social'],
+  scope: ['r_emailaddress', 'r_liteprofile', 'w_member_social'], 
   passReqToCallback: true // Pass the request object to the callback
 },
-  async (req, accessToken, refreshToken, profile, done) => {
-    try {
-      const adminId = req.query.state;
+async (req, accessToken, refreshToken, profile, done) => {
+  try {
+    const adminId = req.query.state;
 
-      let user = await LinkedInUser.findOne({ linkedinId: profile.id });
+    let user = await LinkedInUser.findOne({ linkedinId: profile.id });
 
-      if (!user) {
-        user = new LinkedInUser({
-          adminId: adminId,
-          userId: profile.id,
-          linkedinId: profile.id,
-          accessToken: accessToken,
-          name: profile.displayName,
-          email: profile.emails[0].value,
-        });
-        await user.save();
-      } else {
-        user.accessToken = accessToken;
-        await user.save();
-      }
-
-      return done(null, user);
-    } catch (error) {
-      console.error('Error during LinkedIn authentication:', error);
-      return done(error, null);
+    if (!user) {
+      user = new LinkedInUser({
+        adminId: adminId,
+        userId: profile.id,
+        linkedinId: profile.id,
+        accessToken: accessToken,
+        name: profile.displayName,
+        email: profile.emails[0].value,
+      });
+      await user.save();
+    } else {
+      user.accessToken = accessToken;
+      await user.save();
     }
-  }));
+
+    return done(null, user);
+  } catch (error) {
+    console.error('Error during LinkedIn authentication:', error);
+    return done(error, null);
+  }
+}));
 
 
 
