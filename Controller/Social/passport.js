@@ -4,6 +4,7 @@ const FacebookStrategy = require('passport-facebook').Strategy;
 const InstagramStrategy = require('passport-instagram').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const { LinkedInUser } = require('../../Model/Linkedin');
+const { TwitterUser } = require('../../Model/Twitter');
 const TwitterStrategy = require('passport-twitter').Strategy;
 const { FacebookUser } = require('../../Model/Facebook');
 const { InstagramUser } = require('../../Model/Instagram');
