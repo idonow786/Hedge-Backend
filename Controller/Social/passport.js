@@ -14,7 +14,7 @@ require('dotenv').config();
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback',
   profileFields: ['id', 'displayName', 'emails'],
   passReqToCallback: true // Pass the request object to the callback
 },
@@ -86,7 +86,7 @@ passport.use(new FacebookStrategy({
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback',
   scope: ['openid', 'profile', 'email', 'w_member_social'],
   profileFields: ['id', 'first-name', 'last-name', 'email-address'],
   passReqToCallback: true
@@ -128,7 +128,7 @@ async (req, accessToken, refreshToken, profile, done) => {
 passport.use(new TwitterStrategy({
   consumerKey: process.env.TWITTER_CONSUMER_KEY,
   consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
 async (req, token, tokenSecret, profile, done) => {

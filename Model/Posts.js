@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
 const postsSchema = new mongoose.Schema({
- ID: {
-  type: Number,
-  default: () => Math.floor(Math.random() * 1000000),
-},
-
+  ID: {
+    type: Number,
+    default: () => Math.floor(Math.random() * 1000000),
+  },
   SocialId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Socials',
@@ -28,6 +27,15 @@ const postsSchema = new mongoose.Schema({
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
+  },
+  FacebookPostId: {
+    type: String,
+  },
+  LinkedInPostId: {
+    type: String,
+  },
+  TwitterPostId: {
+    type: String,
   },
 });
 

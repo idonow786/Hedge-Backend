@@ -1,56 +1,216 @@
+const { FacebookUser } = require('../../Model/Facebook');
+const { LinkedInUser } = require('../../Model/Linkedin');
+const { TwitterUser } = require('../../Model/Twitter');
+const Posts = require('../../Model/Posts');
 const axios = require('axios');
-const FormData = require('form-data');
-require('dotenv').config();
-const getSocial = async (req, res) => {
+const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
+const { uploadVideoToFirebase } = require('../../Firebase/uploadVideo');
+
+exports.createPost = async (req, res) => {
   try {
-    const response = await axios.get('https://app.ayrshare.com/api/profiles', {
-      headers: {
-        'Authorization': `Bearer ${process.env.SOCIAL_KEY}`
-      }
+    const { title, description } = req.body;
+    const adminId = req.adminId;
+
+    // Upload images to Firebase Storage
+    const imageUrls = await Promise.all(
+      req.files.filter(file => file.mimetype.startsWith('image/')).map(async (file) => {
+        const imageUrl = await uploadImageToFirebase(file.buffer.toString('base64'), file.mimetype);
+        return imageUrl;
+      })
+    );
+
+    // Upload videos to Firebase Storage
+    const videoUrls = await Promise.all(
+      req.files.filter(file => file.mimetype.startsWith('video/')).map(async (file) => {
+        const videoUrl = await uploadVideoToFirebase(file);
+        return videoUrl;
+      })
+    );
+
+    // Create a new post
+    const post = new Posts({
+      PostTitle: title,
+      PostPics: [...imageUrls, ...videoUrls],
+      PostDescription: description,
+      AdminID: adminId,
     });
 
-    const profiles = response.data;
-    res.json(profiles);
+    await post.save();
+
+    // Get user details from the models based on adminId
+    const facebookUser = await FacebookUser.findOne({ adminId });
+    const linkedinUser = await LinkedInUser.findOne({ adminId });
+    const twitterUser = await TwitterUser.findOne({ adminId });
+
+    // Post on Facebook
+    if (facebookUser) {
+      const facebookAccessToken = facebookUser.accessToken;
+      const facebookPostUrl = `https://graph.facebook.com/me/feed?access_token=${facebookAccessToken}`;
+      const facebookPostData = {
+        message: description,
+        link: '',
+        name: title,
+      };
+      const facebookResponse = await axios.post(facebookPostUrl, facebookPostData);
+      post.FacebookPostId = facebookResponse.data.id;
+    }
+
+    // Post on LinkedIn
+    if (linkedinUser) {
+      const linkedinAccessToken = linkedinUser.accessToken;
+      const linkedinPostUrl = 'https://api.linkedin.com/v2/ugcPosts';
+      const linkedinPostData = {
+        author: `urn:li:person:${linkedinUser.userId}`,
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+          'com.linkedin.ugc.ShareContent': {
+            shareCommentary: {
+              text: description,
+            },
+            shareMediaCategory: 'ARTICLE',
+            media: [
+              {
+                status: 'READY',
+                description: {
+                  text: description,
+                },
+                title: {
+                  text: title,
+                },
+              },
+            ],
+          },
+        },
+        visibility: {
+          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+        },
+      };
+      const linkedinResponse = await axios.post(linkedinPostUrl, linkedinPostData, {
+        headers: {
+          Authorization: `Bearer ${linkedinAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      post.LinkedInPostId = linkedinResponse.data.id;
+    }
+
+    // Post on Twitter
+    if (twitterUser) {
+      const twitterAccessToken = twitterUser.accessToken;
+      const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
+      const twitterPostUrl = 'https://api.twitter.com/2/tweets';
+      const twitterPostData = {
+        text: description.slice(0, 280), // Truncate the description to fit Twitter's character limit
+      };
+      const twitterResponse = await axios.post(twitterPostUrl, twitterPostData, {
+        headers: {
+          Authorization: `Bearer ${twitterAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      post.TwitterPostId = twitterResponse.data.data.id;
+    }
+
+    await post.save();
+
+    res.status(201).json({ message: 'Post created successfully' });
   } catch (error) {
-    console.error('Error retrieving social profiles:', error);
-    res.status(500).json({ error: 'Failed to retrieve social profiles' });
+    console.error('Error creating post:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-
-
-
-const postSocial = async (req, res) => {
+exports.getPosts = async (req, res) => {
   try {
-    const { description } = req.body;
-    const image = req.file;
-
-    const response = await axios.get('https://app.ayrshare.com/api/profiles', {
-      headers: {
-        'Authorization': `Bearer ${process.env.SOCIAL_KEY}`
-      }
-    });
-
-    const profiles = response.data;
-    const profileKeys = profiles.map(profile => profile.profileKey);
-
-    const form = new FormData();
-    form.append('post', description);
-    form.append('platforms', profileKeys);
-    form.append('media', image.buffer, { filename: image.originalname });
-
-    const postResponse = await axios.post('https://app.ayrshare.com/api/post', form, {
-      headers: {
-        ...form.getHeaders(),
-        'Authorization': `Bearer ${process.env.SOCIAL_KEY}`
-      }
-    });
-
-    res.json(postResponse.data);
+    const adminId = req.adminId;
+    const posts = await Posts.find({ AdminID: adminId });
+    res.status(200).json(posts);
   } catch (error) {
-    console.error('Error posting to social accounts:', error);
-    res.status(500).json({ error: 'Failed to post to social accounts' });
+    console.error('Error getting posts:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-module.exports = { getSocial, postSocial };
+exports.updatePost = async (req, res) => {
+  try {
+    const { postId } = req.body;
+    const { title, description } = req.body;
+    const adminId = req.adminId;
+
+    const post = await Posts.findOne({ _id: postId, AdminID: adminId });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    post.PostTitle = title;
+    post.PostDescription = description;
+
+    await post.save();
+
+    res.status(200).json({ message: 'Post updated successfully' });
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.deletePost = async (req, res) => {
+  try {
+    const { postId } = req.body;
+    const adminId = req.adminId;
+
+    const post = await Posts.findOne({ _id: postId, AdminID: adminId });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Delete post from Facebook
+    if (post.FacebookPostId) {
+      const facebookUser = await FacebookUser.findOne({ adminId });
+      if (facebookUser) {
+        const facebookAccessToken = facebookUser.accessToken;
+        const facebookDeleteUrl = `https://graph.facebook.com/${post.FacebookPostId}?access_token=${facebookAccessToken}`;
+        await axios.delete(facebookDeleteUrl);
+      }
+    }
+
+    // Delete post from LinkedIn
+    if (post.LinkedInPostId) {
+      const linkedinUser = await LinkedInUser.findOne({ adminId });
+      if (linkedinUser) {
+        const linkedinAccessToken = linkedinUser.accessToken;
+        const linkedinDeleteUrl = `https://api.linkedin.com/v2/ugcPosts/${post.LinkedInPostId}`;
+        await axios.delete(linkedinDeleteUrl, {
+          headers: {
+            Authorization: `Bearer ${linkedinAccessToken}`,
+          },
+        });
+      }
+    }
+
+    // Delete post from Twitter
+    if (post.TwitterPostId) {
+      const twitterUser = await TwitterUser.findOne({ adminId });
+      if (twitterUser) {
+        const twitterAccessToken = twitterUser.accessToken;
+        const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
+        const twitterDeleteUrl = `https://api.twitter.com/2/tweets/${post.TwitterPostId}`;
+        await axios.delete(twitterDeleteUrl, {
+          headers: {
+            Authorization: `Bearer ${twitterAccessToken}`,
+          },
+        });
+      }
+    }
+
+    await post.remove();
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
