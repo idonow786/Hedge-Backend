@@ -182,8 +182,11 @@ router.get('/auth/twitter/callback',
 );
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
-router.get('/failure', (req, res) => res.send('Failed to connect social account'));
 
+router.get('/failure', (req, res) => {
+  const error = req.query.error || 'Unknown error';
+  res.status(401).send(`Failed to connect social account: ${error}`);
+});
 
 // Helper function to generate code challenge for PKCE
 function generateCodeChallenge() {
@@ -209,8 +212,6 @@ function base64URLEncode(str) {
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
-
-
 
 
 

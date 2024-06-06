@@ -130,9 +130,13 @@ passport.use(new TwitterStrategy({
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
-async (req, accessToken, refreshToken, profile, done) => {
+async (req, token, tokenSecret, profile, done) => {
   try {
     const adminId = req.query.state;
+
+    if (!adminId) {
+      return done(new Error('Missing adminId'), null);
+    }
 
     let user = await TwitterUser.findOne({ twitterId: profile.id });
 
@@ -141,16 +145,32 @@ async (req, accessToken, refreshToken, profile, done) => {
         adminId: adminId,
         userId: profile.id,
         twitterId: profile.id,
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+        accessToken: token,
+        accessTokenSecret: tokenSecret,
         name: profile.displayName,
         username: profile.username,
       });
-      await user.save();
+
+      try {
+        await user.save();
+      } catch (error) {
+        if (error.name === 'ValidationError') {
+          return done(new Error('Invalid or missing required fields'), null);
+        }
+        throw error;
+      }
     } else {
-      user.accessToken = accessToken;
-      user.refreshToken = refreshToken;
-      await user.save();
+      user.accessToken = token;
+      user.accessTokenSecret = tokenSecret;
+
+      try {
+        await user.save();
+      } catch (error) {
+        if (error.name === 'ValidationError') {
+          return done(new Error('Invalid or missing required fields'), null);
+        }
+        throw error;
+      }
     }
 
     return done(null, user);
