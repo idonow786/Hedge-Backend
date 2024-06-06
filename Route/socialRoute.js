@@ -122,6 +122,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 // router.get('/auth/linkedin/callback', linkedinCallback);
 
 // LinkedIn Authentication
+// LinkedIn Authentication
 router.get('/auth/linkedin', verifyToken, (req, res) => {
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=r_emailaddress,r_liteprofile,w_member_social`;
   res.status(200).json({ authUrl });
@@ -134,10 +135,8 @@ router.get('/auth/linkedin/callback',
   }
 );
 
-
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 router.get('/failure', (req, res) => res.send('Failed to connect social account'));
-
 
 // ===============================================
 
