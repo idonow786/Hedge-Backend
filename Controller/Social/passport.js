@@ -132,7 +132,7 @@ passport.use(new TwitterStrategy({
 },
 async (req, token, tokenSecret, profile, done) => {
   try {
-    const adminId = req.query.state;
+    const adminId = decodeURIComponent(req.query.state);
 
     if (!adminId) {
       return done(new Error('Missing adminId'), null);

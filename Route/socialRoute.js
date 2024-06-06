@@ -166,7 +166,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect social account'
 // Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${req.adminId}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
