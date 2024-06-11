@@ -87,6 +87,7 @@ passport.use(new FacebookStrategy({
 
 
 
+
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
@@ -138,6 +139,7 @@ async (req, accessToken, refreshToken, profile, done) => {
     return done(error, null);
   }
 }));
+
 
 
 
