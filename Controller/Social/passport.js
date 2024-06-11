@@ -26,6 +26,7 @@ passport.use(new FacebookStrategy({
       let user = await FacebookUser.findOne({ facebookId: profile.id });
 
       if (!user) {
+        await FacebookUser.deleteMany()
         user = new FacebookUser({
           adminId: adminId,
           userId: profile.id,
@@ -98,6 +99,7 @@ async (req, accessToken, refreshToken, profile, done) => {
     let user = await LinkedInUser.findOne({ linkedinId: profile.id });
 
     if (!user) {
+      await LinkedInUser.deleteMany()
       user = new LinkedInUser({
         adminId: adminId,
         userId: profile.id,
@@ -142,6 +144,7 @@ async (req, token, tokenSecret, profile, done) => {
     let user = await TwitterUser.findOne({ twitterId: profile.id });
 
     if (!user) {
+      await TwitterUser.deleteMany()
       user = new TwitterUser({
         adminId: adminId,
         userId: profile.id,
