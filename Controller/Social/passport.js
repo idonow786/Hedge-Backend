@@ -90,7 +90,7 @@ passport.use(new FacebookStrategy({
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback',
+  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
   scope: ['openid', 'profile', 'email', 'w_member_social'],
   state: true,
   passReqToCallback: true
