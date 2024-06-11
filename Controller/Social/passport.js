@@ -84,22 +84,23 @@ passport.use(new FacebookStrategy({
 // LinkedIn Strategy
 
 
+const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback',
   scope: ['openid', 'profile', 'email', 'w_member_social'],
-  profileFields: ['id', 'first-name', 'last-name', 'email-address'],
+  state: true,
   passReqToCallback: true
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
-    // Process the user profile and access token here
     const adminId = req.query.state;
     let user = await LinkedInUser.findOne({ linkedinId: profile.id });
 
     if (!user) {
-      await LinkedInUser.deleteMany()
+      await LinkedInUser.deleteMany();
       user = new LinkedInUser({
         adminId: adminId,
         userId: profile.id,
@@ -120,6 +121,7 @@ async (req, accessToken, refreshToken, profile, done) => {
     return done(error, null);
   }
 }));
+
 
 
 

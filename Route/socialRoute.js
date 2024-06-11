@@ -148,6 +148,7 @@ router.get('/auth/linkedin/callback',
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 router.get('/failure', (req, res) => res.send('Failed to connect social account'));
+
 // ===============================================
 
 
