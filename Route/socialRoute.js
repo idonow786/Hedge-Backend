@@ -140,14 +140,14 @@ router.get('/auth/linkedin', verifyToken, (req, res) => {
 });
 
 router.get('/auth/linkedin/callback',
-  passport.authenticate('linkedin', { failureRedirect: '/api/social/failure' }),
+  passport.authenticate('linkedin', { failureRedirect: '/api/social/linkedin/failure' }),
   (req, res) => {
-    res.redirect('/api/social/success');
+    res.redirect('/api/social/linkedin/success');
   }
 );
 
-router.get('/success', (req, res) => res.send('Social account connected successfully'));
-router.get('/failure', (req, res) => res.status(404).send('Failed to connect social account'));
+router.get('/linkedin/success', (req, res) => res.send('Social account connected successfully'));
+router.get('/linkedin/failure', (req, res) => res.status(404).send('Failed to connect social account'));
 
 
 // ===============================================
