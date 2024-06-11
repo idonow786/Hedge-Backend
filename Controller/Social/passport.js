@@ -100,21 +100,8 @@ passport.use(new LinkedInStrategy({
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
-    // Manually fetch the user profile from LinkedIn API
-    const profileResponse = await axios.get('https://api.linkedin.com/v2/me', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-
-    const emailResponse = await axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-
-    const linkedinProfile = profileResponse.data;
-    const linkedinEmail = emailResponse.data.elements[0]['handle~'].emailAddress;
+    const linkedinProfile = profile;
+    const linkedinEmail = profile.emails[0].value;
 
     const adminId = req.query.state;
     let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
@@ -125,7 +112,7 @@ async (req, accessToken, refreshToken, profile, done) => {
         userId: linkedinProfile.id,
         linkedinId: linkedinProfile.id,
         accessToken: accessToken,
-        name: `${linkedinProfile.localizedFirstName} ${linkedinProfile.localizedLastName}`,
+        name: linkedinProfile.displayName,
         email: linkedinEmail,
       });
       await user.save();
@@ -136,14 +123,7 @@ async (req, accessToken, refreshToken, profile, done) => {
 
     return done(null, user);
   } catch (error) {
-    if (error.response) {
-      console.error('LinkedIn API response error:', error.response.data);
-    } else if (error.request) {
-      console.error('No response received from LinkedIn API:', error.request);
-    } else {
-      console.error('Error in LinkedIn authentication setup:', error.message);
-    }
-    console.error('Error during LinkedIn authentication:', error.config);
+    console.error('Error during LinkedIn authentication:', error);
     return done(error, null);
   }
 }));

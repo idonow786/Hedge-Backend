@@ -151,6 +151,7 @@ router.get('/auth/linkedin/callback',
 );
 
 router.get('/linkedin/success', (req, res) => res.send('Social account connected successfully'));
+
 router.get('/linkedin/failure', (req, res) => {
   const error = req.query.error || 'Unknown error';
   const errorDescription = req.query.error_description || 'No description available';
