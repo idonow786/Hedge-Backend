@@ -3,6 +3,7 @@ const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const InstagramStrategy = require('passport-instagram').Strategy;
 const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+const axios = require('axios');
 const { LinkedInUser } = require('../../Model/Linkedin');
 const { TwitterUser } = require('../../Model/Twitter');
 const TwitterStrategy = require('passport-twitter').Strategy;
@@ -84,7 +85,7 @@ passport.use(new FacebookStrategy({
 // LinkedIn Strategy
 
 
-const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+
 
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
@@ -96,18 +97,34 @@ passport.use(new LinkedInStrategy({
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
+    // Manually fetch the user profile from LinkedIn API
+    const profileResponse = await axios.get('https://api.linkedin.com/v2/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    const emailResponse = await axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    const linkedinProfile = profileResponse.data;
+    const linkedinEmail = emailResponse.data.elements[0]['handle~'].emailAddress;
+
     const adminId = req.query.state;
-    let user = await LinkedInUser.findOne({ linkedinId: profile.id });
+    let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
 
     if (!user) {
       await LinkedInUser.deleteMany();
       user = new LinkedInUser({
         adminId: adminId,
-        userId: profile.id,
-        linkedinId: profile.id,
+        userId: linkedinProfile.id,
+        linkedinId: linkedinProfile.id,
         accessToken: accessToken,
-        name: profile.displayName,
-        email: profile.emails[0].value,
+        name: `${linkedinProfile.localizedFirstName} ${linkedinProfile.localizedLastName}`,
+        email: linkedinEmail,
       });
       await user.save();
     } else {
