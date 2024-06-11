@@ -89,6 +89,7 @@ passport.use(new FacebookStrategy({
 
 
 
+
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
@@ -99,6 +100,7 @@ passport.use(new LinkedInStrategy({
 },
 async (req, accessToken, refreshToken, profile, done) => {
   try {
+    // Manually fetch the user profile from LinkedIn API
     const profileResponse = await axios.get('https://api.linkedin.com/v2/me', {
       headers: {
         Authorization: `Bearer ${accessToken}`
@@ -136,7 +138,6 @@ async (req, accessToken, refreshToken, profile, done) => {
     return done(null, user);
   } catch (error) {
     if (error.response) {
-
       console.error('LinkedIn API response error:', error.response.data);
     } else if (error.request) {
       console.error('No response received from LinkedIn API:', error.request);
@@ -147,6 +148,7 @@ async (req, accessToken, refreshToken, profile, done) => {
     return done(error, null);
   }
 }));
+
 
 
 

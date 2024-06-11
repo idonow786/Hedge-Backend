@@ -140,9 +140,9 @@ router.get('/auth/linkedin', verifyToken, (req, res) => {
 });
 
 router.get('/auth/linkedin/callback',
-  passport.authenticate('linkedin', { failureRedirect: '/failure' }),
+  passport.authenticate('linkedin', { failureRedirect: '/api/social/failure' }),
   (req, res) => {
-    res.redirect('/success');
+    res.redirect('/api/social/success');
   }
 );
 
