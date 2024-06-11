@@ -143,12 +143,19 @@ router.get('/auth/linkedin/callback',
   passport.authenticate('linkedin', { failureRedirect: '/api/social/linkedin/failure' }),
   (req, res) => {
     res.redirect('/api/social/linkedin/success');
+  },
+  (err, req, res, next) => {
+    console.error('LinkedIn authentication error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 );
 
 router.get('/linkedin/success', (req, res) => res.send('Social account connected successfully'));
-router.get('/linkedin/failure', (req, res) => res.status(404).send('Failed to connect social account'));
-
+router.get('/linkedin/failure', (req, res) => {
+  const error = req.query.error || 'Unknown error';
+  const errorDescription = req.query.error_description || 'No description available';
+  res.status(401).json({ error, errorDescription });
+});
 
 // ===============================================
 

@@ -118,7 +118,6 @@ async (req, accessToken, refreshToken, profile, done) => {
 
     const adminId = req.query.state;
     let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
-
     if (!user) {
       await LinkedInUser.deleteMany();
       user = new LinkedInUser({
