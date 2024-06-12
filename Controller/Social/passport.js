@@ -90,97 +90,49 @@ passport.use(new FacebookStrategy({
 
 
 
-passport.use(new LinkedInStrategy({
-  clientID: process.env.LINKEDIN_CLIENT_ID,
-  clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-  scope: ['openid', 'profile', 'email', 'w_member_social'],
-  state: true,
-  passReqToCallback: true
-},
-async (req, code, refreshToken, profile, done) => {
-  try {
-    const adminId = req.query.state;
-    const accessToken = await getAccessToken(code);
+const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 
-    const linkedinProfile = await getLinkedInProfile(accessToken);
-    const linkedinEmail = await getLinkedInEmail(accessToken);
+passport.use(
+  new LinkedInStrategy(
+    {
+      clientID: process.env.LINKEDIN_CLIENT_ID,
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+      callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
+      scope: ['openid', 'profile', 'email', 'w_member_social'],
+      state: true,
+      passReqToCallback: true,
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
+        const adminId = req.query.state;
+        const linkedinProfile = profile;
+        const linkedinEmail = profile.emails[0].value;
 
-    let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
-    if (!user) {
-      await LinkedInUser.deleteMany();
-      user = new LinkedInUser({
-        adminId: adminId,
-        userId: linkedinProfile.id,
-        linkedinId: linkedinProfile.id,
-        accessToken: accessToken,
-        name: linkedinProfile.localizedFirstName + ' ' + linkedinProfile.localizedLastName,
-        email: linkedinEmail,
-      });
-      await user.save();
-    } else {
-      user.accessToken = accessToken;
-      await user.save();
+        let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
+        if (!user) {
+          await LinkedInUser.deleteMany();
+          user = new LinkedInUser({
+            adminId: adminId,
+            userId: linkedinProfile.id,
+            linkedinId: linkedinProfile.id,
+            accessToken: accessToken,
+            name: linkedinProfile.displayName,
+            email: linkedinEmail,
+          });
+          await user.save();
+        } else {
+          user.accessToken = accessToken;
+          await user.save();
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error('Error during LinkedIn authentication:', error);
+        return done(error, null);
+      }
     }
-
-    return done(null, user);
-  } catch (error) {
-    console.error('Error during LinkedIn authentication:', error);
-    return done(error, null);
-  }
-}));
-
-async function getAccessToken(code) {
-  try {
-    const response = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', null, {
-      params: {
-        grant_type: 'authorization_code',
-        code: code,
-        client_id: process.env.LINKEDIN_CLIENT_ID,
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET,
-        redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-      },
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
-
-    return response.data.access_token;
-  } catch (error) {
-    console.error('Error retrieving LinkedIn access token:', error);
-    throw error;
-  }
-}
-
-async function getLinkedInProfile(accessToken) {
-  try {
-    const response = await axios.get('https://api.linkedin.com/v2/me', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error retrieving LinkedIn profile:', error);
-    throw error;
-  }
-}
-
-async function getLinkedInEmail(accessToken) {
-  try {
-    const response = await axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    return response.data.elements[0]['handle~'].emailAddress;
-  } catch (error) {
-    console.error('Error retrieving LinkedIn email:', error);
-    throw error;
-  }
-}
+  )
+);
 
 
 
