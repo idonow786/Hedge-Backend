@@ -98,12 +98,14 @@ passport.use(new LinkedInStrategy({
   state: true,
   passReqToCallback: true
 },
-async (req, accessToken, refreshToken, profile, done) => {
+async (req, code, refreshToken, profile, done) => {
   try {
-    const linkedinProfile = profile;
-    const linkedinEmail = profile.emails[0].value;
-
     const adminId = req.query.state;
+    const accessToken = await getAccessToken(code);
+
+    const linkedinProfile = await getLinkedInProfile(accessToken);
+    const linkedinEmail = await getLinkedInEmail(accessToken);
+
     let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
     if (!user) {
       await LinkedInUser.deleteMany();
@@ -112,7 +114,7 @@ async (req, accessToken, refreshToken, profile, done) => {
         userId: linkedinProfile.id,
         linkedinId: linkedinProfile.id,
         accessToken: accessToken,
-        name: linkedinProfile.displayName,
+        name: linkedinProfile.localizedFirstName + ' ' + linkedinProfile.localizedLastName,
         email: linkedinEmail,
       });
       await user.save();
@@ -127,6 +129,59 @@ async (req, accessToken, refreshToken, profile, done) => {
     return done(error, null);
   }
 }));
+
+async function getAccessToken(code) {
+  try {
+    const response = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', null, {
+      params: {
+        grant_type: 'authorization_code',
+        code: code,
+        client_id: process.env.LINKEDIN_CLIENT_ID,
+        client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+        redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Error retrieving LinkedIn access token:', error);
+    throw error;
+  }
+}
+
+async function getLinkedInProfile(accessToken) {
+  try {
+    const response = await axios.get('https://api.linkedin.com/v2/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error retrieving LinkedIn profile:', error);
+    throw error;
+  }
+}
+
+async function getLinkedInEmail(accessToken) {
+  try {
+    const response = await axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data.elements[0]['handle~'].emailAddress;
+  } catch (error) {
+    console.error('Error retrieving LinkedIn email:', error);
+    throw error;
+  }
+}
+
 
 
 
