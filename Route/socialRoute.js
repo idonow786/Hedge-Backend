@@ -149,11 +149,12 @@ router.get('/auth/linkedin/callback',
   },
   (err, req, res, next) => {
     console.error('LinkedIn authentication error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 );
-
 router.get('/linkedin/success', (req, res) => res.send('Social account connected successfully'));
+
+
 
 router.get('/linkedin/failure', (req, res) => {
   const error = req.query.error || 'Unknown error';
