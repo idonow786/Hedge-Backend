@@ -141,9 +141,12 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 //     res.status(500).json({ error: 'Internal Server Error' });
 //   }
 // });
-router.get('/auth/linkedin', verifyToken, passport.authenticate('linkedin', {
-  state: req.adminId,
-}));
+router.get('/auth/linkedin', verifyToken, (req, res, next) => {
+  const authOptions = {
+    state: req.adminId,
+  };
+  passport.authenticate('linkedin', authOptions)(req, res, next);
+});
 
 router.get(
   '/auth/linkedin/callback',
