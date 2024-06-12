@@ -90,7 +90,6 @@ passport.use(new FacebookStrategy({
 
 
 
-const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 
 passport.use(
   new LinkedInStrategy(
