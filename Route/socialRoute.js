@@ -134,13 +134,13 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 //     res.status(200).json({ authUrl });
 
 
-app.get('/auth/linkedin', verifyToken, (req, res) => {
+router.get('/auth/linkedin', verifyToken, (req, res) => {
   const state = encodeURIComponent(JSON.stringify({ adminId: req.adminId }));
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${state}&scope=r_emailaddress%20r_liteprofile`;
-  res.redirect(authUrl);
+  res.send(authUrl);
 });
 
-app.get(
+router.get(
   '/auth/linkedin/callback',
   passport.authenticate('linkedin', { failureRedirect: '/auth/linkedin/failure' }),
   (req, res) => {
@@ -148,11 +148,11 @@ app.get(
   }
 );
 
-app.get('/auth/linkedin/success', (req, res) => {
+router.get('/auth/linkedin/success', (req, res) => {
   res.send('Social account connected successfully');
 });
 
-app.get('/auth/linkedin/failure', (req, res) => {
+router.get('/auth/linkedin/failure', (req, res) => {
   const error = req.query.error || 'Unknown error';
   const errorDescription = req.query.error_description || 'No description available';
   res.status(401).json({ error, errorDescription });
