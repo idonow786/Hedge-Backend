@@ -104,9 +104,9 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        const adminId = req.query.state;
+        const adminId = JSON.parse(decodeURIComponent(req.query.state)).adminId;
         const linkedinProfile = profile;
-        const linkedinEmail = profile.emails[0].value;
+        const linkedinEmail = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
 
         let user = await LinkedInUser.findOne({ linkedinId: linkedinProfile.id });
         if (!user) {
