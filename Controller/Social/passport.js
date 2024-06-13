@@ -89,7 +89,9 @@ passport.use(new FacebookStrategy({
 
 
 
+// callbackURL: 'http://localhost:3000/api/social/auth/linkedin/callback',
 
+// scope: ['openid', 'profile', 'email', 'w_member_social'],
 
 passport.use(
   new LinkedInStrategy(
@@ -97,11 +99,10 @@ passport.use(
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
       callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-      scope: ['openid', 'profile', 'email', 'w_member_social'],
-      state: true,
+      scope: ['r_emailaddress', 'r_liteprofile'],
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) =>{
       try {
         const adminId = req.query.state;
         const linkedinProfile = profile;

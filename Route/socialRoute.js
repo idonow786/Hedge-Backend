@@ -129,36 +129,35 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 // LinkedIn Authentication
 
 // LinkedIn Authentication
-// const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=openid%20profile%20email%20w_member_social`;
+
+// const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:3000/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=openid%20profile%20email%20w_member_social`;
+//     res.status(200).json({ authUrl });
 
 
-router.get('/auth/linkedin', verifyToken, (req, res) => {
-  try {
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=openid%20profile%20email%20w_member_social`;
-    res.status(200).json({ authUrl });
-  } catch (error) {
-    console.error('Error generating LinkedIn authentication URL:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+app.get('/auth/linkedin', verifyToken, (req, res) => {
+  const state = encodeURIComponent(JSON.stringify({ adminId: req.adminId }));
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${state}&scope=r_emailaddress%20r_liteprofile`;
+  res.redirect(authUrl);
 });
 
-router.get(
+app.get(
   '/auth/linkedin/callback',
-  passport.authenticate('linkedin', { failureRedirect: '/api/social/linkedin/failure' }),
+  passport.authenticate('linkedin', { failureRedirect: '/auth/linkedin/failure' }),
   (req, res) => {
-    res.redirect('/api/social/linkedin/success');
-  },
-  (err, req, res, next) => {
-    console.error('LinkedIn authentication error:', err);
-    res.status(500).json({ error: err.message || 'Internal Server Error' });
+    res.redirect('/auth/linkedin/success');
   }
 );
-router.get('/linkedin/success', (req, res) => res.send('Social account connected successfully'));
-router.get('/linkedin/failure', (req, res) => {
+
+app.get('/auth/linkedin/success', (req, res) => {
+  res.send('Social account connected successfully');
+});
+
+app.get('/auth/linkedin/failure', (req, res) => {
   const error = req.query.error || 'Unknown error';
   const errorDescription = req.query.error_description || 'No description available';
   res.status(401).json({ error, errorDescription });
 });
+
 
 // ===============================================
 
