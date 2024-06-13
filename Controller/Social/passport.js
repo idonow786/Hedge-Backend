@@ -99,10 +99,10 @@ passport.use(
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
       callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-      scope: ['r_emailaddress', 'r_liteprofile'],
+      scope: ['openid', 'profile', 'email', 'w_member_social'],
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) =>{
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         const adminId = req.query.state;
         const linkedinProfile = profile;
@@ -151,56 +151,56 @@ passport.use(new TwitterStrategy({
   callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
-async (req, token, tokenSecret, profile, done) => {
-  try {
-    const adminId = decodeURIComponent(req.query.state);
+  async (req, token, tokenSecret, profile, done) => {
+    try {
+      const adminId = decodeURIComponent(req.query.state);
 
-    if (!adminId) {
-      return done(new Error('Missing adminId'), null);
-    }
-
-    let user = await TwitterUser.findOne({ twitterId: profile.id });
-
-    if (!user) {
-      await TwitterUser.deleteMany()
-      user = new TwitterUser({
-        adminId: adminId,
-        userId: profile.id,
-        twitterId: profile.id,
-        accessToken: token,
-        accessTokenSecret: tokenSecret,
-        name: profile.displayName,
-        username: profile.username,
-      });
-
-      try {
-        await user.save();
-      } catch (error) {
-        if (error.name === 'ValidationError') {
-          return done(new Error('Invalid or missing required fields'), null);
-        }
-        throw error;
+      if (!adminId) {
+        return done(new Error('Missing adminId'), null);
       }
-    } else {
-      user.accessToken = token;
-      user.accessTokenSecret = tokenSecret;
 
-      try {
-        await user.save();
-      } catch (error) {
-        if (error.name === 'ValidationError') {
-          return done(new Error('Invalid or missing required fields'), null);
+      let user = await TwitterUser.findOne({ twitterId: profile.id });
+
+      if (!user) {
+        await TwitterUser.deleteMany()
+        user = new TwitterUser({
+          adminId: adminId,
+          userId: profile.id,
+          twitterId: profile.id,
+          accessToken: token,
+          accessTokenSecret: tokenSecret,
+          name: profile.displayName,
+          username: profile.username,
+        });
+
+        try {
+          await user.save();
+        } catch (error) {
+          if (error.name === 'ValidationError') {
+            return done(new Error('Invalid or missing required fields'), null);
+          }
+          throw error;
         }
-        throw error;
-      }
-    }
+      } else {
+        user.accessToken = token;
+        user.accessTokenSecret = tokenSecret;
 
-    return done(null, user);
-  } catch (error) {
-    console.error('Error during Twitter authentication:', error);
-    return done(error, null);
-  }
-}));
+        try {
+          await user.save();
+        } catch (error) {
+          if (error.name === 'ValidationError') {
+            return done(new Error('Invalid or missing required fields'), null);
+          }
+          throw error;
+        }
+      }
+
+      return done(null, user);
+    } catch (error) {
+      console.error('Error during Twitter authentication:', error);
+      return done(error, null);
+    }
+  }));
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
