@@ -99,7 +99,7 @@ passport.use(
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
       callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
-      scope: ['openid', 'profile', 'email', 'w_member_social'],
+      scope: ['openid', 'r_liteprofile', 'email', 'w_member_social'],
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
