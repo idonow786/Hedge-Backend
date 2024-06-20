@@ -25,7 +25,7 @@ exports.getFacebookPages = async (req, res) => {
 };
 exports.createPost = async (req, res) => {
   try {
-    const { title, description, facebook, pageId,linkedin } = req.body;
+    const { title, description, facebook, pageId, linkedin } = req.body;
     const adminId = req.adminId;
 
     // Upload images to Firebase Storage
@@ -67,17 +67,17 @@ exports.createPost = async (req, res) => {
     // }
     // Post on LinkedIn
     if (linkedin) {
-      const mediaFiles = req.files; 
-  try {
-    const result = await postToLinkedIn(adminId, title, description, mediaFiles);
-    res.status(200).json({ success: true, data: result });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+      const mediaFiles = req.files;
+      try {
+        const result = await postToLinkedIn(adminId, title, description, mediaFiles);
+        console.log(result);
+      } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+      }
     }
 
     // Post on Twitter
-    if (twitterUser) {
+    if (twitter) {
       const twitterAccessToken = twitterUser.accessToken;
       const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
       const twitterPostUrl = 'https://api.twitter.com/2/tweets';
