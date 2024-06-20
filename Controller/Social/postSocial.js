@@ -66,7 +66,7 @@ exports.createPost = async (req, res) => {
     //   post.FacebookPostId = facebookPostId;
     // }
     // Post on LinkedIn
-    if (linkedin) {
+    if (linkedin==true||linkedin=='true') {
       const mediaFiles = req.files;
       try {
         const result = await postToLinkedIn(adminId, title, description, mediaFiles);
