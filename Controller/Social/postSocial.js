@@ -5,7 +5,7 @@ const Posts = require('../../Model/Posts');
 const axios = require('axios');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const { uploadVideoToFirebase } = require('../../Firebase/uploadVideo');
-const facebookService = require('../../Service/Facebook');
+const facebookService = require('../../Service/Facebook.service');
 
 
 
@@ -25,7 +25,7 @@ exports.getFacebookPages = async (req, res) => {
 };
 exports.createPost = async (req, res) => {
   try {
-    const { title, description, facebook, pageId } = req.body;
+    const { title, description, facebook, pageId,linkedin } = req.body;
     const adminId = req.adminId;
 
     // Upload images to Firebase Storage
@@ -66,42 +66,14 @@ exports.createPost = async (req, res) => {
       post.FacebookPostId = facebookPostId;
     }
     // Post on LinkedIn
-    if (linkedinUser) {
-      const linkedinAccessToken = linkedinUser.accessToken;
-      const linkedinPostUrl = 'https://api.linkedin.com/v2/ugcPosts';
-      const linkedinPostData = {
-        author: `urn:li:person:${linkedinUser.userId}`,
-        lifecycleState: 'PUBLISHED',
-        specificContent: {
-          'com.linkedin.ugc.ShareContent': {
-            shareCommentary: {
-              text: description,
-            },
-            shareMediaCategory: 'ARTICLE',
-            media: [
-              {
-                status: 'READY',
-                description: {
-                  text: description,
-                },
-                title: {
-                  text: title,
-                },
-              },
-            ],
-          },
-        },
-        visibility: {
-          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-        },
-      };
-      const linkedinResponse = await axios.post(linkedinPostUrl, linkedinPostData, {
-        headers: {
-          Authorization: `Bearer ${linkedinAccessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      post.LinkedInPostId = linkedinResponse.data.id;
+    if (linkedin) {
+      const mediaFiles = req.files; 
+  try {
+    const result = await postToLinkedIn(adminId, title, description, mediaFiles);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
     }
 
     // Post on Twitter
