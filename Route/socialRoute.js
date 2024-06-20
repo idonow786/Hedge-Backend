@@ -11,6 +11,8 @@ const { getAuthUrl,
 const { linkedinCallback, linkedinAuth } = require('../Controller/Social/linkedin');
 const { tiktokAuth, tiktokCallback } = require('../Controller/Social/tiktok');
 const  socialController  = require('../Controller/Social/postSocial');
+const  {verifyPhoneNumber,sendMessages}  = require('../Controller/Social/whatsapp');
+
 
 
 const { verifyToken } = require('../Middleware/jwt');
@@ -59,7 +61,7 @@ app.use(express.urlencoded({ extended: true }));
 router.get('/auth/facebook', verifyToken, (req, res) => {
   console.log("APPID :",process.env.FACEBOOK_APP_ID)
   // Generate the Facebook authentication URL with the adminId in the state parameter
-  const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
+  const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
 
   // Send the URL back to the client
   res.status(200).json({ authUrl });
@@ -137,7 +139,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 router.get('/auth/linkedin', verifyToken, (req, res) => {
   const state = encodeURIComponent(JSON.stringify({ adminId: req.adminId }));
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${state}&scope=openid%20profile%20email%20w_member_social`;
-  res.send(authUrl);
+  res.status(200).json({ authUrl });
 });
 
 router.get(
@@ -180,7 +182,7 @@ router.get('/auth/linkedin/failure', (req, res) => {
 // Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
@@ -239,12 +241,29 @@ function base64URLEncode(str) {
 
 
 
+
+
+
+//Facebook Pages Get
+router.get('/pages', verifyToken, socialController.getFacebookPages);
+
+
+
+
 router.post('/posts', verifyToken, upload.array('files'), socialController.createPost);
 router.get('/posts', verifyToken, socialController.getPosts);
 router.put('/posts', verifyToken, socialController.updatePost);
 router.delete('/posts', verifyToken, socialController.deletePost);
 
 
+
+
+
+
+
+
+// /======================================================================whatsapp
+router.post('/whatsapp', verifyPhoneNumber);
 
 
 module.exports = router;

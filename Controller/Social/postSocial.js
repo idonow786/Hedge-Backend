@@ -5,10 +5,27 @@ const Posts = require('../../Model/Posts');
 const axios = require('axios');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const { uploadVideoToFirebase } = require('../../Firebase/uploadVideo');
+const facebookService = require('../../Service/Facebook');
 
+
+
+
+
+
+
+
+exports.getFacebookPages = async (req, res) => {
+  try {
+    const adminId = req.adminId;
+    const pages = await facebookService.FacebookPages(adminId);
+    res.status(200).json(pages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 exports.createPost = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, facebook, pageId } = req.body;
     const adminId = req.adminId;
 
     // Upload images to Firebase Storage
@@ -42,19 +59,12 @@ exports.createPost = async (req, res) => {
     const linkedinUser = await LinkedInUser.findOne({ adminId });
     const twitterUser = await TwitterUser.findOne({ adminId });
 
-    // Post on Facebook
-    if (facebookUser) {
-      const facebookAccessToken = facebookUser.accessToken;
-      const facebookPostUrl = `https://graph.facebook.com/me/feed?access_token=${facebookAccessToken}`;
-      const facebookPostData = {
-        message: description,
-        link: '',
-        name: title,
-      };
-      const facebookResponse = await axios.post(facebookPostUrl, facebookPostData);
-      post.FacebookPostId = facebookResponse.data.id;
-    }
 
+    // Post on Facebook if requested
+    if (facebook && pageId) {
+      const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
+      post.FacebookPostId = facebookPostId;
+    }
     // Post on LinkedIn
     if (linkedinUser) {
       const linkedinAccessToken = linkedinUser.accessToken;
