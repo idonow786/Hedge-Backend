@@ -61,10 +61,10 @@ exports.createPost = async (req, res) => {
 
 
     // Post on Facebook if requested
-    if (facebook && pageId) {
-      const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
-      post.FacebookPostId = facebookPostId;
-    }
+    // if (facebook && pageId) {
+    //   const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
+    //   post.FacebookPostId = facebookPostId;
+    // }
     // Post on LinkedIn
     if (linkedin) {
       const mediaFiles = req.files; 
