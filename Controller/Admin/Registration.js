@@ -19,7 +19,8 @@ const transporter = nodemailer.createTransport(
 // Signup controller
 const signup = async (req, res) => {
   try {
-    const { username, email, password, role, businessName } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType } = req.body;
+
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
         return res.status(400).json({ message: 'You are not Super Admin' });
@@ -64,6 +65,12 @@ const signup = async (req, res) => {
       const newBusiness = new Business({
         AdminID: savedUser._id,
         BusinessName: businessName,
+        BusinessAddress: BusinessAddress,
+        BusinessPhoneNo: BusinessPhoneNo,
+        BusinessEmail: BusinessEmail,
+        OwnerName: OwnerName,
+        YearofEstablishment: YearofEstablishment,
+        BusinessType: BusinessType,
       });
 
       await newBusiness.save();

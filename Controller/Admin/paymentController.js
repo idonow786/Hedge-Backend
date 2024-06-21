@@ -2,16 +2,29 @@ const Payment = require('../../Model/Payment');
 
 const addPayment = async (req, res) => {
   try {
-    const { UserID, SubscriptionMonth, Amount, Currency, PaymentMethod } = req.body;
+    const { UserID, SubscriptionMonth, Amount, Currency, PaymentMethod, Features, TotalStaff, TotalExpenses, TotalCustomers, TotalSocialMediaPosts } = req.body;
+
     if (req.role !== 'superadmin') {
-        return res.status(400).json({ message: 'You are not Super Admin' });
-      }
+      return res.status(400).json({ message: 'You are not Super Admin' });
+    }
+
     const newPayment = new Payment({
       UserID,
       SubscriptionMonth,
       Amount,
       Currency,
       PaymentMethod,
+      Features: {
+        Expense: Features?.Expense ?? false,
+        Projects: Features?.Projects ?? false,
+        Customers: Features?.Customers ?? false,
+        Staff: Features?.Staff ?? false,
+        SocialMedia: Features?.SocialMedia ?? false,
+      },
+      TotalStaff: TotalStaff ?? 0,
+      TotalExpenses: TotalExpenses ?? 0,
+      TotalCustomers: TotalCustomers ?? 0,
+      TotalSocialMediaPosts: TotalSocialMediaPosts ?? 0,
     });
 
     const savedPayment = await newPayment.save();
@@ -24,13 +37,14 @@ const addPayment = async (req, res) => {
 };
 
 
+
 const updatePayment = async (req, res) => {
   try {
     if (req.role !== 'superadmin') {
-        return res.status(400).json({ message: 'You are not Super Admin' });
+      return res.status(400).json({ message: 'You are not Super Admin' });
     }
 
-    const { paymentId, SubscriptionMonth, Amount, Currency, PaymentMethod, Status } = req.body;
+    const { paymentId, SubscriptionMonth, Amount, Currency, PaymentMethod, Status, Features, TotalStaff, TotalExpenses, TotalCustomers, TotalSocialMediaPosts } = req.body;
 
     const updateFields = {};
     if (SubscriptionMonth !== undefined) updateFields.SubscriptionMonth = SubscriptionMonth;
@@ -38,6 +52,21 @@ const updatePayment = async (req, res) => {
     if (Currency !== undefined) updateFields.Currency = Currency;
     if (PaymentMethod !== undefined) updateFields.PaymentMethod = PaymentMethod;
     if (Status !== undefined) updateFields.Status = Status;
+
+    if (Features !== undefined) {
+      updateFields.Features = {
+        Expense: Features.Expense ?? false,
+        Projects: Features.Projects ?? false,
+        Customers: Features.Customers ?? false,
+        Staff: Features.Staff ?? false,
+        SocialMedia: Features.SocialMedia ?? false,
+      };
+    }
+
+    if (TotalStaff !== undefined) updateFields.TotalStaff = TotalStaff;
+    if (TotalExpenses !== undefined) updateFields.TotalExpenses = TotalExpenses;
+    if (TotalCustomers !== undefined) updateFields.TotalCustomers = TotalCustomers;
+    if (TotalSocialMediaPosts !== undefined) updateFields.TotalSocialMediaPosts = TotalSocialMediaPosts;
 
     const updatedPayment = await Payment.findByIdAndUpdate(
       paymentId,
@@ -55,6 +84,7 @@ const updatePayment = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 

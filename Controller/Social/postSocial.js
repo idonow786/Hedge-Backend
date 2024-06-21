@@ -5,7 +5,8 @@ const Posts = require('../../Model/Posts');
 const axios = require('axios');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const { uploadVideoToFirebase } = require('../../Firebase/uploadVideo');
-const facebookService = require('../../Service/Facebook.service');
+const {facebookService} = require('../../Service/Facebook.service');
+const {postToLinkedIn} = require('../../Service/Linkedin.service');
 
 
 
