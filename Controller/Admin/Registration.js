@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport(
 // Signup controller
 const signup = async (req, res) => {
   try {
-    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType } = req.body;
 
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
@@ -71,6 +71,7 @@ const signup = async (req, res) => {
         OwnerName: OwnerName,
         YearofEstablishment: YearofEstablishment,
         BusinessType: BusinessType,
+        CompanyType: CompanyType,
       });
 
       await newBusiness.save();
@@ -103,6 +104,77 @@ const signup = async (req, res) => {
     res.status(201).json({ message: 'User created successfully', user: savedUser, role: savedUser.role });
   } catch (error) {
     console.error('Error signing up:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType } = req.body;
+
+    let user;
+    if (role === 'superadmin') {
+      user = await SuperAdmin.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'Super Admin not found' });
+      }
+    } else {
+      user = await Admin.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+    }
+
+    if (username) user.Name = username;
+    if (email) user.Email = email;
+    if (password) user.Password = await bcrypt.hash(password, 10);
+
+    const updatedUser = await user.save();
+
+    if (role !== 'superadmin') {
+      const business = await Business.findOne({ AdminID: id });
+      if (business) {
+        if (businessName) business.BusinessName = businessName;
+        if (BusinessAddress) business.BusinessAddress = BusinessAddress;
+        if (BusinessPhoneNo) business.BusinessPhoneNo = BusinessPhoneNo;
+        if (BusinessEmail) business.BusinessEmail = BusinessEmail;
+        if (OwnerName) business.OwnerName = OwnerName;
+        if (YearofEstablishment) business.YearofEstablishment = YearofEstablishment;
+        if (BusinessType) business.BusinessType = BusinessType;
+        if (CompanyType) business.CompanyType = CompanyType;
+
+        await business.save();
+      }
+    }
+
+    res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+const deleteUser = async (req, res) => {
+  try {
+    const { id, role } = req.body;
+
+    let user;
+    if (role === 'superadmin') {
+      user = await SuperAdmin.findByIdAndDelete(id);
+      if (!user) {
+        return res.status(404).json({ message: 'Super Admin not found' });
+      }
+    } else {
+      user = await Admin.findByIdAndDelete(id);
+      if (!user) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+
+      await Business.findOneAndDelete({ AdminID: id });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -152,4 +224,4 @@ const signin = async (req, res) => {
 };
 
 
-module.exports = { signup, signin };
+module.exports = { signup, signin ,updateUser,deleteUser};

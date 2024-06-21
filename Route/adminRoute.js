@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {signup,signin} = require('../Controller/Admin/Registration');
+const {signup,signin, updateUser,deleteUser} = require('../Controller/Admin/Registration');
 const { verifyOtp,generateOtp,updatePassword } = require('../Controller/Admin/ForgetPassword');
 const {deletePayment,updatePayment,addPayment,getPayments} = require('../Controller/Admin/paymentController');
 const {getAdminProfile,getAllUsersWithBusinesses,DeleteUser} = require('../Controller/Admin/profile');
@@ -24,6 +24,9 @@ const upload = multer({
   
 
 router.post('/signup',verifyToken, signup);                                                                                   //working
+router.put('/update/user',verifyToken, updateUser);                                                                                   //working
+router.delete('/delete/user',verifyToken, deleteUser);                                                                                   //working
+
 router.post('/signin', signin);                                                                                   //working
 router.get('/profile',verifyToken, getAdminProfile);                                                              //working
 router.put('/profile/update', verifyToken, upload.single('profilePic'), updateAdminProfile);                      //working
