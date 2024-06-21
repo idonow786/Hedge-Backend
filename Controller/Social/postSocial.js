@@ -26,7 +26,7 @@ exports.getFacebookPages = async (req, res) => {
 };
 exports.createPost = async (req, res) => {
   try {
-    const { title, description, facebook, pageId, linkedin,twitter } = req.body;
+    const { title, description, facebook, pageId, linkedin, twitter } = req.body;
     const adminId = req.adminId;
 
     // Upload images to Firebase Storage
@@ -55,6 +55,7 @@ exports.createPost = async (req, res) => {
 
     await post.save();
 
+
     // Get user details from the models based on adminId
     const facebookUser = await FacebookUser.findOne({ adminId });
     const linkedinUser = await LinkedInUser.findOne({ adminId });
@@ -62,10 +63,11 @@ exports.createPost = async (req, res) => {
 
 
     // Post on Facebook if requested
-    // if (facebook && pageId) {
-    //   const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
-    //   post.FacebookPostId = facebookPostId;
-    // }
+    if (facebook && pageId) {
+      const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
+      post.FacebookPostId = facebookPostId;
+    }
+    // Post on LinkedIn
     // Post on LinkedIn
     if (linkedin === true || linkedin === 'true') {
       const mediaFiles = req.files;
@@ -76,6 +78,7 @@ exports.createPost = async (req, res) => {
         console.error('Error posting to LinkedIn:', error);
       }
     }
+
     // Post on Twitter
     if (twitter) {
       const twitterAccessToken = twitterUser.accessToken;
@@ -92,7 +95,7 @@ exports.createPost = async (req, res) => {
       });
       post.TwitterPostId = twitterResponse.data.data.id;
     }
-    console.log("Post Obj: ",post)
+
     await post.save();
 
     res.status(201).json({ message: 'Post created successfully' });

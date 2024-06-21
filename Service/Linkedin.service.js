@@ -11,7 +11,7 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
   }
 
   const linkedInAccessToken = linkedInUser.accessToken;
-  const linkedInPostUrl = `https://api.linkedin.com/v2/shares`;
+  const linkedInPostUrl = `https://api.linkedin.com/v2/ugcPosts`;
 
   // Upload images to Firebase Storage if any
   const imageUrls = await Promise.all(
@@ -29,23 +29,39 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
     })
   );
 
-  const content = {
-    title: title,
-    description: description,
-    media: [
-      ...imageUrls.map(url => ({ media: url })),
-      ...videoUrls.map(url => ({ media: url }))
-    ]
-  };
+  const media = [
+    ...imageUrls.map(url => ({
+      status: 'READY',
+      description: {
+        text: title
+      },
+      originalUrl: url,
+      mediaType: 'IMAGE'
+    })),
+    ...videoUrls.map(url => ({
+      status: 'READY',
+      description: {
+        text: title
+      },
+      originalUrl: url,
+      mediaType: 'VIDEO'
+    }))
+  ];
 
   const linkedInPostData = {
-    owner: `urn:li:person:${linkedInUser.linkedinId}`,
-    text: {
-      text: description
+    author: `urn:li:person:${linkedInUser.linkedinId}`,
+    lifecycleState: 'PUBLISHED',
+    specificContent: {
+      'com.linkedin.ugc.ShareContent': {
+        shareCommentary: {
+          text: description
+        },
+        shareMediaCategory: 'IMAGE',
+        media: media
+      }
     },
-    content: content,
-    distribution: {
-      linkedInDistributionTarget: {}
+    visibility: {
+      'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
     }
   };
 
@@ -55,7 +71,8 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
       'Content-Type': 'application/json'
     }
   });
-  console.log('LinkedIn response: ', response.data)
+
+  console.log('LinkedIn response: ', response.data);
   return response.data.id;
 };
 
