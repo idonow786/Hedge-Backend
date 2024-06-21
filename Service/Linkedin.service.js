@@ -65,7 +65,7 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
 
   // Retrieve LinkedIn user details
   const userDetails = await getLinkedInUserDetails(linkedInAccessToken);
-  const personURN = `urn:li:person:${userDetails.sub}`;
+  const personURN = `urn:li:person:${userDetails.id}`;
 
   const linkedInPostUrl = `https://api.linkedin.com/v2/ugcPosts`;
 
@@ -95,12 +95,19 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
       description: {
         text: title
       },
-      media: asset,
-      mediaType: mediaType
+      media: {
+        title: {
+          text: title
+        },
+        originalUrl: url,
+        mediaType: mediaType,
+        asset: asset
+      }
     });
   }
 
-  const linkedInPostData = {
+  // Create the LinkedIn post
+  const postData = {
     author: personURN,
     lifecycleState: 'PUBLISHED',
     specificContent: {
@@ -108,7 +115,7 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
         shareCommentary: {
           text: description
         },
-        shareMediaCategory: 'IMAGE',
+        shareMediaCategory: media.length > 0 ? 'IMAGE' : 'NONE',
         media: media
       }
     },
@@ -117,8 +124,7 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
     }
   };
 
-  // Create the post on LinkedIn
-  await axios.post(linkedInPostUrl, linkedInPostData, {
+  await axios.post(linkedInPostUrl, postData, {
     headers: {
       'Authorization': `Bearer ${linkedInAccessToken}`,
       'Content-Type': 'application/json'
