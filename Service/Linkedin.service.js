@@ -1,8 +1,8 @@
 // services/linkedin.js
 const axios = require('axios');
-const { LinkedInUser } = require('../models/LinkedInUser');
-const { uploadImageToFirebase } = require('../firebase/uploadImage');
-const { uploadVideoToFirebase } = require('../firebase/uploadVideo');
+const { LinkedInUser } = require('../Model/Linkedin');
+const { uploadImageToFirebase } = require('../Firebase/uploadImage');
+const { uploadVideoToFirebase } = require('../Firebase/uploadVideo');
 
 const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
   const linkedInUser = await LinkedInUser.findOne({ adminId });
