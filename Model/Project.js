@@ -32,6 +32,9 @@ const projectSchema = new mongoose.Schema({
   Budget: {
     type: String,
   },
+  ProgressUpdate: {
+    type: String,
+  },
   DynamicFields: [
     {
       key: {

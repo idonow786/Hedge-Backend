@@ -11,6 +11,7 @@ const addProject = async (req, res) => {
       StartDate,
       Deadline,
       Budget,
+      ProgressUpdate,
       DynamicFields,
       CustomerId,
     } = req.body;
@@ -59,6 +60,7 @@ const addProject = async (req, res) => {
       CustomerId,
       BusinessID: business._id,
       Budget,
+      ProgressUpdate,
       DynamicFields,
     });
 

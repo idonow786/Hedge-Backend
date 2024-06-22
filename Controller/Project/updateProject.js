@@ -11,6 +11,7 @@ const updateProject = async (req, res) => {
       StartDate,
       Deadline,
       Budget,
+      ProgressUpdate,
       DynamicFields,
     } = req.body;
 
@@ -39,6 +40,7 @@ const updateProject = async (req, res) => {
     project.StartDate = StartDate || project.StartDate;
     project.Deadline = Deadline || project.Deadline;
     project.Budget = Budget || project.Budget;
+    project.ProgressUpdate = ProgressUpdate || project.ProgressUpdate;
 
     if (DynamicFields) {
       project.DynamicFields = DynamicFields;
