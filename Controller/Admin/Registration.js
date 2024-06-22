@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport(
 // Signup controller
 const signup = async (req, res) => {
   try {
-    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType,CompanyActivity } = req.body;
 
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
@@ -72,6 +72,7 @@ const signup = async (req, res) => {
         YearofEstablishment: YearofEstablishment,
         BusinessType: BusinessType,
         CompanyType: CompanyType,
+        CompanyActivity: CompanyActivity
       });
 
       await newBusiness.save();
@@ -110,7 +111,7 @@ const signup = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.body;
-    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType,CompanyActivity } = req.body;
 
     let user;
     if (role === 'superadmin') {
@@ -142,6 +143,7 @@ const updateUser = async (req, res) => {
         if (YearofEstablishment) business.YearofEstablishment = YearofEstablishment;
         if (BusinessType) business.BusinessType = BusinessType;
         if (CompanyType) business.CompanyType = CompanyType;
+        if (CompanyActivity) business.CompanyActivity = CompanyActivity;
 
         await business.save();
       }
