@@ -188,6 +188,8 @@ const signin = async (req, res) => {
 
     let user;
     let secretKey;
+    let features = null;
+    let totals = null;
 
     user = await SuperAdmin.findOne({ Email: email });
     if (user) {
@@ -205,11 +207,22 @@ const signin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    if (user.role != 'superadmin') {
+
+    if (user.role !== 'superadmin') {
       const payment = await Payment.findOne({ UserID: user._id });
+      console.log(payment);
       if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
         return res.status(404).json({ message: 'Payment not completed' });
       }
+      
+      // Extract features and totals from the payment
+      features = payment.Features;
+      totals = {
+        TotalStaff: payment.TotalStaff,
+        TotalExpenses: payment.TotalExpenses,
+        TotalCustomers: payment.TotalCustomers,
+        TotalSocialMediaPosts: payment.TotalSocialMediaPosts
+      };
     }
 
     const token = jwt.sign(
@@ -218,12 +231,19 @@ const signin = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.status(200).json({ message: 'Signin successful', token, role: user.role });
+    res.status(200).json({ 
+      message: 'Signin successful', 
+      token, 
+      role: user.role,
+      features,
+      totals
+    });
   } catch (error) {
     console.error('Error signing in:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 module.exports = { signup, signin ,updateUser,deleteUser};

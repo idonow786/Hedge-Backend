@@ -38,25 +38,30 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const users = [...admins, ...superAdmins];
 
-    const usersWithPayments = await Promise.all(users.map(async (user) => {
+    const usersWithBusinessesAndPayments = await Promise.all(users.map(async (user) => {
       const payments = await Payment.find({ UserID: user._id });
       let status = 'No Payments';
       if (payments.length > 0) {
         status = payments[0].Status;
       }
+
+      const businesses = await Business.find({ AdminID: user._id });
+
       return {
         ...user.toObject(),
         status,
-        payments
+        payments,
+        businesses
       };
     }));
 
-    res.status(200).json({ users: usersWithPayments });
+    res.status(200).json({ users: usersWithBusinessesAndPayments });
   } catch (error) {
     console.error('Error getting users with businesses:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 const DeleteUser = async (req, res) => {
   try {
     if (req.role !== 'superadmin') {
