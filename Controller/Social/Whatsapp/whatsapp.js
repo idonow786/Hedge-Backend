@@ -5,8 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
 const axios = require('axios');
-const WhatsApp = require('../../Model/whatsapp');
-const { WHATSAPP_API_URL, ACCESS_TOKEN } = require('../../Config/whatsappconfig');
+const WhatsApp = require('../../../Model/whatsapp');
+const { WHATSAPP_API_URL, ACCESS_TOKEN } = require('../../../Config/whatsappconfig');
 
 const getPhoneNumberId = async (phoneNumber) => {
     try {

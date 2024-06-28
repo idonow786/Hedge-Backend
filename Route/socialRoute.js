@@ -11,7 +11,23 @@ const { getAuthUrl,
 const { linkedinCallback, linkedinAuth } = require('../Controller/Social/linkedin');
 const { tiktokAuth, tiktokCallback } = require('../Controller/Social/tiktok');
 const  socialController  = require('../Controller/Social/postSocial');
-const  {verifyPhoneNumber,sendMessages}  = require('../Controller/Social/whatsapp');
+
+
+
+
+
+
+
+
+
+const  {sendMessages}  = require('../Controller/Social/Whatsapp/sendMessage')
+const  {verifyPhoneNumber}  = require('../Controller/Social/Whatsapp/verifyPhone');
+const  {deleteMessage}  = require('../Controller/Social/Whatsapp/deleteMessage');
+const  { verifyWebhook, handleWebhook}  = require('../Controller/Social/Whatsapp/webhookController');
+const  {replyToCustomer,getAllMessages}  = require('../Controller/Social/Whatsapp/replyMessage');
+
+
+
 
 
 
@@ -124,14 +140,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 
 
 //==========================================LINKEDIN
-// router.get('/auth/linkedin', verifyToken, linkedinAuth);
-// router.get('/auth/linkedin/callback', linkedinCallback);
-
 // LinkedIn Authentication
-// LinkedIn Authentication
-
-// LinkedIn Authentication
-
 // const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:3000/api/social/auth/linkedin/callback')}&state=${req.adminId}&scope=openid%20profile%20email%20w_member_social`;
 //     res.status(200).json({ authUrl });
 
@@ -263,7 +272,14 @@ router.delete('/posts', verifyToken, socialController.deletePost);
 
 
 // /======================================================================whatsapp
-router.post('/whatsapp', verifyPhoneNumber);
+router.post('/whatsapp/verify/number',verifyToken, verifyPhoneNumber);
+router.post('/whatsapp/sendmessage',verifyToken, sendMessages);
+router.delete('/whatsapp/deletemessage',verifyToken, deleteMessage);
+router.get('/whatsapp/verify/webhook', verifyWebhook);
+router.post('/whatsapp/verify/webhook', handleWebhook);
+router.post('/whatsapp/reply/customer',verifyToken, replyToCustomer);
+router.get('/whatsapp/messages',verifyToken, getAllMessages);
+
 
 
 module.exports = router;
