@@ -11,7 +11,7 @@ const { getAuthUrl,
 const { linkedinCallback, linkedinAuth } = require('../Controller/Social/linkedin');
 const { tiktokAuth, tiktokCallback } = require('../Controller/Social/tiktok');
 const socialController = require('../Controller/Social/postSocial');
-
+const { TwitterUser } = require('../Model/Twitter');
 
 
 
