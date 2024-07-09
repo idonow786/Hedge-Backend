@@ -189,26 +189,100 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 
 // Twitter Authentication
-router.get('/auth/twitter', verifyToken, (req, res) => {
+// router.get('/auth/twitter', verifyToken, (req, res) => {
+//   try {
+//     const state = encodeURIComponent(req.adminId);
+//     console.log('Generated state:', state);
+//     const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+//     res.status(200).json({ authUrl });
+//   } catch (error) {
+//     console.error('Error generating Twitter authentication URL:', error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// });
+
+
+
+// router.get('/auth/twitter/callback',
+//   passport.authenticate('twitter', { failureRedirect: '/failure' }),
+//   (req, res) => {
+//     res.redirect('/success');
+//   }
+// );
+
+const { TwitterApi } = require('twitter-api-v2');
+
+// Initialize Twitter client
+const client = new TwitterApi({
+  clientId: process.env.TWITTER_CLIENT_ID,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET,
+});
+
+router.get('/auth/twitter', verifyToken, async (req, res) => {
   try {
     const state = encodeURIComponent(req.adminId);
-    console.log('Generated state:', state);
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
-    res.status(200).json({ authUrl });
+    console.log('Generated state:', state); // Log the state parameter
+
+    const { url, codeVerifier, state: generatedState } = client.generateOAuth2AuthLink(
+      'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+      { scope: ['tweet.read', 'tweet.write', 'users.read', 'follows.read', 'offline.access'], state }
+    );
+
+    // Store codeVerifier and state in session or database for later use
+    req.session.codeVerifier = codeVerifier;
+    req.session.state = generatedState;
+
+    console.log('Generated auth URL:', url); // Log the entire authorization URL
+    res.status(200).json({ authUrl: url });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
+router.get('/auth/twitter/callback', async (req, res) => {
+  try {
+    const { state, code } = req.query;
+    console.log('Request query:', req.query); // Log the entire request query
 
+    // Verify state parameter
+    if (state !== req.session.state) {
+      throw new Error('Invalid state parameter');
+    }
 
-router.get('/auth/twitter/callback',
-  passport.authenticate('twitter', { failureRedirect: '/failure' }),
-  (req, res) => {
-    res.redirect('/success');
+    const client = new TwitterApi({
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
+    });
+
+    const { client: loggedClient, accessToken, refreshToken } = await client.loginWithOAuth2({
+      code,
+      codeVerifier: req.session.codeVerifier,
+      redirectUri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+    });
+
+    // Use loggedClient to make authenticated requests
+    const { data: user } = await loggedClient.v2.me();
+
+    // Save user details and tokens in database
+    const twitterUser = new TwitterUser({
+      adminId: decodeURIComponent(state),
+      userId: user.id,
+      twitterId: user.id,
+      accessToken,
+      refreshToken,
+      name: user.name,
+      username: user.username,
+    });
+
+    await twitterUser.save();
+
+    res.status(200).json({ message: 'Authentication successful', user: twitterUser });
+  } catch (error) {
+    console.error('Error during Twitter authentication:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-);
+});
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
