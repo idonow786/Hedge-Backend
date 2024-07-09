@@ -155,6 +155,8 @@ passport.use(new TwitterStrategy({
     try {
       const adminId = decodeURIComponent(req.query.state);
       console.log('Decoded adminId:', adminId); // Log the decoded state
+      console.log('state adminId:', req.query.state); // Log the decoded state
+      console.log('query adminId:', req.query); // Log the decoded state
 
       if (!adminId) {
         return done(new Error('Missing adminId'), null);
