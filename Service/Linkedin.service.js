@@ -1,4 +1,3 @@
-// services/linkedin.js
 const axios = require('axios');
 const { LinkedInUser } = require('../Model/Linkedin');
 const { uploadImageToFirebase } = require('../Firebase/uploadImage');
@@ -17,9 +16,9 @@ const getLinkedInUserDetails = async (linkedInAccessToken) => {
   return response.data;
 };
 
-// Function to upload media to LinkedIn
-const uploadMediaToLinkedIn = async (linkedInAccessToken, mediaUrl, mediaType, personURN) => {
-  const uploadUrl = 'https://api.linkedin.com/v2/assets?action=registerUpload';
+// Function to register media upload to LinkedIn
+const registerMediaUpload = async (linkedInAccessToken, personURN, mediaType) => {
+  const registerUploadUrl = 'https://api.linkedin.com/v2/assets?action=registerUpload';
 
   const registerUploadData = {
     registerUploadRequest: {
@@ -34,24 +33,23 @@ const uploadMediaToLinkedIn = async (linkedInAccessToken, mediaUrl, mediaType, p
     }
   };
 
-  const registerUploadResponse = await axios.post(uploadUrl, registerUploadData, {
+  const response = await axios.post(registerUploadUrl, registerUploadData, {
     headers: {
       'Authorization': `Bearer ${linkedInAccessToken}`,
       'Content-Type': 'application/json'
     }
   });
 
-  const { uploadUrl: uploadDestination, asset } = registerUploadResponse.data.value;
+  return response.data.value;
+};
 
-  // Upload the media to LinkedIn's storage
-  await axios.put(uploadDestination, mediaUrl, {
+// Function to upload media to LinkedIn
+const uploadMediaToLinkedIn = async (uploadUrl, mediaBuffer, mediaType) => {
+  await axios.put(uploadUrl, mediaBuffer, {
     headers: {
-      'Authorization': `Bearer ${linkedInAccessToken}`,
       'Content-Type': mediaType.startsWith('image/') ? 'image/jpeg' : 'video/mp4'
     }
   });
-
-  return asset;
 };
 
 // Function to create a post on LinkedIn
@@ -85,23 +83,20 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
     })
   );
 
-  // Upload media to LinkedIn and get URNs
+  // Register and upload media to LinkedIn and get URNs
   const media = [];
-  for (const url of [...imageUrls, ...videoUrls]) {
-    const mediaType = url.includes('.mp4') ? 'VIDEO' : 'IMAGE';
-    const asset = await uploadMediaToLinkedIn(linkedInAccessToken, url, mediaType, personURN);
+  for (const file of mediaFiles) {
+    const mediaType = file.mimetype.startsWith('image/') ? 'IMAGE' : 'VIDEO';
+    const { uploadMechanism, asset } = await registerMediaUpload(linkedInAccessToken, personURN, mediaType);
+    await uploadMediaToLinkedIn(uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl, file.buffer, file.mimetype);
     media.push({
       status: 'READY',
       description: {
         text: title
       },
-      media: {
-        title: {
-          text: title
-        },
-        originalUrl: url,
-        mediaType: mediaType,
-        asset: asset
+      media: asset,
+      title: {
+        text: title
       }
     });
   }
@@ -115,8 +110,8 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
         shareCommentary: {
           text: description
         },
-        shareMediaCategory: media.length > 0 ? 'IMAGE' : 'NONE',
-        media: media
+        shareMediaCategory: media.length > 0 ? (media[0].media.includes('video') ? 'VIDEO' : 'IMAGE') : 'NONE',
+        media: media.length > 0 ? media : undefined
       }
     },
     visibility: {
@@ -124,12 +119,14 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
     }
   };
 
-  await axios.post(linkedInPostUrl, postData, {
+  const response = await axios.post(linkedInPostUrl, postData, {
     headers: {
       'Authorization': `Bearer ${linkedInAccessToken}`,
       'Content-Type': 'application/json'
     }
   });
+
+  return response.data.id;
 };
 
 module.exports = {
