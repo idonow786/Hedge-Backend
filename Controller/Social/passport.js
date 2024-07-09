@@ -154,6 +154,7 @@ passport.use(new TwitterStrategy({
   async (req, token, tokenSecret, profile, done) => {
     try {
       const adminId = decodeURIComponent(req.query.state);
+      console.log('Decoded adminId:', adminId); // Log the decoded state
 
       if (!adminId) {
         return done(new Error('Missing adminId'), null);
@@ -202,6 +203,7 @@ passport.use(new TwitterStrategy({
     }
   }
 ));
+
 
 
 passport.serializeUser((user, done) => {

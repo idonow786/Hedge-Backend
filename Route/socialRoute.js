@@ -192,14 +192,15 @@ router.get('/auth/linkedin/failure', (req, res) => {
 router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
     const state = encodeURIComponent(req.adminId);
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
-
+    console.log('Generated state:', state);
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 router.get('/auth/twitter/callback',
