@@ -6,11 +6,11 @@ const crypto = require('crypto');
 const multer = require('multer');
 const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
 const { getAuthUrl,
-    handleCallback,
-    postTweet } = require('../Controller/Social/twitter');
+  handleCallback,
+  postTweet } = require('../Controller/Social/twitter');
 const { linkedinCallback, linkedinAuth } = require('../Controller/Social/linkedin');
 const { tiktokAuth, tiktokCallback } = require('../Controller/Social/tiktok');
-const  socialController  = require('../Controller/Social/postSocial');
+const socialController = require('../Controller/Social/postSocial');
 
 
 
@@ -20,11 +20,11 @@ const  socialController  = require('../Controller/Social/postSocial');
 
 
 
-const  {sendMessages}  = require('../Controller/Social/Whatsapp/sendMessage')
-const  {verifyPhoneNumber}  = require('../Controller/Social/Whatsapp/verifyPhone');
-const  {deleteMessage}  = require('../Controller/Social/Whatsapp/deleteMessage');
-const  { verifyWebhook, handleWebhook}  = require('../Controller/Social/Whatsapp/webhookController');
-const  {replyToCustomer,getAllMessages}  = require('../Controller/Social/Whatsapp/replyMessage');
+const { sendMessages } = require('../Controller/Social/Whatsapp/sendMessage')
+const { verifyPhoneNumber } = require('../Controller/Social/Whatsapp/verifyPhone');
+const { deleteMessage } = require('../Controller/Social/Whatsapp/deleteMessage');
+const { verifyWebhook, handleWebhook } = require('../Controller/Social/Whatsapp/webhookController');
+const { replyToCustomer, getAllMessages } = require('../Controller/Social/Whatsapp/replyMessage');
 
 
 
@@ -75,7 +75,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //facebook passport
 router.get('/auth/facebook', verifyToken, (req, res) => {
-  console.log("APPID :",process.env.FACEBOOK_APP_ID)
+  console.log("APPID :", process.env.FACEBOOK_APP_ID)
   // Generate the Facebook authentication URL with the adminId in the state parameter
   const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
 
@@ -191,13 +191,16 @@ router.get('/auth/linkedin/failure', (req, res) => {
 // Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+    const state = encodeURIComponent(req.adminId);
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${encodeURIComponent(req.adminId)}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 router.get('/auth/twitter/callback',
   passport.authenticate('twitter', { failureRedirect: '/failure' }),
@@ -272,13 +275,13 @@ router.delete('/posts', verifyToken, socialController.deletePost);
 
 
 // /======================================================================whatsapp
-router.post('/whatsapp/verify/number',verifyToken, verifyPhoneNumber);
-router.post('/whatsapp/sendmessage',verifyToken, sendMessages);
-router.delete('/whatsapp/deletemessage',verifyToken, deleteMessage);
+router.post('/whatsapp/verify/number', verifyToken, verifyPhoneNumber);
+router.post('/whatsapp/sendmessage', verifyToken, sendMessages);
+router.delete('/whatsapp/deletemessage', verifyToken, deleteMessage);
 router.get('/whatsapp/verify/webhook', verifyWebhook);
 router.post('/whatsapp/verify/webhook', handleWebhook);
-router.post('/whatsapp/reply/customer',verifyToken, replyToCustomer);
-router.get('/whatsapp/messages',verifyToken, getAllMessages);
+router.post('/whatsapp/reply/customer', verifyToken, replyToCustomer);
+router.get('/whatsapp/messages', verifyToken, getAllMessages);
 
 
 

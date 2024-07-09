@@ -162,7 +162,7 @@ passport.use(new TwitterStrategy({
       let user = await TwitterUser.findOne({ twitterId: profile.id });
 
       if (!user) {
-        await TwitterUser.deleteMany()
+        await TwitterUser.deleteMany();
         user = new TwitterUser({
           adminId: adminId,
           userId: profile.id,
@@ -194,13 +194,15 @@ passport.use(new TwitterStrategy({
           throw error;
         }
       }
-
+      console.log(user);
       return done(null, user);
     } catch (error) {
       console.error('Error during Twitter authentication:', error);
       return done(error, null);
     }
-  }));
+  }
+));
+
 
 passport.serializeUser((user, done) => {
   done(null, user.id);

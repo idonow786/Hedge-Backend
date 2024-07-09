@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { LinkedInUser } = require('../Model/Linkedin');
+const { Posts } = require('../Model/Posts');
 const { uploadImageToFirebase } = require('../Firebase/uploadImage');
 const { uploadVideoToFirebase } = require('../Firebase/uploadVideo');
 
@@ -129,6 +130,113 @@ const postToLinkedIn = async (adminId, title, description, mediaFiles) => {
   return response.data.id;
 };
 
+
+const updatePost = async (postId, adminId, title, description, linkedinPostId) => {
+  // Find the post by ID and AdminID
+  const post = await Posts.findOne({ _id: postId, AdminID: adminId });
+
+  if (!post) {
+    throw new Error('Post not found');
+  }
+
+  // Update the post details
+  post.PostTitle = title || post.PostTitle;
+  post.PostDescription = description || post.PostDescription;
+
+  // If LinkedInPostId is provided, update the LinkedIn post
+  if (linkedinPostId) {
+    const linkedInUser = await LinkedInUser.findOne({ adminId });
+    if (!linkedInUser) {
+      throw new Error('LinkedIn user not found');
+    }
+
+    const linkedInAccessToken = linkedInUser.accessToken;
+    const personURN = `urn:li:person:${linkedInUser.linkedInId}`;
+
+    const linkedInPostUrl = `https://api.linkedin.com/v2/ugcPosts/${linkedinPostId}`;
+
+    const postData = {
+      author: personURN,
+      lifecycleState: 'PUBLISHED',
+      specificContent: {
+        'com.linkedin.ugc.ShareContent': {
+          shareCommentary: {
+            text: description
+          },
+          shareMediaCategory: post.PostPics.length > 0 ? 'IMAGE' : 'NONE',
+          media: post.PostPics.map(pic => ({
+            status: 'READY',
+            description: {
+              text: title
+            },
+            media: pic,
+            title: {
+              text: title
+            }
+          }))
+        }
+      },
+      visibility: {
+        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+      }
+    };
+
+    try {
+      await axios.put(linkedInPostUrl, postData, {
+        headers: {
+          'Authorization': `Bearer ${linkedInAccessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('Error updating LinkedIn post:', error);
+      throw new Error('Error updating LinkedIn post');
+    }
+  }
+
+  await post.save();
+
+  return post;
+};
+
+
+const deletePost = async (postId, adminId) => {
+  // Find the post by ID and AdminID
+  const post = await Posts.findOne({ _id: postId, AdminID: adminId });
+
+  if (!post) {
+    throw new Error('Post not found');
+  }
+
+  // If LinkedInPostId is provided, delete the LinkedIn post
+  if (post.LinkedInPostId) {
+    const linkedInUser = await LinkedInUser.findOne({ adminId });
+    if (!linkedInUser) {
+      throw new Error('LinkedIn user not found');
+    }
+
+    const linkedInAccessToken = linkedInUser.accessToken;
+    const linkedInPostUrl = `https://api.linkedin.com/v2/ugcPosts/${post.LinkedInPostId}`;
+
+    try {
+      await axios.delete(linkedInPostUrl, {
+        headers: {
+          'Authorization': `Bearer ${linkedInAccessToken}`
+        }
+      });
+    } catch (error) {
+      console.error('Error deleting LinkedIn post:', error);
+      throw new Error('Error deleting LinkedIn post');
+    }
+  }
+
+  // Delete the post from the database
+  await Posts.deleteOne({ _id: postId });
+
+  return post;
+};
 module.exports = {
-  postToLinkedIn
+  postToLinkedIn,
+  updatePost,
+  deletePost
 };

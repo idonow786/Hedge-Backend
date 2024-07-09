@@ -7,6 +7,7 @@ const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 const { uploadVideoToFirebase } = require('../../Firebase/uploadVideo');
 const {facebookService} = require('../../Service/Facebook.service');
 const {postToLinkedIn} = require('../../Service/Linkedin.service');
+const {postToTwitter} = require('../../Service/Twitter.service');
 
 
 
@@ -57,10 +58,12 @@ exports.createPost = async (req, res) => {
 
 
     // Get user details from the models based on adminId
-    const facebookUser = await FacebookUser.findOne({ adminId });
-    const linkedinUser = await LinkedInUser.findOne({ adminId });
-    const twitterUser = await TwitterUser.findOne({ adminId });
-
+    const facebookUser = await FacebookUser.find();
+    const linkedinUser = await LinkedInUser.find();
+    const twitterUser = await TwitterUser.find();
+    console.log(twitterUser)
+    console.log(facebookUser)
+    console.log(linkedinUser)
 
     // Post on Facebook if requested
     if (facebook && pageId) {
@@ -79,21 +82,28 @@ exports.createPost = async (req, res) => {
       }
     }
 
-    // Post on Twitter
-    if (twitter) {
-      const twitterAccessToken = twitterUser.accessToken;
-      const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
-      const twitterPostUrl = 'https://api.twitter.com/2/tweets';
-      const twitterPostData = {
-        text: description.slice(0, 280), // Truncate the description to fit Twitter's character limit
-      };
-      const twitterResponse = await axios.post(twitterPostUrl, twitterPostData, {
-        headers: {
-          Authorization: `Bearer ${twitterAccessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      post.TwitterPostId = twitterResponse.data.data.id;
+    if (twitter==true||twitter=='true') {
+      try {
+        const imageUrls = await Promise.all(
+          req.files.filter(file => file.mimetype.startsWith('image/')).map(async (file) => {
+            const imageUrl = await uploadImageToFirebase(file.buffer.toString('base64'), file.mimetype);
+            return imageUrl;
+          })
+        );
+    
+        const videoUrls = await Promise.all(
+          req.files.filter(file => file.mimetype.startsWith('video/')).map(async (file) => {
+            const videoUrl = await uploadVideoToFirebase(file);
+            return videoUrl;
+          })
+        );
+    
+        const tweetResponse = await postToTwitter(description, imageUrls, videoUrls, adminId);
+        post.TwitterPostId=tweetResponse.id_str
+        console.log(tweetResponse)
+      } catch (error) {
+        console.error('Error posting to Twitter:', error);
+      }
     }
 
     await post.save();
