@@ -245,10 +245,10 @@ router.get('/auth/twitter/callback', async (req, res) => {
     const { state, code } = req.query;
     console.log('Request query:', req.query); // Log the entire request query
 
-    // Verify state parameter
-    if (state !== req.session.state) {
-      throw new Error('Invalid state parameter');
-    }
+    // // Verify state parameter
+    // if (state !== req.session.state) {
+    //   throw new Error('Invalid state parameter');
+    // }
 
     const client = new TwitterApi({
       clientId: process.env.TWITTER_CLIENT_ID,
