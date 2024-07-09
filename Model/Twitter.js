@@ -27,6 +27,18 @@ const TwitterUserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  session: {
+    type: String,
+    required: true,
+  },
+  codeVerifier: {
+    type: String,
+    required: true,
+  },
+  generatedState: {
+    type: String,
+    required: true,
+  },
   username: {
     type: String,
     required: true,

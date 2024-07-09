@@ -212,6 +212,8 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 const { TwitterApi } = require('twitter-api-v2');
 
+const { v4: uuidv4 } = require('uuid');
+
 // Initialize Twitter client
 const client = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID,
@@ -221,34 +223,46 @@ const client = new TwitterApi({
 router.get('/auth/twitter', verifyToken, async (req, res) => {
   try {
     const state = encodeURIComponent(req.adminId);
-    console.log('Generated state:', state); // Log the state parameter
+    const sessionId = uuidv4(); // Generate a unique session ID
 
     const { url, codeVerifier, state: generatedState } = client.generateOAuth2AuthLink(
       'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
       { scope: ['tweet.read', 'tweet.write', 'users.read', 'follows.read', 'offline.access'], state }
     );
 
-    // Store codeVerifier and state in session or database for later use
-    req.session.codeVerifier = codeVerifier;
-    req.session.state = generatedState;
+    // Save session and codeVerifier in the database
+    const twitterUser = new TwitterUser({
+      adminId: req.adminId,
+      session: sessionId,
+      codeVerifier,
+      state: generatedState,
+    });
 
-    console.log('Generated auth URL:', url); // Log the entire authorization URL
-    res.status(200).json({ authUrl: url });
+    await twitterUser.save();
+
+    res.status(200).json({ authUrl: url, sessionId });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
+
 router.get('/auth/twitter/callback', async (req, res) => {
   try {
-    const { state, code } = req.query;
-    console.log('Request query:', req.query); // Log the entire request query
+    const { state, code, sessionId } = req.query;
 
-    // // Verify state parameter
-    // if (state !== req.session.state) {
-    //   throw new Error('Invalid state parameter');
-    // }
+    // Retrieve the saved session and codeVerifier from the database
+    const twitterUser = await TwitterUser.findOne({ session: sessionId });
+
+    if (!twitterUser) {
+      throw new Error('Invalid session ID');
+    }
+
+    // Verify state parameter
+    if (state !== twitterUser.state) {
+      throw new Error('Invalid state parameter');
+    }
 
     const client = new TwitterApi({
       clientId: process.env.TWITTER_CLIENT_ID,
@@ -257,23 +271,20 @@ router.get('/auth/twitter/callback', async (req, res) => {
 
     const { client: loggedClient, accessToken, refreshToken } = await client.loginWithOAuth2({
       code,
-      codeVerifier: req.session.codeVerifier,
+      codeVerifier: twitterUser.codeVerifier, // Include the code_verifier here
       redirectUri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
     });
 
     // Use loggedClient to make authenticated requests
     const { data: user } = await loggedClient.v2.me();
 
-    // Save user details and tokens in database
-    const twitterUser = new TwitterUser({
-      adminId: decodeURIComponent(state),
-      userId: user.id,
-      twitterId: user.id,
-      accessToken,
-      refreshToken,
-      name: user.name,
-      username: user.username,
-    });
+    // Update user details and tokens in the database
+    twitterUser.userId = user.id;
+    twitterUser.twitterId = user.id;
+    twitterUser.accessToken = accessToken;
+    twitterUser.refreshToken = refreshToken;
+    twitterUser.name = user.name;
+    twitterUser.username = user.username;
 
     await twitterUser.save();
 
@@ -283,6 +294,7 @@ router.get('/auth/twitter/callback', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
