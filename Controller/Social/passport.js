@@ -208,24 +208,6 @@ passport.use(new TwitterStrategy({
 ));
 
 
-
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await TwitterUser.findById(id) ||SnapUser.findById(id);
-    done(null, user);
-  } catch (error) {
-    done(error, null);
-  }
-});
-
-
-
-
-
 passport.use('snapchat', new OAuth2Strategy({
   authorizationURL: 'https://accounts.snapchat.com/accounts/oauth2/auth',
   tokenURL: 'https://accounts.snapchat.com/accounts/oauth2/token',
@@ -256,6 +238,25 @@ passport.use('snapchat', new OAuth2Strategy({
     return done(error, null);
   }
 }));
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await TwitterUser.findById(id) ||SnapUser.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+
+
+
+
+
 
 
 module.exports = passport;

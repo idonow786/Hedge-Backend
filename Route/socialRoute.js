@@ -252,80 +252,52 @@ function base64URLEncode(str) {
 
 // ========================================================
 
-const snapchatStrategy = new OAuth2Strategy({
-  authorizationURL: 'https://accounts.snapchat.com/accounts/oauth2/auth',
-  tokenURL: 'https://accounts.snapchat.com/accounts/oauth2/token',
-  clientID: process.env.SNAPCHAT_CLIENT_ID,
-  clientSecret: process.env.SNAPCHAT_CLIENT_SECRET,
-  callbackURL: 'https://yourdomain.com/auth/snapchat/callback',
-}, (accessToken, refreshToken, profile, done) => {
-  // OAuth2 strategy callback
-});
+async function getSnapchatAuthUrl(state) {
+  try {
+    const response = await axios.post('https://api.stytch.com/v1/oauth/snapchat/start', {
+      client_id: process.env.STYTCH_CLIENT_ID,
+      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/snapchat/callback',
+      state: state,
+      scope: 'snapchat.marketing', // Requesting snapchat.marketing scope
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.STYTCH_API_KEY}`,
+      },
+    });
 
-passport.use('snapchat', snapchatStrategy);
-
-// Function to generate Snapchat authorization URL
-function getSnapchatAuthUrl(req) {
-  const state = JSON.stringify({ adminId: req.adminId });
-  const params = snapchatStrategy.authorizationParams(req);
-  params.state = state;
-  params.response_type = 'code';
-  params.client_id = snapchatStrategy._oauth2._clientId;
-  params.redirect_uri = snapchatStrategy._callbackURL;
-  params.scope = 'snapchat.marketing';
-
-  const authUrl = snapchatStrategy._oauth2.getAuthorizeUrl(params);
-  return authUrl;
+    return response.data.authorization_url;
+  } catch (error) {
+    throw new Error('Error generating Snapchat auth URL: ' + error.message);
+  }
 }
 
 // Generate the Snapchat authorization URL and send it in the response
-router.get('/auth/snapchat', verifyToken, (req, res) => {
+router.get('/auth/snapchat', verifyToken, async (req, res) => {
   const adminId = req.adminId;
   if (!adminId) {
     return res.status(400).send('adminId is required');
   }
 
+  const state = JSON.stringify({ adminId });
+
   try {
-    const authUrl = getSnapchatAuthUrl(req);
+    const authUrl = await getSnapchatAuthUrl(state);
     res.status(200).json({ authUrl });
   } catch (error) {
-    console.error('Error generating Snapchat auth URL:', error);
+    console.error(error.message);
     res.status(500).send('Internal Server Error');
   }
 });
 
 // Handle the Snapchat callback
+router.get('/auth/snapchat', passport.authenticate('snapchat'));
+
 router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
   failureRedirect: '/login',
-}), async (req, res) => {
-  const { state } = req.query;
-  const { adminId } = JSON.parse(state);
-
-  try {
-    const user = await SnapUser.findById(req.user.id);
-    const admin = await AdminModel.findById(adminId);
-    
-    if (!admin) {
-      return res.status(404).send('Admin not found');
-    }
-
-    // Save the access token and other details in the AdminModel
-    admin.snapchat = {
-      accessToken: user.accessToken,
-      refreshToken: user.refreshToken,
-      snapid: user.snapid,
-      username: user.username,
-    };
-    await admin.save();
-
-    res.redirect('/dashboard'); // Redirect to the desired page after successful authentication
-  } catch (error) {
-    console.error('Error saving token to AdminModel:', error);
-    res.status(500).send('Internal Server Error');
-  }
+}), (req, res) => {
+  res.redirect('/dashboard');
 });
-
-
 
 
 //=========================================================
