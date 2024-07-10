@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const OAuth = require('oauth').OAuth;
 const crypto = require('crypto');
-
+const axios=require('axios')
 const multer = require('multer');
 const { facebookAuth, facebookCallback } = require('../Controller/Social/facebook');
 const { getAuthUrl,
@@ -261,6 +261,102 @@ router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
   res.redirect('/dashboard');
 });
 //=========================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//================================================================
+// Function to get the TikTok authorization URL
+async function getTikTokAuthUrl(state) {
+  const clientId = process.env.TIKTOK_CLIENT_KEY
+  const redirectUri = 'https://crm-m3ck.onrender.com/api/social/auth/tiktok/callback';
+  const scope = 'video.upload'; // Requesting permission to post on TikTok
+
+  const authUrl = `https://open-api.tiktok.com/platform/oauth/connect/?client_key=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
+
+  return authUrl;
+}
+
+// Generate the TikTok authorization URL and send it in the response
+router.get('/auth/tiktok', verifyToken, async (req, res) => {
+  const adminId = req.adminId;
+  if (!adminId) {
+    return res.status(400).send('adminId is required');
+  }
+
+  const state = adminId; // Save the adminId as the state
+
+  try {
+    const authUrl = await getTikTokAuthUrl(state);
+    res.status(200).json({ authUrl });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Handle the TikTok callback
+router.get('/auth/tiktok/callback', async (req, res) => {
+  const { code, state } = req.query;
+  const adminId = state;
+
+  try {
+    const response = await axios.post('https://open-api.tiktok.com/oauth/access_token/', {
+      client_key: process.env.TIKTOK_CLIENT_KEY,
+      client_secret:process.env.TIKTOK_CLIENT_SECRET,
+      code: code,
+      grant_type: 'authorization_code',
+    });
+
+    const { data } = response;
+    if (data.error_code) {
+      throw new Error(data.description);
+    }
+
+    const { access_token, refresh_token, open_id } = data.data;
+
+    // Fetch user info from TikTok
+    const userInfoResponse = await axios.get(`https://open-api.tiktok.com/oauth/userinfo/?access_token=${access_token}&open_id=${open_id}`);
+    const { data: userInfo } = userInfoResponse;
+
+    const { nickname: username, open_id: tiktokId } = userInfo.data;
+
+    // Save the access token and other details in the TikTokUser model
+    const tiktokUser = new TikTokUser({
+      userId: adminId,
+      tiktokId: tiktokId,
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      openId: open_id,
+      username: username,
+    });
+
+    await tiktokUser.save();
+
+    res.redirect('/dashboard'); // Redirect to the desired page after successful authentication
+  } catch (error) {
+    console.error('Error handling TikTok callback:', error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+// =============================
+
+
+
+
 
 
 //Facebook Pages Get
