@@ -189,58 +189,12 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 
 // Twitter Authentication
-// router.get('/auth/twitter', verifyToken, (req, res) => {
-//   try {
-//     const state = encodeURIComponent(req.adminId);
-//     console.log('Generated state:', state);
-//     const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
-//     res.status(200).json({ authUrl });
-//   } catch (error) {
-//     console.error('Error generating Twitter authentication URL:', error);
-//     res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// });
-
-
-
-// router.get('/auth/twitter/callback',
-//   passport.authenticate('twitter', { failureRedirect: '/failure' }),
-//   (req, res) => {
-//     res.redirect('/success');
-//   }
-// );
-
-const { TwitterApi } = require('twitter-api-v2');
-
-const { v4: uuidv4 } = require('uuid');
-
-// Initialize Twitter client
-const client = new TwitterApi({
-  clientId: process.env.TWITTER_CLIENT_ID,
-  clientSecret: process.env.TWITTER_CLIENT_SECRET,
-});
-
-router.get('/auth/twitter', verifyToken, async (req, res) => {
+router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
     const state = encodeURIComponent(req.adminId);
-    const sessionId = uuidv4(); // Generate a unique session ID
-
-    const { url, codeVerifier, state: generatedState } = client.generateOAuth2AuthLink(
-      'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
-      { scope: ['tweet.read', 'tweet.write', 'users.read', 'follows.read', 'offline.access'], state }
-    );
-
-    // Save session and codeVerifier in the database
-    const twitterUser = new TwitterUser({
-      adminId: req.adminId,
-      session: sessionId,
-      codeVerifier,
-      state: generatedState,
-    });
-
-    await twitterUser.save();
-
-    res.status(200).json({ authUrl: url, sessionId });
+    console.log('Generated state:', state);
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+    res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Twitter authentication URL:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -248,54 +202,15 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
 });
 
 
-router.get('/auth/twitter/callback', async (req, res) => {
-  try {
-    const { state, code, sessionId } = req.query;
-    console.log("query session",sessionId)
-    console.log("query state",state)
-    
-    // Retrieve the saved session and codeVerifier from the database
-    const twitterUser = await TwitterUser.findOne({ session: sessionId });
 
-    if (!twitterUser) {
-      throw new Error('Invalid session ID');
-    }
-    console.log("model state",twitterUser.state)
-    // Verify state parameter
-    if (state !== twitterUser.state) {
-      console.log('Invalid state parameter');
-    }
-
-    const client = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET,
-    });
-
-    const { client: loggedClient, accessToken, refreshToken } = await client.loginWithOAuth2({
-      code,
-      codeVerifier: twitterUser.codeVerifier, // Include the code_verifier here
-      redirectUri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
-    });
-
-    // Use loggedClient to make authenticated requests
-    const { data: user } = await loggedClient.v2.me();
-
-    // Update user details and tokens in the database
-    twitterUser.userId = user.id;
-    twitterUser.twitterId = user.id;
-    twitterUser.accessToken = accessToken;
-    twitterUser.refreshToken = refreshToken;
-    twitterUser.name = user.name;
-    twitterUser.username = user.username;
-
-    await twitterUser.save();
-
-    res.status(200).json({ message: 'Authentication successful', user: twitterUser });
-  } catch (error) {
-    console.error('Error during Twitter authentication:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+router.get('/auth/twitter/callback',
+  passport.authenticate('twitter', { failureRedirect: '/failure' }),
+  (req, res) => {
+    res.redirect('/success');
   }
-});
+);
+
+
 
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
@@ -335,14 +250,20 @@ function base64URLEncode(str) {
 
 
 // ========================================================
+router.get('/auth/snapchat', passport.authenticate('snapchat'));
+
+router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
+  failureRedirect: '/login',
+}), (req, res) => {
+  res.redirect('/dashboard');
+});
 
 
 
 
 
 
-
-
+//=========================================================
 
 
 //Facebook Pages Get

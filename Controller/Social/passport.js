@@ -9,8 +9,9 @@ const { TwitterUser } = require('../../Model/Twitter');
 const TwitterStrategy = require('passport-twitter').Strategy;
 const { FacebookUser } = require('../../Model/Facebook');
 const { InstagramUser } = require('../../Model/Instagram');
+const { SnapUser } = require('../../Model/SnapChat');
 require('dotenv').config();
-
+const OAuth2Strategy = require('passport-oauth2');
 // Facebook Strategy
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
@@ -214,11 +215,47 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await TwitterUser.findById(id);
+    const user = await FacebookUser.findById(id) || await InstagramUser.findById(id) || await TwitterUser.findById(id) ||SnapUser.findById(id);
     done(null, user);
   } catch (error) {
     done(error, null);
   }
 });
+
+
+
+
+
+passport.use('snapchat', new OAuth2Strategy({
+  authorizationURL: 'https://accounts.snapchat.com/accounts/oauth2/auth',
+  tokenURL: 'https://accounts.snapchat.com/accounts/oauth2/token',
+  clientID: process.env.SNAPCHAT_CLIENT_ID,
+  clientSecret: process.env.SNAPCHAT_CLIENT_SECRET,
+  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/snapchat/callback',
+  scope: ['snapchat.marketing'],
+  state: true,
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    let user = await SnapUser.findOne({ snapid: profile.id });
+    if (!user) {
+      user = new SnapUser({
+        snapid: profile.id,
+        accessToken,
+        refreshToken,
+        name: profile.displayName,
+        username: profile.username,
+      });
+      await user.save();
+    } else {
+      user.accessToken = accessToken;
+      user.refreshToken = refreshToken;
+      await user.save();
+    }
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
 
 module.exports = passport;
