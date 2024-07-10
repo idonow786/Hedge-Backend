@@ -203,27 +203,26 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
   
   // Save codeVerifier in the database
   let twitterUser = await TwitterUser.findOne({ adminId: adminId });
-  if(twitterUser){
-    await TwitterUser.deleteOne({ adminId: adminId })
-  }
-  else if (!twitterUser) {
+  if (!twitterUser) {
     twitterUser = new TwitterUser({ adminId: adminId });
   }
   twitterUser.codeVerifier = codeVerifier;
   await twitterUser.save();
 
-  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&code_challenge=${codeVerifier}&code_challenge_method=plain`;
+  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent(`https://crm-m3ck.onrender.com/api/social/auth/twitter/callback/${adminId}`)}&scope=tweet.read%20users.read%20follows.read%20follows.write&code_challenge=${codeVerifier}&code_challenge_method=plain`;
 
   res.send(authUrl);
 });
 
-router.get('/auth/twitter/callback', async (req, res, next) => {
+
+router.get('/auth/twitter/callback/:adminId', async (req, res, next) => {
   const { code } = req.query;
+  const { adminId } = req.params;
 
   try {
-    // Find the user by codeVerifier
-    const twitterUser = await TwitterUser.findOne({ codeVerifier: { $ne: null } });
-    if (!twitterUser) {
+    // Find the user by adminId
+    const twitterUser = await TwitterUser.findOne({ adminId: adminId });
+    if (!twitterUser || !twitterUser.codeVerifier) {
       return res.status(400).send('Invalid request');
     }
 
@@ -234,7 +233,7 @@ router.get('/auth/twitter/callback', async (req, res, next) => {
         code,
         grant_type: 'authorization_code',
         client_id: process.env.TWITTER_CLIENT_ID,
-        redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+        redirect_uri: `https://crm-m3ck.onrender.com/api/social/auth/twitter/callback/${adminId}`,
         code_verifier: codeVerifier
       }), 
       {
@@ -254,7 +253,7 @@ router.get('/auth/twitter/callback', async (req, res, next) => {
     await twitterUser.save();
 
     // Set the adminId in the session for the passport strategy
-    req.session.adminId = twitterUser.adminId;
+    req.session.adminId = adminId;
 
     next();
   } catch (error) {
@@ -266,6 +265,7 @@ passport.authenticate('twitter', { failureRedirect: '/api/social/failure' }),
 (req, res) => {
   res.redirect('/api/social/success');
 });
+
 
 
 
