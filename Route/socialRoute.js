@@ -202,8 +202,11 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
   const codeVerifier = crypto.randomBytes(32).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   
   // Save codeVerifier in the database
-  let twitterUser = await TwitterUser.deleteOne({ adminId: adminId });
-  if (!twitterUser) {
+  let twitterUser = await TwitterUser.findOne({ adminId: adminId });
+  if(twitterUser){
+    await TwitterUser.deleteOne({ adminId: adminId })
+  }
+  else if (!twitterUser) {
     twitterUser = new TwitterUser({ adminId: adminId });
   }
   twitterUser.codeVerifier = codeVerifier;
