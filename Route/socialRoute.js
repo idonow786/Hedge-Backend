@@ -204,7 +204,7 @@ router.get('/auth/twitter',verifyToken, (req, res) => {
 
   const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&state=${codeChallenge}&code_challenge=${codeChallenge}&code_challenge_method=plain`;
 
-  res.redirect(authUrl);
+  res.send(authUrl);
 });
 
 router.get('/auth/twitter/callback', async (req, res, next) => {
