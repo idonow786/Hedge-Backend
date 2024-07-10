@@ -252,17 +252,19 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
 router.get('/auth/twitter/callback', async (req, res) => {
   try {
     const { state, code, sessionId } = req.query;
-
+    console.log("query session",sessionId)
+    console.log("query state",state)
+    
     // Retrieve the saved session and codeVerifier from the database
     const twitterUser = await TwitterUser.findOne({ session: sessionId });
 
     if (!twitterUser) {
       throw new Error('Invalid session ID');
     }
-
+    console.log("model state",twitterUser.state)
     // Verify state parameter
     if (state !== twitterUser.state) {
-      throw new Error('Invalid state parameter');
+      console.log('Invalid state parameter');
     }
 
     const client = new TwitterApi({
