@@ -6,12 +6,14 @@ const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const axios = require('axios');
 const { LinkedInUser } = require('../../Model/Linkedin');
 const { TwitterUser } = require('../../Model/Twitter');
-const TwitterStrategy = require('passport-twitter').Strategy;
+// const TwitterStrategy = require('passport-twitter').Strategy;
 const { FacebookUser } = require('../../Model/Facebook');
 const { InstagramUser } = require('../../Model/Instagram');
 const { SnapUser } = require('../../Model/SnapChat');
 require('dotenv').config();
 const OAuth2Strategy = require('passport-oauth2');
+const TwitterStrategy = require('passport-twitter-oauth2').Strategy;
+
 // Facebook Strategy
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
@@ -147,65 +149,53 @@ passport.use(
 
 // Twitter Strategy
 passport.use(new TwitterStrategy({
-  consumerKey: process.env.TWITTER_CONSUMER_KEY,
-  consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+  clientID: process.env.TWITTER_CLIENT_ID,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET,
   callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
-  async (req, token, tokenSecret, profile, done) => {
-    try {
-      const adminId = decodeURIComponent(req.query.state);
-      console.log('Decoded adminId:', adminId); // Log the decoded state
-      console.log('state adminId:', req.query.state); // Log the decoded state
-      console.log('query adminId:', req.query); // Log the decoded state
+async (req, accessToken, refreshToken, profile, done) => {
+  try {
+    const adminId = req.session.adminId;
+    console.log('Decoded adminId:', adminId);
 
-      if (!adminId) {
-        return done(new Error('Missing adminId'), null);
-      }
-
-      let user = await TwitterUser.findOne({ twitterId: profile.id });
-
-      if (!user) {
-        await TwitterUser.deleteMany();
-        user = new TwitterUser({
-          adminId: adminId,
-          userId: profile.id,
-          twitterId: profile.id,
-          accessToken: token,
-          accessTokenSecret: tokenSecret,
-          name: profile.displayName,
-          username: profile.username,
-        });
-
-        try {
-          await user.save();
-        } catch (error) {
-          if (error.name === 'ValidationError') {
-            return done(new Error('Invalid or missing required fields'), null);
-          }
-          throw error;
-        }
-      } else {
-        user.accessToken = token;
-        user.accessTokenSecret = tokenSecret;
-
-        try {
-          await user.save();
-        } catch (error) {
-          if (error.name === 'ValidationError') {
-            return done(new Error('Invalid or missing required fields'), null);
-          }
-          throw error;
-        }
-      }
-      console.log(user);
-      return done(null, user);
-    } catch (error) {
-      console.error('Error during Twitter authentication:', error);
-      return done(error, null);
+    if (!adminId) {
+      return done(new Error('Missing adminId'), null);
     }
+
+    let user = await TwitterUser.findOne({ twitterId: profile.id });
+
+    if (!user) {
+      user = new TwitterUser({
+        adminId: adminId,
+        userId: profile.id,
+        twitterId: profile.id,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        name: profile.displayName,
+        username: profile.username,
+      });
+    } else {
+      user.accessToken = accessToken;
+      user.refreshToken = refreshToken;
+    }
+
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.name === 'ValidationError') {
+        return done(new Error('Invalid or missing required fields'), null);
+      }
+      throw error;
+    }
+
+    console.log(user);
+    return done(null, user);
+  } catch (error) {
+    console.error('Error during Twitter authentication:', error);
+    return done(error, null);
   }
-));
+}));
 
 
 passport.use('snapchat', new OAuth2Strategy({

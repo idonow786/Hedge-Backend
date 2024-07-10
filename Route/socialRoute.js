@@ -192,8 +192,10 @@ router.get('/auth/linkedin/failure', (req, res) => {
 // Twitter Authentication
 router.get('/auth/twitter', verifyToken, (req, res) => {
   try {
-    const state = encodeURIComponent(req.adminId);
-    console.log('Generated state:', state);
+    const state = crypto.randomBytes(16).toString('hex');
+    req.session.adminId = req.adminId;
+    req.session.twitterState = state;
+    
     const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
     res.status(200).json({ authUrl });
   } catch (error) {
@@ -202,17 +204,15 @@ router.get('/auth/twitter', verifyToken, (req, res) => {
   }
 });
 
-
-
-router.get('/auth/twitter/callback',
-  passport.authenticate('twitter', { failureRedirect: '/failure' }),
-  (req, res) => {
-    res.redirect('/success');
+router.get('/auth/twitter/callback', (req, res, next) => {
+  const state = req.query.state;
+  if (state !== req.session.twitterState) {
+    return res.status(400).send('Invalid state parameter');
   }
-);
-
-
-
+  passport.authenticate('twitter', { failureRedirect: '/api/social/failure' })(req, res, next);
+}, (req, res) => {
+  res.redirect('/api/social/success');
+});
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
@@ -230,12 +230,7 @@ function generateCodeChallenge() {
 
 // Helper function to generate random string for code verifier
 function generateRandomString(length) {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
+  return crypto.randomBytes(length).toString('hex');
 }
 
 // Helper function to base64URL encode a string
@@ -245,7 +240,6 @@ function base64URLEncode(str) {
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
-
 
 
 
