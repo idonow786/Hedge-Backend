@@ -157,39 +157,22 @@ passport.use(new TwitterStrategy({
 async (req, accessToken, refreshToken, profile, done) => {
   try {
     const adminId = req.session.adminId;
-    console.log('Decoded adminId:', adminId);
-
     if (!adminId) {
       return done(new Error('Missing adminId'), null);
     }
 
-    let user = await TwitterUser.findOne({ twitterId: profile.id });
+    let user = await TwitterUser.findOne({ adminId: adminId });
 
     if (!user) {
-      user = new TwitterUser({
-        adminId: adminId,
-        userId: profile.id,
-        twitterId: profile.id,
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        name: profile.displayName,
-        username: profile.username,
-      });
-    } else {
-      user.accessToken = accessToken;
-      user.refreshToken = refreshToken;
+      return done(new Error('User not found'), null);
     }
 
-    try {
-      await user.save();
-    } catch (error) {
-      if (error.name === 'ValidationError') {
-        return done(new Error('Invalid or missing required fields'), null);
-      }
-      throw error;
-    }
+    user.twitterId = profile.id;
+    user.name = profile.displayName;
+    user.username = profile.username;
 
-    console.log(user);
+    await user.save();
+
     return done(null, user);
   } catch (error) {
     return done(error, null);

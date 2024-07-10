@@ -197,29 +197,35 @@ function generateCodeChallenge() {
 }
 
 // Routes
-router.get('/auth/twitter',verifyToken, (req, res) => {
-  req.session.adminId = req.adminId; 
-  const codeChallenge = generateCodeChallenge();
-  req.session.codeVerifier = codeChallenge;
+router.get('/auth/twitter', verifyToken, async (req, res) => {
+  const adminId = req.adminId;
+  const codeVerifier = crypto.randomBytes(32).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  // Save codeVerifier in the database
+  let twitterUser = await TwitterUser.findOne({ adminId: adminId });
+  if (!twitterUser) {
+    twitterUser = new TwitterUser({ adminId: adminId });
+  }
+  twitterUser.codeVerifier = codeVerifier;
+  await twitterUser.save();
 
-  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&state=${codeChallenge}&code_challenge=${codeChallenge}&code_challenge_method=plain`;
+  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&code_challenge=${codeVerifier}&code_challenge_method=plain`;
 
   res.send(authUrl);
 });
+
 router.get('/auth/twitter/callback', async (req, res, next) => {
-  const { code, state } = req.query;
-  const codeVerifier = req.session.codeVerifier;
-
-  console.log('Received callback with code:', code);
-  console.log('State:', state);
-  console.log('Stored codeVerifier:', codeVerifier);
-
-  if (state !== codeVerifier) {
-    console.error('State mismatch');
-    return res.status(400).send('Invalid state parameter');
-  }
+  const { code } = req.query;
 
   try {
+    // Find the user by codeVerifier
+    const twitterUser = await TwitterUser.findOne({ codeVerifier: { $ne: null } });
+    if (!twitterUser) {
+      return res.status(400).send('Invalid request');
+    }
+
+    const codeVerifier = twitterUser.codeVerifier;
+
     const tokenResponse = await axios.post('https://api.twitter.com/2/oauth2/token', 
       new URLSearchParams({
         code,
@@ -236,12 +242,16 @@ router.get('/auth/twitter/callback', async (req, res, next) => {
       }
     );
 
-    console.log('Token response:', tokenResponse.data);
-
     const { access_token, refresh_token } = tokenResponse.data;
 
-    req.session.accessToken = access_token;
-    req.session.refreshToken = refresh_token;
+    // Update the user with the new tokens
+    twitterUser.accessToken = access_token;
+    twitterUser.refreshToken = refresh_token;
+    twitterUser.codeVerifier = null; // Clear the code verifier
+    await twitterUser.save();
+
+    // Set the adminId in the session for the passport strategy
+    req.session.adminId = twitterUser.adminId;
 
     next();
   } catch (error) {
@@ -253,6 +263,7 @@ passport.authenticate('twitter', { failureRedirect: '/api/social/failure' }),
 (req, res) => {
   res.redirect('/api/social/success');
 });
+
 
 
 // ========================================================
