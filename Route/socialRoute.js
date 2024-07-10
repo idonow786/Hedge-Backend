@@ -190,72 +190,55 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 
 // Twitter Authentication
-app.get('/auth/twitter', (req, res) => {
-  const state = crypto.randomBytes(16).toString('hex');
-  req.session.twitterState = state;
-  console.log('Generated state:', state);
-  
-  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
-  
-  console.log('Session ID:', req.sessionID);
-  console.log('Auth URL:', authUrl);
-  
+// Helper function to generate code challenge
+function generateCodeChallenge() {
+  const verifier = crypto.randomBytes(32).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return verifier;
+}
+
+// Routes
+router.get('/auth/twitter', (req, res) => {
+  req.session.adminId = req.query.adminId; // Assuming adminId is passed as a query parameter
+  const codeChallenge = generateCodeChallenge();
+  req.session.codeVerifier = codeChallenge;
+
+  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&state=${codeChallenge}&code_challenge=${codeChallenge}&code_challenge_method=plain`;
+
   res.redirect(authUrl);
 });
 
-app.get('/auth/twitter/callback', (req, res, next) => {
-  console.log('Callback received');
-  console.log('Session ID:', req.sessionID);
-  console.log('Received state:', req.query.state);
-  console.log('Stored state:', req.session.twitterState);
+router.get('/auth/twitter/callback', async (req, res, next) => {
+  const code = req.query.code;
+  const codeVerifier = req.session.codeVerifier;
 
-  const receivedState = req.query.state;
-  const storedState = req.session.twitterState;
+  try {
+    const response = await axios.post('https://api.twitter.com/2/oauth2/token', new URLSearchParams({
+      code: code,
+      grant_type: 'authorization_code',
+      client_id: process.env.TWITTER_CLIENT_ID,
+      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+      code_verifier: codeVerifier
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`).toString('base64')}`
+      }
+    });
 
-  if (!storedState) {
-    console.log('No stored state found in session');
-    return res.status(400).send('No stored state found');
+    const { access_token, refresh_token } = response.data;
+
+    req.session.accessToken = access_token;
+    req.session.refreshToken = refresh_token;
+
+    // Proceed with authentication
+    passport.authenticate('twitter', { failureRedirect: '/api/social/failure' })(req, res, next);
+  } catch (error) {
+    console.error('Error exchanging code for tokens:', error);
+    res.status(500).send('Authentication failed');
   }
-
-  if (receivedState !== storedState) {
-    console.log('State mismatch');
-    return res.status(400).send('Invalid state parameter');
-  }
-
-  passport.authenticate('twitter', { failureRedirect: '/api/social/failure' })(req, res, next);
 }, (req, res) => {
   res.redirect('/api/social/success');
 });
-
-
-router.get('/success', (req, res) => res.send('Social account connected successfully'));
-
-router.get('/failure', (req, res) => {
-  const error = req.query.error || 'Unknown error';
-  res.status(401).send(`Failed to connect social account: ${error}`);
-});
-
-// Helper function to generate code challenge for PKCE
-function generateCodeChallenge() {
-  const codeVerifier = generateRandomString(128);
-  const codeChallenge = base64URLEncode(crypto.createHash('sha256').update(codeVerifier).digest());
-  return codeChallenge;
-}
-
-// Helper function to generate random string for code verifier
-function generateRandomString(length) {
-  return crypto.randomBytes(length).toString('hex');
-}
-
-// Helper function to base64URL encode a string
-function base64URLEncode(str) {
-  return str.toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-}
-
-
 
 
 // ========================================================

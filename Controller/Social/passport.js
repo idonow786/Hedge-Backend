@@ -192,10 +192,10 @@ async (req, accessToken, refreshToken, profile, done) => {
     console.log(user);
     return done(null, user);
   } catch (error) {
-    console.error('Error during Twitter authentication:', error);
     return done(error, null);
   }
 }));
+
 
 
 passport.use('snapchat', new OAuth2Strategy({
