@@ -190,7 +190,7 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 
 // Twitter Authentication
-app.get('/api/social/auth/twitter', (req, res) => {
+app.get('/auth/twitter', (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   req.session.twitterState = state;
   console.log('Generated state:', state);
@@ -203,7 +203,7 @@ app.get('/api/social/auth/twitter', (req, res) => {
   res.redirect(authUrl);
 });
 
-app.get('/api/social/auth/twitter/callback', (req, res, next) => {
+app.get('/auth/twitter/callback', (req, res, next) => {
   console.log('Callback received');
   console.log('Session ID:', req.sessionID);
   console.log('Received state:', req.query.state);
