@@ -251,14 +251,35 @@ function base64URLEncode(str) {
 
 // ========================================================
 
-router.get('/auth/snapchat',verifyToken, (req, res, next) => {
+function getSnapchatAuthUrl(req, res, next) {
+  return new Promise((resolve, reject) => {
+    passport.authenticate('snapchat', (err, user, info) => {
+      if (err) {
+        return reject(err);
+      }
+      const url = info;
+      resolve(url);
+    })(req, res, next);
+  });
+}
+
+// Generate the Snapchat authorization URL and send it in the response
+router.get('/auth/snapchat', verifyToken, async (req, res, next) => {
   const adminId = req.adminId;
   if (!adminId) {
     return res.status(400).send('adminId is required');
   }
-  
+
   const state = JSON.stringify({ adminId });
-  passport.authenticate('snapchat', { state })(req, res, next);
+  req.query.state = state; // Add state to query parameters
+
+  try {
+    const authUrl = await getSnapchatAuthUrl(req, res, next);
+    res.status(200).json({ authUrl });
+  } catch (error) {
+    console.error('Error generating Snapchat auth URL:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 // Handle the Snapchat callback
