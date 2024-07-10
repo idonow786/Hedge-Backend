@@ -10,6 +10,7 @@ const TwitterUserSchema = new mongoose.Schema({
   },
   twitterId: {
     type: String,
+    default:'null'
 
   },
   accessToken: {

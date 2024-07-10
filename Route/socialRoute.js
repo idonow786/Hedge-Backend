@@ -232,7 +232,6 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
 
     // Save session and codeVerifier in the database
     const twitterUser = new TwitterUser({
-      twitterId:'yes',
       adminId: req.adminId,
       session: sessionId,
       codeVerifier,
