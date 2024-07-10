@@ -197,46 +197,51 @@ function generateCodeChallenge() {
 }
 
 // Routes
-router.get('/auth/twitter',verifyToken, (req, res) => {
-  req.session.adminId = req.adminId; 
-  const codeChallenge = generateCodeChallenge();
-  req.session.codeVerifier = codeChallenge;
-
-  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&state=${codeChallenge}&code_challenge=${codeChallenge}&code_challenge_method=plain`;
-
-  res.send(authUrl);
-});
-
 router.get('/auth/twitter/callback', async (req, res, next) => {
-  const code = req.query.code;
+  const { code, state } = req.query;
   const codeVerifier = req.session.codeVerifier;
 
-  try {
-    const response = await axios.post('https://api.twitter.com/2/oauth2/token', new URLSearchParams({
-      code: code,
-      grant_type: 'authorization_code',
-      client_id: process.env.TWITTER_CLIENT_ID,
-      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
-      code_verifier: codeVerifier
-    }), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`).toString('base64')}`
-      }
-    });
+  console.log('Received callback with code:', code);
+  console.log('State:', state);
+  console.log('Stored codeVerifier:', codeVerifier);
 
-    const { access_token, refresh_token } = response.data;
+  if (state !== codeVerifier) {
+    console.error('State mismatch');
+    return res.status(400).send('Invalid state parameter');
+  }
+
+  try {
+    const tokenResponse = await axios.post('https://api.twitter.com/2/oauth2/token', 
+      new URLSearchParams({
+        code,
+        grant_type: 'authorization_code',
+        client_id: process.env.TWITTER_CLIENT_ID,
+        redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+        code_verifier: codeVerifier
+      }), 
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`).toString('base64')}`
+        }
+      }
+    );
+
+    console.log('Token response:', tokenResponse.data);
+
+    const { access_token, refresh_token } = tokenResponse.data;
 
     req.session.accessToken = access_token;
     req.session.refreshToken = refresh_token;
 
-    // Proceed with authentication
-    passport.authenticate('twitter', { failureRedirect: '/api/social/failure' })(req, res, next);
+    next();
   } catch (error) {
-    console.error('Error exchanging code for tokens:', error);
-    res.status(500).send('Authentication failed');
+    console.error('Error exchanging code for tokens:', error.response ? error.response.data : error.message);
+    return res.status(500).send('Authentication failed');
   }
-}, (req, res) => {
+}, 
+passport.authenticate('twitter', { failureRedirect: '/api/social/failure' }),
+(req, res) => {
   res.redirect('/api/social/success');
 });
 
