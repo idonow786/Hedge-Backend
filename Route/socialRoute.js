@@ -212,6 +212,7 @@ router.get('/auth/twitter/callback',
 
 
 
+router.get('/auth/snapchat', passport.authenticate('snapchat'));
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
