@@ -190,29 +190,43 @@ router.get('/auth/linkedin/failure', (req, res) => {
 
 
 // Twitter Authentication
-router.get('/auth/twitter', verifyToken, (req, res) => {
-  try {
-    const state = crypto.randomBytes(16).toString('hex');
-    req.session.adminId = req.adminId;
-    req.session.twitterState = state;
-    
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
-    res.status(200).json({ authUrl });
-  } catch (error) {
-    console.error('Error generating Twitter authentication URL:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+app.get('/api/social/auth/twitter', (req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
+  req.session.twitterState = state;
+  console.log('Generated state:', state);
+  
+  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=${state}&code_challenge_method=plain&code_challenge=${generateCodeChallenge()}`;
+  
+  console.log('Session ID:', req.sessionID);
+  console.log('Auth URL:', authUrl);
+  
+  res.redirect(authUrl);
 });
 
-router.get('/auth/twitter/callback', (req, res, next) => {
-  const state = req.query.state;
-  if (state !== req.session.twitterState) {
+app.get('/api/social/auth/twitter/callback', (req, res, next) => {
+  console.log('Callback received');
+  console.log('Session ID:', req.sessionID);
+  console.log('Received state:', req.query.state);
+  console.log('Stored state:', req.session.twitterState);
+
+  const receivedState = req.query.state;
+  const storedState = req.session.twitterState;
+
+  if (!storedState) {
+    console.log('No stored state found in session');
+    return res.status(400).send('No stored state found');
+  }
+
+  if (receivedState !== storedState) {
+    console.log('State mismatch');
     return res.status(400).send('Invalid state parameter');
   }
+
   passport.authenticate('twitter', { failureRedirect: '/api/social/failure' })(req, res, next);
 }, (req, res) => {
   res.redirect('/api/social/success');
 });
+
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
