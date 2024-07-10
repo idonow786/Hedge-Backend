@@ -252,45 +252,7 @@ function base64URLEncode(str) {
 
 // ========================================================
 
-async function getSnapchatAuthUrl(state) {
-  try {
-    const response = await axios.post('https://api.stytch.com/v1/oauth/snapchat/start', {
-      client_id: process.env.STYTCH_CLIENT_ID,
-      redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/snapchat/callback',
-      state: state,
-      scope: 'snapchat.marketing', // Requesting snapchat.marketing scope
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.STYTCH_API_KEY}`,
-      },
-    });
 
-    return response.data.authorization_url;
-  } catch (error) {
-    throw new Error('Error generating Snapchat auth URL: ' + error.message);
-  }
-}
-
-// Generate the Snapchat authorization URL and send it in the response
-router.get('/auth/snapchat', verifyToken, async (req, res) => {
-  const adminId = req.adminId;
-  if (!adminId) {
-    return res.status(400).send('adminId is required');
-  }
-
-  const state = JSON.stringify({ adminId });
-
-  try {
-    const authUrl = await getSnapchatAuthUrl(state);
-    res.status(200).json({ authUrl });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-// Handle the Snapchat callback
 router.get('/auth/snapchat', passport.authenticate('snapchat'));
 
 router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
@@ -298,8 +260,6 @@ router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
 }), (req, res) => {
   res.redirect('/dashboard');
 });
-
-
 //=========================================================
 
 
