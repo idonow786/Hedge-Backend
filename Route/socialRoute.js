@@ -212,7 +212,6 @@ router.get('/auth/twitter/callback',
 
 
 
-router.get('/auth/snapchat', passport.authenticate('snapchat'));
 
 router.get('/success', (req, res) => res.send('Social account connected successfully'));
 
@@ -251,14 +250,47 @@ function base64URLEncode(str) {
 
 
 // ========================================================
-router.get('/auth/snapchat', passport.authenticate('snapchat'));
 
-router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
-  failureRedirect: '/login',
-}), (req, res) => {
-  res.redirect('/dashboard');
+router.get('/auth/snapchat',verifyToken, (req, res, next) => {
+  const adminId = req.adminId;
+  if (!adminId) {
+    return res.status(400).send('adminId is required');
+  }
+  
+  const state = JSON.stringify({ adminId });
+  passport.authenticate('snapchat', { state })(req, res, next);
 });
 
+// Handle the Snapchat callback
+router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
+  failureRedirect: '/login',
+}), async (req, res) => {
+  const { state } = req.query;
+  const { adminId } = JSON.parse(state);
+
+  try {
+    const user = await SnapUser.findById(req.user.id);
+    const admin = await AdminModel.findById(adminId);
+    
+    if (!admin) {
+      return res.status(404).send('Admin not found');
+    }
+
+    // Save the access token and other details in the AdminModel
+    admin.snapchat = {
+      accessToken: user.accessToken,
+      refreshToken: user.refreshToken,
+      snapid: user.snapid,
+      username: user.username,
+    };
+    await admin.save();
+
+    res.redirect('/dashboard'); // Redirect to the desired page after successful authentication
+  } catch (error) {
+    console.error('Error saving token to AdminModel:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 
 
