@@ -26,6 +26,7 @@ const { deleteMessage } = require('../Controller/Social/Whatsapp/deleteMessage')
 const { verifyWebhook, handleWebhook } = require('../Controller/Social/Whatsapp/webhookController');
 const { replyToCustomer, getAllMessages } = require('../Controller/Social/Whatsapp/replyMessage');
 
+const OAuth2Strategy = require('passport-oauth2');
 
 
 
@@ -251,30 +252,41 @@ function base64URLEncode(str) {
 
 // ========================================================
 
-function getSnapchatAuthUrl(req, res, next) {
-  return new Promise((resolve, reject) => {
-    passport.authenticate('snapchat', (err, user, info) => {
-      if (err) {
-        return reject(err);
-      }
-      const url = info;
-      resolve(url);
-    })(req, res, next);
-  });
+const snapchatStrategy = new OAuth2Strategy({
+  authorizationURL: 'https://accounts.snapchat.com/accounts/oauth2/auth',
+  tokenURL: 'https://accounts.snapchat.com/accounts/oauth2/token',
+  clientID: process.env.SNAPCHAT_CLIENT_ID,
+  clientSecret: process.env.SNAPCHAT_CLIENT_SECRET,
+  callbackURL: 'https://yourdomain.com/auth/snapchat/callback',
+}, (accessToken, refreshToken, profile, done) => {
+  // OAuth2 strategy callback
+});
+
+passport.use('snapchat', snapchatStrategy);
+
+// Function to generate Snapchat authorization URL
+function getSnapchatAuthUrl(req) {
+  const state = JSON.stringify({ adminId: req.adminId });
+  const params = snapchatStrategy.authorizationParams(req);
+  params.state = state;
+  params.response_type = 'code';
+  params.client_id = snapchatStrategy._oauth2._clientId;
+  params.redirect_uri = snapchatStrategy._callbackURL;
+  params.scope = 'snapchat.marketing';
+
+  const authUrl = snapchatStrategy._oauth2.getAuthorizeUrl(params);
+  return authUrl;
 }
 
 // Generate the Snapchat authorization URL and send it in the response
-router.get('/auth/snapchat', verifyToken, async (req, res, next) => {
+router.get('/auth/snapchat', verifyToken, (req, res) => {
   const adminId = req.adminId;
   if (!adminId) {
     return res.status(400).send('adminId is required');
   }
 
-  const state = JSON.stringify({ adminId });
-  req.query.state = state; // Add state to query parameters
-
   try {
-    const authUrl = await getSnapchatAuthUrl(req, res, next);
+    const authUrl = getSnapchatAuthUrl(req);
     res.status(200).json({ authUrl });
   } catch (error) {
     console.error('Error generating Snapchat auth URL:', error);
@@ -312,7 +324,6 @@ router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
     res.status(500).send('Internal Server Error');
   }
 });
-
 
 
 
