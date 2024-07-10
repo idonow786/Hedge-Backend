@@ -197,8 +197,8 @@ function generateCodeChallenge() {
 }
 
 // Routes
-router.get('/auth/twitter', (req, res) => {
-  req.session.adminId = req.query.adminId; // Assuming adminId is passed as a query parameter
+router.get('/auth/twitter',verifyToken, (req, res) => {
+  req.session.adminId = req.adminId; 
   const codeChallenge = generateCodeChallenge();
   req.session.codeVerifier = codeChallenge;
 
