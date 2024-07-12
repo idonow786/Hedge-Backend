@@ -161,44 +161,44 @@ exports.deletePost = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Delete post from Facebook
-    if (post.FacebookPostId) {
-      const facebookUser = await FacebookUser.findOne({ adminId });
-      if (facebookUser) {
-        const facebookAccessToken = facebookUser.accessToken;
-        const facebookDeleteUrl = `https://graph.facebook.com/${post.FacebookPostId}?access_token=${facebookAccessToken}`;
-        await axios.delete(facebookDeleteUrl);
-      }
-    }
+    // // Delete post from Facebook
+    // if (post.FacebookPostId) {
+    //   const facebookUser = await FacebookUser.findOne({ adminId });
+    //   if (facebookUser) {
+    //     const facebookAccessToken = facebookUser.accessToken;
+    //     const facebookDeleteUrl = `https://graph.facebook.com/${post.FacebookPostId}?access_token=${facebookAccessToken}`;
+    //     await axios.delete(facebookDeleteUrl);
+    //   }
+    // }
 
-    // Delete post from LinkedIn
-    if (post.LinkedInPostId) {
-      const linkedinUser = await LinkedInUser.findOne({ adminId });
-      if (linkedinUser) {
-        const linkedinAccessToken = linkedinUser.accessToken;
-        const linkedinDeleteUrl = `https://api.linkedin.com/v2/ugcPosts/${post.LinkedInPostId}`;
-        await axios.delete(linkedinDeleteUrl, {
-          headers: {
-            Authorization: `Bearer ${linkedinAccessToken}`,
-          },
-        });
-      }
-    }
+    // // Delete post from LinkedIn
+    // if (post.LinkedInPostId) {
+    //   const linkedinUser = await LinkedInUser.findOne({ adminId });
+    //   if (linkedinUser) {
+    //     const linkedinAccessToken = linkedinUser.accessToken;
+    //     const linkedinDeleteUrl = `https://api.linkedin.com/v2/ugcPosts/${post.LinkedInPostId}`;
+    //     await axios.delete(linkedinDeleteUrl, {
+    //       headers: {
+    //         Authorization: `Bearer ${linkedinAccessToken}`,
+    //       },
+    //     });
+    //   }
+    // }
 
-    // Delete post from Twitter
-    if (post.TwitterPostId) {
-      const twitterUser = await TwitterUser.findOne({ adminId });
-      if (twitterUser) {
-        const twitterAccessToken = twitterUser.accessToken;
-        const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
-        const twitterDeleteUrl = `https://api.twitter.com/2/tweets/${post.TwitterPostId}`;
-        await axios.delete(twitterDeleteUrl, {
-          headers: {
-            Authorization: `Bearer ${twitterAccessToken}`,
-          },
-        });
-      }
-    }
+    // // Delete post from Twitter
+    // if (post.TwitterPostId) {
+    //   const twitterUser = await TwitterUser.findOne({ adminId });
+    //   if (twitterUser) {
+    //     const twitterAccessToken = twitterUser.accessToken;
+    //     const twitterAccessTokenSecret = twitterUser.accessTokenSecret;
+    //     const twitterDeleteUrl = `https://api.twitter.com/2/tweets/${post.TwitterPostId}`;
+    //     await axios.delete(twitterDeleteUrl, {
+    //       headers: {
+    //         Authorization: `Bearer ${twitterAccessToken}`,
+    //       },
+    //     });
+    //   }
+    // }
 
     await post.remove();
 
