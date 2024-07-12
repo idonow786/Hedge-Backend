@@ -18,7 +18,7 @@ const TwitterStrategy = require('passport-twitter-oauth2').Strategy;
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/facebook/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback',
   profileFields: ['id', 'displayName', 'emails'],
   passReqToCallback: true // Pass the request object to the callback
 },
@@ -101,7 +101,7 @@ passport.use(
     {
       clientID: process.env.LINKEDIN_CLIENT_ID,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback',
+      callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback',
       scope: ['openid', 'profile', 'email', 'w_member_social'],
       passReqToCallback: true,
     },
@@ -151,7 +151,7 @@ passport.use(
 passport.use(new TwitterStrategy({
   clientID: process.env.TWITTER_CLIENT_ID,
   clientSecret: process.env.TWITTER_CLIENT_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback',
   passReqToCallback: true
 },
 async (req, accessToken, refreshToken, profile, done) => {
@@ -186,7 +186,7 @@ passport.use('snapchat', new OAuth2Strategy({
   tokenURL: 'https://accounts.snapchat.com/accounts/oauth2/token',
   clientID: process.env.SNAPCHAT_CLIENT_ID,
   clientSecret: process.env.SNAPCHAT_CLIENT_SECRET,
-  callbackURL: 'https://crm-m3ck.onrender.com/api/social/auth/snapchat/callback',
+  callbackURL: 'https://ai-crem-backend.onrender.com/api/social/auth/snapchat/callback',
   scope: ['snapchat.marketing'],
   state: true,
 }, async (accessToken, refreshToken, profile, done) => {

@@ -4,7 +4,7 @@ const { OAuthDataLinkedin, LinkedInUser } = require('../../Model/Linkedin');
 // Auth controller
 const linkedinAuth = async (req, res) => {
   try {
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${process.env.LINKEDIN_REDIRECT_URI}&scope=r_liteprofile%20r_emailaddress`;
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback&scope=r_liteprofile%20r_emailaddress`;
     const state = Math.random().toString(36).substring(7);
 
     const oauthData = new OAuthDataLinkedin({

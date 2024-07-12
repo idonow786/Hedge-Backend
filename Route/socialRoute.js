@@ -78,7 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 router.get('/auth/facebook', verifyToken, (req, res) => {
   console.log("APPID :", process.env.FACEBOOK_APP_ID)
   // Generate the Facebook authentication URL with the adminId in the state parameter
-  const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
+  const authUrl = `https://www.facebook.com/v9.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback')}&state=${req.adminId}&scope=email,pages_manage_posts,pages_read_engagement`;
 
   // Send the URL back to the client
   res.status(200).json({ authUrl });
@@ -148,7 +148,7 @@ router.get('/failure', (req, res) => res.send('Failed to connect Facebook accoun
 
 router.get('/auth/linkedin', verifyToken, (req, res) => {
   const state = encodeURIComponent(JSON.stringify({ adminId: req.adminId }));
-  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/linkedin/callback')}&state=${state}&scope=openid%20profile%20email%20w_member_social`;
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/linkedin/callback')}&state=${state}&scope=openid%20profile%20email%20w_member_social`;
   res.status(200).json({ authUrl });
 });
 
@@ -212,7 +212,7 @@ router.get('/auth/twitter', verifyToken, async (req, res) => {
 
   const state = Buffer.from(JSON.stringify({ adminId })).toString('base64');
 
-  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://crm-m3ck.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
+  const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback')}&scope=tweet.read%20users.read%20follows.read%20follows.write&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
 
   res.send(authUrl);
 });
@@ -238,7 +238,7 @@ router.get('/auth/twitter/callback', async (req, res, next) => {
         code,
         grant_type: 'authorization_code',
         client_id: process.env.TWITTER_CLIENT_ID,
-        redirect_uri: 'https://crm-m3ck.onrender.com/api/social/auth/twitter/callback',
+        redirect_uri: 'https://ai-crem-backend.onrender.com/api/social/auth/twitter/callback',
         code_verifier: codeVerifier
       }), 
       {
@@ -305,7 +305,7 @@ router.get('/auth/snapchat/callback', passport.authenticate('snapchat', {
 // Function to get the TikTok authorization URL
 async function getTikTokAuthUrl(state) {
   const clientId = process.env.TIKTOK_CLIENT_KEY
-  const redirectUri = 'https://crm-m3ck.onrender.com/api/social/auth/tiktok/callback';
+  const redirectUri = 'https://ai-crem-backend.onrender.com/api/social/auth/tiktok/callback';
   const scope = 'video.upload'; // Requesting permission to post on TikTok
 
   const authUrl = `https://open-api.tiktok.com/platform/oauth/connect/?client_key=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
