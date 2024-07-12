@@ -58,55 +58,54 @@ exports.createPost = async (req, res) => {
 
 
     // Get user details from the models based on adminId
-    const facebookUser = await FacebookUser.find();
-    const linkedinUser = await LinkedInUser.find();
-    const twitterUser = await TwitterUser.find();
-    console.log(twitterUser)
-    console.log(facebookUser)
-    console.log(linkedinUser)
+    // const facebookUser = await FacebookUser.find();
+    // const linkedinUser = await LinkedInUser.find();
+    // const twitterUser = await TwitterUser.find();
+    // console.log(twitterUser)
+    // console.log(facebookUser)
+    // console.log(linkedinUser)
 
-    // Post on Facebook if requested
-    if (facebook && pageId) {
-      const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
-      post.FacebookPostId = facebookPostId;
-    }
-    // Post on LinkedIn
-    // Post on LinkedIn
-    if (linkedin === true || linkedin === 'true') {
-      const mediaFiles = req.files;
-      try {
-        const linkedInPostId = await postToLinkedIn(adminId, title, description, mediaFiles);
-        post.LinkedInPostId = linkedInPostId;
-      } catch (error) {
-        console.error('Error posting to LinkedIn:', error);
-      }
-    }
+    // // Post on Facebook if requested
+    // if (facebook && pageId) {
+    //   const facebookPostId = await facebookService.postToFacebook(adminId, pageId, title, description, req.files);
+    //   post.FacebookPostId = facebookPostId;
+    // }
+    // // Post on LinkedIn
+    // // Post on LinkedIn
+    // if (linkedin === true || linkedin === 'true') {
+    //   const mediaFiles = req.files;
+    //   try {
+    //     const linkedInPostId = await postToLinkedIn(adminId, title, description, mediaFiles);
+    //     post.LinkedInPostId = linkedInPostId;
+    //   } catch (error) {
+    //     console.error('Error posting to LinkedIn:', error);
+    //   }
+    // }
 
-    if (twitter==true||twitter=='true') {
-      try {
-        const imageUrls = await Promise.all(
-          req.files.filter(file => file.mimetype.startsWith('image/')).map(async (file) => {
-            const imageUrl = await uploadImageToFirebase(file.buffer.toString('base64'), file.mimetype);
-            return imageUrl;
-          })
-        );
+    // if (twitter==true||twitter=='true') {
+    //   try {
+    //     const imageUrls = await Promise.all(
+    //       req.files.filter(file => file.mimetype.startsWith('image/')).map(async (file) => {
+    //         const imageUrl = await uploadImageToFirebase(file.buffer.toString('base64'), file.mimetype);
+    //         return imageUrl;
+    //       })
+    //     );
     
-        const videoUrls = await Promise.all(
-          req.files.filter(file => file.mimetype.startsWith('video/')).map(async (file) => {
-            const videoUrl = await uploadVideoToFirebase(file);
-            return videoUrl;
-          })
-        );
+    //     const videoUrls = await Promise.all(
+    //       req.files.filter(file => file.mimetype.startsWith('video/')).map(async (file) => {
+    //         const videoUrl = await uploadVideoToFirebase(file);
+    //         return videoUrl;
+    //       })
+    //     );
     
-        const tweetResponse = await postToTwitter(description, imageUrls, videoUrls, adminId);
-        post.TwitterPostId=tweetResponse.id_str
-        console.log(tweetResponse)
-      } catch (error) {
-        console.error('Error posting to Twitter:', error);
-      }
-    }
+    //     const tweetResponse = await postToTwitter(description, imageUrls, videoUrls, adminId);
+    //     post.TwitterPostId=tweetResponse.id_str
+    //     console.log(tweetResponse)
+    //   } catch (error) {
+    //     console.error('Error posting to Twitter:', error);
+    //   }
+    // }
 
-    await post.save();
 
     res.status(201).json({ message: 'Post created successfully' });
   } catch (error) {
