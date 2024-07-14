@@ -11,8 +11,16 @@ router.get('/get-token',verifyToken, getToken);
 router.post('/add-token',verifyToken, updateToken);
 router.post('/send-message', upload.single('file'),verifyToken, sendMessage);
 router.get('/messages',verifyToken, getAllMessages);
+
+
+
+
+
+
+//venom
 router.post('/sending', upload.single('file'),verifyToken, sending);
 router.get('/qr',verifyToken, QRcode);
 router.get('/inbox',verifyToken, getAllMessages);
+router.get('/report',verifyToken, getReport);
 
 module.exports = router;
