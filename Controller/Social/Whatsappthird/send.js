@@ -5,6 +5,7 @@ const WhatsAppReport = require('../../../Model/whatsAppReport');
 const xlsx = require('xlsx');
 const multer = require('multer');
 const path = require('path');
+const { uploadImageToFirebase } = require('../../../Firebase/uploadImage');
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -137,7 +138,7 @@ const QRcode = async (req, res) => {
 
 
 const sending = async (req, res) => {
-    const { message, phoneNo, Name } = req.body;
+    const { message, phoneNo, Name, base64Image, contentType } = req.body;
     const userId = req.adminId;
 
     if (!req.file || !req.file.path) {
@@ -153,6 +154,16 @@ const sending = async (req, res) => {
     }
 
     try {
+        let imageUrl = null;
+
+        if (base64Image && contentType) {
+            try {
+                imageUrl = await uploadImageToFirebase(base64Image, contentType);
+            } catch (error) {
+                return res.status(500).send('Failed to upload image.');
+            }
+        }
+
         const file = req.file;
         const workbook = xlsx.readFile(file.path);
         const sheetName = workbook.SheetNames[0];
@@ -173,7 +184,11 @@ const sending = async (req, res) => {
             const chatId = number.includes('@c.us') ? number : `${number}@c.us`;
 
             try {
-                await clients[userId].sendText(chatId, message);
+                if (imageUrl) {
+                    await clients[userId].sendImage(chatId, imageUrl, 'image', message);
+                } else {
+                    await clients[userId].sendText(chatId, message);
+                }
 
                 const newMessage = {
                     userId: req.adminId,
@@ -184,9 +199,10 @@ const sending = async (req, res) => {
                         to: number,
                         author: phoneNo,
                         pushname: Name,
-                        message_type: 'text',
+                        message_type: imageUrl ? 'image' : 'text',
                         status: 'sent',
                         body: message,
+                        imageUrl: imageUrl || null,
                         timestamp: new Date(),
                     }]
                 };
@@ -213,6 +229,8 @@ const sending = async (req, res) => {
         res.status(500).send('Failed to process Excel file');
     }
 };
+
+
 
 
 const getAllMessages = async (req, res) => {
