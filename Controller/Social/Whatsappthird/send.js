@@ -172,5 +172,25 @@ const sending = async (req, res) => {
         res.status(500).send('Failed to process Excel file');
     }
 };
+const getAllMessages = async (req, res) => {
+    const userId = req.adminId;
 
-module.exports = { sending, QRcode,upload }
+    if (!userId) {
+        return res.status(400).send('Missing user ID');
+    }
+
+    try {
+        const messages = await Message.find({ userId: userId });
+
+        if (!messages || messages.length === 0) {
+            return res.status(404).send('No messages found for this user');
+        }
+
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error('Error fetching messages: ', error);
+        res.status(500).send('Failed to fetch messages');
+    }
+};
+
+module.exports = { sending, QRcode,upload,getAllMessages }

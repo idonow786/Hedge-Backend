@@ -13,5 +13,6 @@ router.post('/send-message', upload.single('file'),verifyToken, sendMessage);
 router.get('/messages',verifyToken, getAllMessages);
 router.post('/sending', upload.single('file'),verifyToken, sending);
 router.get('/qr',verifyToken, QRcode);
+router.get('/inbox',verifyToken, getAllMessages);
 
 module.exports = router;
