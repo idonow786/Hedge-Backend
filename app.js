@@ -29,6 +29,7 @@ const projectRoute=require('./Route/projectRoute')
 const dashboardRoute=require('./Route/dashboardRoute') 
 const businessRoute=require('./Route/businessRoute') 
 const socialRoute=require('./Route/socialRoute') 
+const whatsappRoute=require('./Route/whatsappRoute') 
 
 
 
@@ -71,6 +72,7 @@ app.use('/api/report',reportRoute)
 app.use('/api/dashboard',dashboardRoute)
 app.use('/api/business',businessRoute)
 app.use('/api/social',socialRoute)
+app.use('/api/whatsapp',whatsappRoute)
 
 
 // Error handling middleware

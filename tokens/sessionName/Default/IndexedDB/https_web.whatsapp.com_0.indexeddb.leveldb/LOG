@@ -1,0 +1,40 @@
+2024/07/14-15:22:27.692 569df Reusing MANIFEST /home/osamahashmi/MD-/F~/<P>/CRM/tokens/sessionName/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/07/14-15:22:27.693 569df Recovering log #799
+2024/07/14-15:22:27.753 569df Reusing old log /home/osamahashmi/MD-/F~/<P>/CRM/tokens/sessionName/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000799.log 
+2024/07/14-15:22:30.742 569df Level-0 table #816: started
+2024/07/14-15:22:30.878 569df Level-0 table #816: 901081 bytes OK
+2024/07/14-15:22:30.883 569df Delete type=0 #799
+2024/07/14-15:22:30.890 569df Manual compaction at level-0 from '\x00?\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00@\x00\x00\x00' @ 0 : 0; will stop at '\x00?\x00\x00\x05' @ 2605268 : 1
+2024/07/14-15:22:30.890 569df Compacting 1@0 + 1@1 files
+2024/07/14-15:22:31.013 569df Generated table #817@0: 19305 keys, 428934 bytes
+2024/07/14-15:22:31.029 569df Generated table #818@0: 1957 keys, 40328 bytes
+2024/07/14-15:22:31.029 569df Compacted 1@0 + 1@1 files => 469262 bytes
+2024/07/14-15:22:31.033 569df compacted to: files[ 0 2 15 0 0 0 0 ]
+2024/07/14-15:22:31.034 569df Delete type=2 #816
+2024/07/14-15:22:31.035 569df Manual compaction at level-0 from '\x00?\x00\x00\x05' @ 2605268 : 1 .. '\x00@\x00\x00\x00' @ 0 : 0; will stop at (end)
+2024/07/14-15:22:32.991 569e0 Compacting 1@1 + 10@2 files
+2024/07/14-15:22:33.184 569e0 Generated table #819@1: 49143 keys, 2204784 bytes
+2024/07/14-15:22:33.396 569e0 Generated table #820@1: 49987 keys, 2214002 bytes
+2024/07/14-15:22:33.433 569e0 Generated table #821@1: 2282 keys, 2157343 bytes
+2024/07/14-15:22:33.490 569e0 Generated table #822@1: 2648 keys, 2152286 bytes
+2024/07/14-15:22:33.583 569e0 Generated table #823@1: 3884 keys, 2156605 bytes
+2024/07/14-15:22:33.733 569e0 Generated table #824@1: 21511 keys, 2212955 bytes
+2024/07/14-15:22:33.850 569e0 Generated table #825@1: 31078 keys, 2260527 bytes
+2024/07/14-15:22:33.955 569e0 Generated table #826@1: 27656 keys, 2221503 bytes
+2024/07/14-15:22:34.009 569e0 Generated table #827@1: 7207 keys, 2127921 bytes
+2024/07/14-15:22:34.249 569e0 Generated table #828@1: 106615 keys, 2258193 bytes
+2024/07/14-15:22:34.257 569e0 Generated table #829@1: 3355 keys, 72866 bytes
+2024/07/14-15:22:34.257 569e0 Compacted 1@1 + 10@2 files => 22038985 bytes
+2024/07/14-15:22:34.260 569e0 compacted to: files[ 0 1 16 0 0 0 0 ]
+2024/07/14-15:22:34.261 569e0 Delete type=2 #806
+2024/07/14-15:22:34.262 569e0 Delete type=2 #807
+2024/07/14-15:22:34.262 569e0 Delete type=2 #803
+2024/07/14-15:22:34.262 569e0 Delete type=2 #817
+2024/07/14-15:22:34.262 569e0 Delete type=2 #809
+2024/07/14-15:22:34.262 569e0 Delete type=2 #808
+2024/07/14-15:22:34.262 569e0 Delete type=2 #810
+2024/07/14-15:22:34.262 569e0 Delete type=2 #805
+2024/07/14-15:22:34.262 569e0 Delete type=2 #811
+2024/07/14-15:22:34.263 569e0 Delete type=2 #804
+2024/07/14-15:22:34.263 569e0 Delete type=2 #802
+2024/07/14-15:22:34.263 569e0 Delete type=2 #812
