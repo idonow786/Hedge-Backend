@@ -2,7 +2,7 @@ const express = require('express');
 const { updateToken,getToken } = require('../Controller/Social/Whatsappthird/TokenController');
 const { sendMessage, upload } = require('../Controller/Social/Whatsappthird/sendMessage');
 const { getAllMessages } = require('../Controller/Social/Whatsappthird/allMessages');
-const { sending,QRcode } = require('../Controller/Social/Whatsappthird/send');
+const { sending,QRcode,getReport } = require('../Controller/Social/Whatsappthird/send');
 const { verifyToken } = require('../Middleware/jwt');
 
 const router = express.Router();

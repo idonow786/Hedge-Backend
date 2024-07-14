@@ -137,8 +137,10 @@ const QRcode = async (req, res) => {
 };
 
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 const sending = async (req, res) => {
-    const { message, phoneNo, Name, base64Image, contentType } = req.body;
+    const { message, base64Image, contentType } = req.body;
     const userId = req.adminId;
 
     if (!req.file || !req.file.path) {
@@ -152,6 +154,12 @@ const sending = async (req, res) => {
     if (!message || !phoneNo || !Name) {
         return res.status(400).send('Missing required fields: message, phoneNo, and/or Name');
     }
+    const business = await Business.findOne({ AdminID: userId });
+    if (!business) {
+        return res.status(400).send('Business details not found.');
+    }
+
+    const { BusinessName, BusinessPhoneNo } = business;
 
     try {
         let imageUrl = null;
@@ -171,6 +179,16 @@ const sending = async (req, res) => {
         const data = xlsx.utils.sheet_to_json(worksheet);
 
         let bulkMessagesCount = 0;
+        const today = new Date().toISOString().split('T')[0];
+
+        let report = await WhatsAppReport.findOne({ userId: userId });
+        if (!report) {
+            report = new WhatsAppReport({ userId: userId, sessionName: clients[userId].sessionName });
+        }
+
+        if (report.dailyMessages.get(today) && report.dailyMessages.get(today) >= 400) {
+            return res.status(400).send('Daily message limit of 400 reached.');
+        }
 
         for (const row of data) {
             let number = row.phone;
@@ -195,10 +213,10 @@ const sending = async (req, res) => {
                     phoneNumber: number,
                     messages: [{
                         id: chatId,
-                        from: phoneNo,
+                        from: BusinessPhoneNo,
                         to: number,
-                        author: phoneNo,
-                        pushname: Name,
+                        author: BusinessPhoneNo,
+                        pushname: BusinessName,
                         message_type: imageUrl ? 'image' : 'text',
                         status: 'sent',
                         body: message,
@@ -209,19 +227,29 @@ const sending = async (req, res) => {
 
                 await Message.create(newMessage);
                 bulkMessagesCount++;
+
+                report.dailyMessages.set(today, (report.dailyMessages.get(today) || 0) + 1);
+
+                if (report.dailyMessages.get(today) >= 400) {
+                    break;
+                }
+
+                await delay(10000);
             } catch (error) {
                 console.error('Error sending message to: ', number, error);
             }
         }
 
-        await WhatsAppReport.findOneAndUpdate(
-            { userId: userId },
-            { 
-                $inc: { totalBulkMessages: bulkMessagesCount },
-                lastMessageSentDate: new Date()
-            },
-            { new: true, upsert: true }
-        );
+        const week = getWeekNumber(new Date());
+        const month = new Date().getMonth() + 1;
+
+        report.weeklyMessages.set(week, (report.weeklyMessages.get(week) || 0) + bulkMessagesCount);
+        report.monthlyMessages.set(month, (report.monthlyMessages.get(month) || 0) + bulkMessagesCount);
+
+        report.totalBulkMessages += bulkMessagesCount;
+        report.lastMessageSentDate = new Date();
+
+        await report.save();
 
         res.status(200).send('Messages sent successfully');
     } catch (error) {
@@ -230,6 +258,13 @@ const sending = async (req, res) => {
     }
 };
 
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    return weekNo;
+}
 
 
 

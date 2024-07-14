@@ -8,6 +8,21 @@ const WhatsAppReportSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    dailyMessages: {
+        type: Map,
+        of: Number,
+        default: {}
+    },
+    weeklyMessages: {
+        type: Map,
+        of: Number,
+        default: {}
+    },
+    monthlyMessages: {
+        type: Map,
+        of: Number,
+        default: {}
+    },
     totalUsers: {
         type: Number,
         default: 0
