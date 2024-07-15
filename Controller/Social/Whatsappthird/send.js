@@ -189,9 +189,9 @@ const sending = async (req, res) => {
             return res.status(400).send('WhatsApp session is not active. Please generate QR code and connect first.');
         }
 
-        if (!clients[userId]) {
-            return res.status(400).send('Client is not initialized. Please reconnect to WhatsApp.');
-        }
+        // if (!clients[userId]) {
+        //     return res.status(400).send('Client is not initialized. Please reconnect to WhatsApp.');
+        // }
 
         const business = await Business.findOne({ AdminID: userId });
         if (!business) {
