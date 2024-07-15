@@ -55,7 +55,7 @@ const QRcode = async (req, res) => {
         if (retryCount < maxRetries) {
             retryCount++;
             console.log(`Retrying QR code generation. Attempt ${retryCount} of ${maxRetries}`);
-            initializeVenom();
+            await initializeVenom();
         } else {
             sendResponse(408, { success: false, message: 'Failed to establish connection after multiple attempts. Please try again later.' });
         }
@@ -84,7 +84,6 @@ const QRcode = async (req, res) => {
                             qrCode: base64Image
                         });
 
-                        // Set timer to remove session if QR is not scanned within 10 seconds
                         qrScanTimer = setTimeout(() => removeInstanceAndSession(userId), 10000);
                     }
                 },
@@ -115,8 +114,8 @@ const QRcode = async (req, res) => {
                         }
                     }
 
-                    if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled' || statusSession === 'desconnectedMobile') {
-                        removeInstanceAndSession(userId);
+                    if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled' || statusSession === 'desconnectedMobile' || statusSession === 'erroPageWhatsapp') {
+                        await removeInstanceAndSession(userId);
                     }
                 },
                 {
@@ -131,6 +130,14 @@ const QRcode = async (req, res) => {
                     autoClose: 60000,
                     createPathFileToken: true,
                     waitForLogin: true,
+                    createOptions: {
+                        browserArgs: ['--no-sandbox'],
+                        useChrome: true,
+                        puppeteerOptions: {
+                            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                            timeout: 120000 // Increased timeout to 2 minutes
+                        }
+                    }
                 }
             );
 
@@ -153,7 +160,7 @@ const QRcode = async (req, res) => {
 
         } catch (error) {
             console.error('Error initializing venom-bot: ', error);
-            sendResponse(500, { success: false, message: 'Failed to initialize venom-bot' });
+            await removeInstanceAndSession(userId);
         }
     };
 
@@ -176,13 +183,14 @@ const QRcode = async (req, res) => {
             });
         }
 
-        initializeVenom();
+        await initializeVenom();
 
     } catch (error) {
         console.error('Error in QRcode function: ', error);
         sendResponse(500, { success: false, message: 'Internal server error' });
     }
 };
+
 
 
 
