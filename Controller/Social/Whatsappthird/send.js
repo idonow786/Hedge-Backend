@@ -16,21 +16,25 @@ const QRcode = async (req, res) => {
     const sessionName = `session-${userId}`; 
 
     try {
-        const user = await User.findOne({ userId: userId });
-        if (user && user.sessionActive) {
-            if (clients[userId] && await isClientConnected(clients[userId])) {
-                return res.status(200).send({ session: true });
-            } else {
-                await User.findOneAndUpdate(
-                    { userId: userId },
-                    { sessionActive: false },
-                    { new: true }
-                );
-                if (clients[userId]) {
+        // Check if client exists and is properly initialized
+        if (clients[userId]) {
+            try {
+                const isConnected = await isClientConnected(clients[userId]);
+                if (isConnected) {
+                    console.log('Client is already connected');
+                    return res.status(200).send({ session: true });
+                } else {
+                    console.log('Client exists but is not connected. Reinitializing...');
                     delete clients[userId];
                 }
+            } catch (error) {
+                console.error('Error checking client connection:', error);
+                delete clients[userId];
             }
         }
+
+        // At this point, we know we need to generate a new QR code
+        console.log('Generating new QR code for user:', userId);
 
         await User.findOneAndUpdate(
             { userId: userId },
@@ -61,6 +65,7 @@ const QRcode = async (req, res) => {
             sessionName,
             (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
+                    console.log('QR code generated. Sending to client...');
                     const qrImageData = base64Qr.replace(/^data:image\/png;base64,/, "");
                     res.writeHead(200, {
                         'Content-Type': 'image/png',
@@ -79,6 +84,7 @@ const QRcode = async (req, res) => {
                 }
 
                 if (statusSession === 'successChat') {
+                    console.log('Chat connected successfully');
                     await User.findOneAndUpdate(
                         { userId: userId },
                         { sessionActive: true },
@@ -93,14 +99,10 @@ const QRcode = async (req, res) => {
                         },
                         { new: true, upsert: true }
                     );
-
-                    if (!responseSent) {
-                        res.status(200).send({ session: true });
-                        responseSent = true;
-                    }
                 }
 
                 if (statusSession === 'browserClose' || statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
+                    console.log('Session ended or failed:', statusSession);
                     await User.findOneAndUpdate(
                         { userId: userId },
                         { sessionActive: false },
@@ -109,14 +111,11 @@ const QRcode = async (req, res) => {
                     if (clients[userId]) {
                         delete clients[userId];
                     }
-                    if (!responseSent) {
-                        res.status(500).send('Failed to read QR code or session closed.');
-                        responseSent = true;
-                    }
                 }
             },
             venomOptions
         ).then((clientInstance) => {
+            console.log('Venom client created successfully');
             clients[userId] = clientInstance;
             clientInstance.onStateChange((state) => {
                 console.log('State changed: ', state);
@@ -124,6 +123,7 @@ const QRcode = async (req, res) => {
                     console.log('Client is ready!');
                 }
                 if (state === 'DISCONNECTED') {
+                    console.log('Client disconnected');
                     User.findOneAndUpdate(
                         { userId: userId },
                         { sessionActive: false },
@@ -151,7 +151,8 @@ const QRcode = async (req, res) => {
 
 async function isClientConnected(client) {
     try {
-        await client.getBatteryLevel();
+        const batteryLevel = await client.getBatteryLevel();
+        console.log('Battery level:', batteryLevel);
         return true;
     } catch (error) {
         console.error('Error checking client connection:', error);
