@@ -33,6 +33,7 @@ const getMessages = async (req, res) => {
         res.status(500).send('Failed to fetch messages');
     }
 };
+
 const getReport = async (req, res) => {
     const userId = req.adminId;
 
@@ -48,10 +49,41 @@ const getReport = async (req, res) => {
             report = await WhatsAppReport.find();
         }
 
-        res.status(200).json(report);
+        const currentDate = new Date();
+        const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        let weeklyMessages = 0;
+        for (let [date, count] of report.weeklyMessages) {
+            if (new Date(date) >= oneWeekAgo) {
+                weeklyMessages += count;
+            }
+        }
+
+        const lastMessageDate = report.lastMessageSentDate ? report.lastMessageSentDate.toISOString().split('T')[0] : null;
+
+        const reportData = {
+            totalUsers: report.totalUsers,
+            totalBulkMessages: report.totalBulkMessages,
+            weeklyMessages: weeklyMessages,
+            lastMessageSentDate: lastMessageDate,
+            lastMessageTotalBulkMessages: report.totalBulkMessages
+        };
+
+        res.status(200).json({
+            message: 'WhatsApp report generated successfully',
+            reports: {
+                users: report.totalUsers,
+                bulkMessages: report.totalBulkMessages,
+                weeklyMessages: weeklyMessages,
+                lastMessageDate: lastMessageDate,
+                lastMessageTotalBulkMessages: report.totalBulkMessages
+            },
+        });
     } catch (error) {
         console.error('Error fetching WhatsApp report: ', error);
         res.status(500).send('Failed to fetch WhatsApp report.');
     }
 };
+
+
 module.exports = {  getMessages, upload, getReport };
