@@ -16,20 +16,25 @@ const QRcode = async (req, res) => {
     const sessionName = `session-${userId}`; 
 
     try {
-        // Check if a session already exists
-        if (clients[userId]) {
-            // If the client exists but is not ready, delete it
-            if (!clients[userId].isReady) {
-                await clients[userId].destroy();
-                delete clients[userId];
-            } else {
+        const user = await User.findOne({ userId: userId });
+        if (user && user.sessionActive) {
+            if (clients[userId] && await isClientConnected(clients[userId])) {
                 return res.status(200).send({ session: true });
+            } else {
+                await User.findOneAndUpdate(
+                    { userId: userId },
+                    { sessionActive: false },
+                    { new: true }
+                );
+                if (clients[userId]) {
+                    delete clients[userId];
+                }
             }
         }
 
         await User.findOneAndUpdate(
             { userId: userId },
-            { sessionName: sessionName },
+            { sessionName: sessionName, sessionActive: false },
             { new: true, upsert: true }
         );
 
@@ -48,8 +53,8 @@ const QRcode = async (req, res) => {
             disableWelcome: true,
             logQR: true,
             autoClose: 300000,
-            createPathFileToken: false,
-            waitForLogin: false, 
+            createPathFileToken: false, 
+            waitForLogin: false,
         };
 
         venom.create(
@@ -77,7 +82,7 @@ const QRcode = async (req, res) => {
                     await User.findOneAndUpdate(
                         { userId: userId },
                         { sessionActive: true },
-                        { new: true, upsert: true }
+                        { new: true }
                     );
 
                     await WhatsAppReport.findOneAndUpdate(
@@ -96,8 +101,12 @@ const QRcode = async (req, res) => {
                 }
 
                 if (statusSession === 'browserClose' || statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
+                    await User.findOneAndUpdate(
+                        { userId: userId },
+                        { sessionActive: false },
+                        { new: true }
+                    );
                     if (clients[userId]) {
-                        await clients[userId].destroy();
                         delete clients[userId];
                     }
                     if (!responseSent) {
@@ -113,6 +122,15 @@ const QRcode = async (req, res) => {
                 console.log('State changed: ', state);
                 if (state === 'CONNECTED') {
                     console.log('Client is ready!');
+                }
+                if (state === 'DISCONNECTED') {
+                    User.findOneAndUpdate(
+                        { userId: userId },
+                        { sessionActive: false },
+                        { new: true }
+                    ).then(() => {
+                        delete clients[userId];
+                    });
                 }
             });
         }).catch((error) => {
@@ -130,6 +148,16 @@ const QRcode = async (req, res) => {
         }
     }
 };
+
+async function isClientConnected(client) {
+    try {
+        await client.getBatteryLevel();
+        return true;
+    } catch (error) {
+        console.error('Error checking client connection:', error);
+        return false;
+    }
+}
 
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
