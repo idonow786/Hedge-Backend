@@ -1,6 +1,7 @@
 const venom = require('venom-bot');
 const User = require('../../../Model/whatsappUser');
 const Message = require('../../../Model/messageWhatsapp');
+const Business = require('../../../Model/Business');
 const WhatsAppReport = require('../../../Model/whatsAppReport');
 const xlsx = require('xlsx');
 const multer = require('multer');
@@ -13,152 +14,122 @@ let clients = {};
 
 const QRcode = async (req, res) => {
     const userId = req.adminId;
-    const sessionName = `session-${userId}`; 
+    const sessionName = `session-${userId}`;
+    let responseSent = false;
+    let inactivityTimer;
+
+    const sendResponse = (status, message) => {
+        if (!responseSent) {
+            res.status(status).send(message);
+            responseSent = true;
+        }
+    };
+
+    const closeClientAfterInactivity = (client) => {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            console.log(`Closing client for ${userId} due to inactivity`);
+            if (client && typeof client.close === 'function') {
+                client.close();
+            }
+            delete clients[userId];
+        }, 5 * 60 * 1000); 
+    };
 
     try {
-        // Check if client exists and is properly initialized
         if (clients[userId]) {
-            try {
-                const isConnected = await isClientConnected(clients[userId]);
-                if (isConnected) {
-                    console.log('Client is already connected');
-                    return res.status(200).send({ session: true });
-                } else {
-                    console.log('Client exists but is not connected. Reinitializing...');
-                    delete clients[userId];
-                }
-            } catch (error) {
-                console.error('Error checking client connection:', error);
-                delete clients[userId];
-            }
+            return sendResponse(200, { session: true });
         }
-
-        // At this point, we know we need to generate a new QR code
-        console.log('Generating new QR code for user:', userId);
 
         await User.findOneAndUpdate(
             { userId: userId },
-            { sessionName: sessionName, sessionActive: false },
+            { sessionName: sessionName },
             { new: true, upsert: true }
         );
-
-        let responseSent = false;
-
-        const venomOptions = {
-            headless: 'new',
-            devtools: false,
-            useChrome: true,
-            browserArgs: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox'
-            ],
-            executablePath: '/usr/bin/google-chrome-stable',
-            disableSpins: true,
-            disableWelcome: true,
-            logQR: true,
-            autoClose: 300000,
-            createPathFileToken: false, 
-            waitForLogin: false,
-        };
 
         venom.create(
             sessionName,
             (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
-                    console.log('QR code generated. Sending to client...');
-                    const qrImageData = base64Qr.replace(/^data:image\/png;base64,/, "");
                     res.writeHead(200, {
                         'Content-Type': 'image/png',
-                        'Content-Length': Buffer.from(qrImageData, 'base64').length
+                        'Content-Length': base64Qr.length
                     });
-                    res.end(Buffer.from(qrImageData, 'base64'));
+                    res.end(Buffer.from(base64Qr.replace('data:image/png;base64,', ''), 'base64'));
                     responseSent = true;
                 }
+
             },
             async (statusSession, session) => {
                 console.log('Status Session: ', statusSession);
                 console.log('Session name: ', session);
 
-                if (statusSession === 'qrReadSuccess') {
-                    console.log('QR Code scanned successfully');
+                if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
+                    sendResponse(500, 'Failed to read QR code or session auto-closed.');
                 }
 
                 if (statusSession === 'successChat') {
-                    console.log('Chat connected successfully');
-                    await User.findOneAndUpdate(
-                        { userId: userId },
-                        { sessionActive: true },
-                        { new: true }
-                    );
+                    try {
+                        await User.findOneAndUpdate(
+                            { userId: userId },
+                            { sessionActive: true },
+                            { new: true, upsert: true }
+                        );
 
-                    await WhatsAppReport.findOneAndUpdate(
-                        { userId: userId },
-                        { 
-                            sessionName: sessionName,
-                            userConnectedDate: new Date(),
-                        },
-                        { new: true, upsert: true }
-                    );
-                }
+                        await WhatsAppReport.findOneAndUpdate(
+                            { userId: userId },
+                            {
+                                sessionName: sessionName,
+                                userConnectedDate: new Date(),
+                            },
+                            { new: true, upsert: true }
+                        );
 
-                if (statusSession === 'browserClose' || statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
-                    console.log('Session ended or failed:', statusSession);
-                    await User.findOneAndUpdate(
-                        { userId: userId },
-                        { sessionActive: false },
-                        { new: true }
-                    );
-                    if (clients[userId]) {
-                        delete clients[userId];
+                        sendResponse(200, { session: true });
+                    } catch (error) {
+                        console.error('Error updating user data:', error);
+                        sendResponse(500, 'Failed to update user data');
                     }
                 }
             },
-            venomOptions
+            {
+                headless: 'new',
+                devtools: false,
+                useChrome: true,
+                browserArgs: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox'
+                ],
+                executablePath: '/usr/bin/google-chrome-stable',
+                disableSpins: true,
+                disableWelcome: true,
+                logQR: true,
+            }
         ).then((clientInstance) => {
-            console.log('Venom client created successfully');
             clients[userId] = clientInstance;
+            closeClientAfterInactivity(clientInstance);
+
             clientInstance.onStateChange((state) => {
                 console.log('State changed: ', state);
                 if (state === 'CONNECTED') {
                     console.log('Client is ready!');
+                    closeClientAfterInactivity(clientInstance);
                 }
-                if (state === 'DISCONNECTED') {
-                    console.log('Client disconnected');
-                    User.findOneAndUpdate(
-                        { userId: userId },
-                        { sessionActive: false },
-                        { new: true }
-                    ).then(() => {
-                        delete clients[userId];
-                    });
-                }
+            });
+
+            clientInstance.onMessage(() => {
+                closeClientAfterInactivity(clientInstance);
             });
         }).catch((error) => {
             console.error('Error initializing venom-bot: ', error);
-            if (!responseSent) {
-                res.status(500).send('Failed to initialize venom-bot');
-                responseSent = true;
-            }
+            sendResponse(500, 'Failed to initialize venom-bot');
         });
 
     } catch (error) {
         console.error('Error in QRcode function: ', error);
-        if (!res.headersSent) {
-            res.status(500).send('Internal server error');
-        }
+        sendResponse(500, 'Internal server error');
     }
 };
-
-async function isClientConnected(client) {
-    try {
-        const batteryLevel = await client.getBatteryLevel();
-        console.log('Battery level:', batteryLevel);
-        return true;
-    } catch (error) {
-        console.error('Error checking client connection:', error);
-        return false;
-    }
-}
 
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -175,8 +146,8 @@ const sending = async (req, res) => {
         return res.status(400).send('Client is not initialized. Please generate QR code first.');
     }
 
-    if (!message || !phoneNo || !Name) {
-        return res.status(400).send('Missing required fields: message, phoneNo, and/or Name');
+    if (!message) {
+        return res.status(400).send('Missing required fields: message');
     }
     const business = await Business.findOne({ AdminID: userId });
     if (!business) {
@@ -218,7 +189,7 @@ const sending = async (req, res) => {
             let number = row.phone;
 
             if (!number) {
-                continue; 
+                continue;
             }
 
             number = String(number);
@@ -264,8 +235,9 @@ const sending = async (req, res) => {
             }
         }
 
-        const week = getWeekNumber(new Date());
-        const month = new Date().getMonth() + 1;
+        const week = getWeekNumber(new Date()).toString();
+        const month = (new Date().getMonth() + 1).toString();
+
 
         report.weeklyMessages.set(week, (report.weeklyMessages.get(week) || 0) + bulkMessagesCount);
         report.monthlyMessages.set(month, (report.monthlyMessages.get(month) || 0) + bulkMessagesCount);
@@ -285,8 +257,8 @@ const sending = async (req, res) => {
 function getWeekNumber(d) {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-    const weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     return weekNo;
 }
 
@@ -333,4 +305,4 @@ const getReport = async (req, res) => {
         res.status(500).send('Failed to fetch WhatsApp report.');
     }
 };
-module.exports = { QRcode, sending, getAllMessages, upload,getReport };
+module.exports = { QRcode, sending, getAllMessages, upload, getReport };
