@@ -20,6 +20,8 @@ const QRcode = async (req, res) => {
     let responseSent = false;
     let inactivityTimer;
     let qrScanTimer;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const sendResponse = (status, data) => {
         if (!responseSent) {
@@ -36,57 +38,45 @@ const QRcode = async (req, res) => {
                 client.close();
             }
             delete clients[userId];
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5 * 60 * 1000);
     };
 
     const removeInstanceAndSession = async (client) => {
-        console.log(`Removing instance and session for ${userId} due to QR code not scanned`);
+        console.log(`Removing instance and session for ${userId}`);
         if (client && typeof client.close === 'function') {
             await client.close();
         }
         delete clients[userId];
         
-        // Remove the session from the database
         await User.findOneAndUpdate(
             { userId: userId },
             { $unset: { base64QR: "", sessionExpiry: "" }, sessionActive: false }
         );
         
-        sendResponse(408, { success: false, message: 'QR code scan timeout. Please try again.' });
+        if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying QR code generation. Attempt ${retryCount} of ${maxRetries}`);
+            initializeVenom();
+        } else {
+            sendResponse(408, { success: false, message: 'Failed to establish connection after multiple attempts. Please try again later.' });
+        }
     };
 
-    try {
-        let user = await User.findOne({ userId: userId });
-
-        if (!user) {
-            user = new User({ userId: userId, sessionName: sessionName });
-        }
-
-        if (clients[userId]) {
-            return sendResponse(200, { success: true, session: true, message: 'Session already active' });
-        }
-
-        if (user.sessionActive) {
-            return sendResponse(200, { success: true, session: true, message: 'WhatsApp already connected' });
-        }
-
-        if (user.base64QR && user.sessionExpiry && user.sessionExpiry > new Date()) {
-            return sendResponse(200, {
-                success: true,
-                message: 'Existing QR Code retrieved successfully',
-                qrCode: user.base64QR
-            });
-        }
-
+    const initializeVenom = () => {
         venom.create(
             sessionName,
             async (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
                     const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
                     
-                    user.base64QR = base64Image;
-                    user.sessionExpiry = new Date(Date.now() + 5 * 60 * 1000); 
-                    await user.save();
+                    await User.findOneAndUpdate(
+                        { userId: userId },
+                        { 
+                            base64QR: base64Image,
+                            sessionExpiry: new Date(Date.now() + 5 * 60 * 1000)
+                        },
+                        { upsert: true, new: true }
+                    );
 
                     sendResponse(200, {
                         success: true,
@@ -94,56 +84,52 @@ const QRcode = async (req, res) => {
                         qrCode: base64Image
                     });
 
-                    qrScanTimer = setTimeout(() => removeInstanceAndSession(clients[userId]), 10000);
+                    qrScanTimer = setTimeout(() => removeInstanceAndSession(clients[userId]), 30000); 
                 }
             },
             async (statusSession, session) => {
                 console.log('Status Session: ', statusSession);
                 console.log('Session name: ', session);
 
-                if (statusSession === 'qrReadSuccess') {
+                if (statusSession === 'qrReadSuccess' || statusSession === 'successChat') {
                     if (qrScanTimer) clearTimeout(qrScanTimer);
-                }
 
-                if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
-                    sendResponse(500, { success: false, message: 'Failed to read QR code or session auto-closed.' });
-                }
+                    await User.findOneAndUpdate(
+                        { userId: userId },
+                        { sessionActive: true },
+                        { upsert: true }
+                    );
 
-                if (statusSession === 'successChat') {
-                    try {
-                        if (qrScanTimer) clearTimeout(qrScanTimer);
+                    await WhatsAppReport.findOneAndUpdate(
+                        { userId: userId },
+                        {
+                            sessionName: sessionName,
+                            userConnectedDate: new Date(),
+                        },
+                        { new: true, upsert: true }
+                    );
 
-                        user.sessionActive = true;
-                        await user.save();
-
-                        await WhatsAppReport.findOneAndUpdate(
-                            { userId: userId },
-                            {
-                                sessionName: sessionName,
-                                userConnectedDate: new Date(),
-                            },
-                            { new: true, upsert: true }
-                        );
-
+                    if (statusSession === 'successChat') {
                         sendResponse(200, { success: true, session: true, message: 'WhatsApp connected successfully' });
-                    } catch (error) {
-                        console.error('Error updating user data:', error);
-                        sendResponse(500, { success: false, message: 'Failed to update user data' });
                     }
+                }
+
+                if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled' || statusSession === 'desconnectedMobile') {
+                    removeInstanceAndSession(clients[userId]);
                 }
             },
             {
                 headless: 'new',
                 devtools: false,
                 useChrome: true,
-                browserArgs: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ],
+                browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
                 executablePath: '/usr/bin/google-chrome-stable',
                 disableSpins: true,
                 disableWelcome: true,
                 logQR: true,
+                autoClose: 60000,
+                createPathFileToken: true,
+                waitForLogin: true,
             }
         ).then((clientInstance) => {
             clients[userId] = clientInstance;
@@ -154,6 +140,8 @@ const QRcode = async (req, res) => {
                 if (state === 'CONNECTED') {
                     console.log('Client is ready!');
                     closeClientAfterInactivity(clientInstance);
+                } else if (state === 'DISCONNECTED') {
+                    removeInstanceAndSession(clientInstance);
                 }
             });
 
@@ -164,12 +152,35 @@ const QRcode = async (req, res) => {
             console.error('Error initializing venom-bot: ', error);
             sendResponse(500, { success: false, message: 'Failed to initialize venom-bot' });
         });
+    };
+
+    try {
+        let user = await User.findOne({ userId: userId });
+
+        if (clients[userId]) {
+            return sendResponse(200, { success: true, session: true, message: 'Session already active' });
+        }
+
+        if (user && user.sessionActive) {
+            return sendResponse(200, { success: true, session: true, message: 'WhatsApp already connected' });
+        }
+
+        if (user && user.base64QR && user.sessionExpiry && user.sessionExpiry > new Date()) {
+            return sendResponse(200, {
+                success: true,
+                message: 'Existing QR Code retrieved successfully',
+                qrCode: user.base64QR
+            });
+        }
+
+        initializeVenom();
 
     } catch (error) {
         console.error('Error in QRcode function: ', error);
         sendResponse(500, { success: false, message: 'Internal server error' });
     }
 };
+
 
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
