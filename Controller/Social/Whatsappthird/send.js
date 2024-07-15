@@ -337,7 +337,7 @@ function getWeekNumber(d) {
 
 
 
-const getAllMessages = async (req, res) => {
+const getMessages = async (req, res) => {
     const userId = req.adminId;
 
     if (!userId) {
@@ -378,4 +378,4 @@ const getReport = async (req, res) => {
         res.status(500).send('Failed to fetch WhatsApp report.');
     }
 };
-module.exports = { QRcode, sending, getAllMessages, upload, getReport };
+module.exports = { QRcode, sending, getMessages, upload, getReport };

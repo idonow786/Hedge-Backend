@@ -2,7 +2,7 @@ const express = require('express');
 const { updateToken,getToken } = require('../Controller/Social/Whatsappthird/TokenController');
 const { sendMessage, upload } = require('../Controller/Social/Whatsappthird/sendMessage');
 const { getAllMessages } = require('../Controller/Social/Whatsappthird/allMessages');
-const { sending,QRcode,getReport } = require('../Controller/Social/Whatsappthird/send');
+const { sending,QRcode,getReport,getMessages } = require('../Controller/Social/Whatsappthird/send');
 const { verifyToken } = require('../Middleware/jwt');
 
 const router = express.Router();
@@ -20,7 +20,7 @@ router.get('/messages',verifyToken, getAllMessages);
 //venom
 router.post('/sending', upload.single('file'),verifyToken, sending);
 router.get('/qr',verifyToken, QRcode);
-router.get('/inbox',verifyToken, getAllMessages);
+router.get('/inbox',verifyToken, getMessages);
 router.get('/report',verifyToken, getReport);
 
 module.exports = router;
