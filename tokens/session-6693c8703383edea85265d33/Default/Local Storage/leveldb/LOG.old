@@ -1,5 +1,3 @@
-2024/07/15-17:29:38.311 ee4e Reusing MANIFEST /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/Local Storage/leveldb/MANIFEST-000001
-2024/07/15-17:29:38.358 ee4e Recovering log #3
-2024/07/15-17:29:38.360 ee4e Level-0 table #3: started
-2024/07/15-17:29:38.372 ee4e Level-0 table #3: 16501 bytes OK
-2024/07/15-17:29:38.376 ee4e Delete type=0 #3
+2024/07/15-19:08:28.192 3fb7 Reusing MANIFEST /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/Local Storage/leveldb/MANIFEST-000001
+2024/07/15-19:08:28.213 3fb7 Recovering log #4
+2024/07/15-19:08:28.216 3fb7 Reusing old log /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/Local Storage/leveldb/000004.log 
