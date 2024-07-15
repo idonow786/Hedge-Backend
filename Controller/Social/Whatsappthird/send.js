@@ -85,12 +85,14 @@ const QRcode = async (req, res) => {
 
                     if (statusSession === 'qrReadSuccess' || statusSession === 'successChat') {
                         if (qrScanTimer) clearTimeout(qrScanTimer);
-
+                        
+                        console.log("update status")
                         await WhatsAppSession.findOneAndUpdate(
                             { userId: userId },
                             { isActive: true },
                             { upsert: true }
                         );
+                        console.log(await WhatsAppSession.find({userId:userId}))
 
                         await WhatsAppReport.findOneAndUpdate(
                             { userId: userId },
@@ -184,6 +186,7 @@ const sending = async (req, res) => {
     }
 
     try {
+        console.log(await WhatsAppSession.find({ userId: userId}))
         const session = await WhatsAppSession.findOne({ userId: userId, isActive: true });
         if (!session) {
             return res.status(400).send('WhatsApp session is not active. Please generate QR code and connect first.');
