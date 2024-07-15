@@ -51,13 +51,17 @@ const QRcode = async (req, res) => {
             sessionName,
             (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
-                    res.writeHead(200, {
-                        'Content-Type': 'image/png',
-                        'Content-Length': base64Qr.length
+                    const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
+                    
+                    res.status(200).json({
+                        success: true,
+                        message: 'QR Code generated successfully',
+                        qrCode: base64Image
                     });
-                    res.end(Buffer.from(base64Qr.replace('data:image/png;base64,', ''), 'base64'));
+                    
                     responseSent = true;
                 }
+                
 
             },
             async (statusSession, session) => {
