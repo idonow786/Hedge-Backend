@@ -37,7 +37,7 @@ const whatsappController = {
                 await clients[userId].close();
             }
             delete clients[userId];
-
+            
             await WhatsAppSession.findOneAndUpdate(
                 { userId: userId },
                 { isActive: false, $unset: { base64QR: "", sessionExpiry: "" } }
@@ -60,10 +60,10 @@ const whatsappController = {
                 sessionName,
                 async (base64Qr, asciiQR, attempts, urlCode) => {
                     const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
-
+                    
                     await WhatsAppSession.findOneAndUpdate(
                         { userId: userId },
-                        {
+                        { 
                             base64QR: base64Image,
                             sessionExpiry: new Date(Date.now() + 5 * 60 * 1000)
                         },
@@ -85,9 +85,12 @@ const whatsappController = {
                 },
                 async (statusSession, session) => {
                     console.log('Status Session: ', statusSession);
-                    if (statusSession === 'qrReadSuccess' || statusSession === 'successChat') {
+                    if (statusSession === 'qrReadSuccess') {
                         clearTimeout(qrScanTimer);
-
+                        console.log('QR Code scanned successfully');
+                    } else if (statusSession === 'successChat') {
+                        clearTimeout(qrScanTimer);
+                        
                         await WhatsAppSession.findOneAndUpdate(
                             { userId: userId },
                             { isActive: true },
@@ -103,19 +106,17 @@ const whatsappController = {
                             { new: true, upsert: true }
                         );
 
-                        if (statusSession === 'successChat') {
-                            clients[userId] = client;
-                            try {
-                                const result = await sendMessages(req, userId, client);
-                                sendResponse(200, {
-                                    success: true,
-                                    message: 'Messages sent successfully',
-                                    sentCount: result.bulkMessagesCount,
-                                    dailyTotal: result.dailyTotal
-                                });
-                            } catch (error) {
-                                sendResponse(500, { success: false, message: error.message });
-                            }
+                        clients[userId] = client;
+                        try {
+                            const result = await sendMessages(req, userId, client);
+                            sendResponse(200, { 
+                                success: true, 
+                                message: 'Messages sent successfully', 
+                                sentCount: result.bulkMessagesCount,
+                                dailyTotal: result.dailyTotal
+                            });
+                        } catch (error) {
+                            sendResponse(500, { success: false, message: error.message });
                         }
                     }
 
