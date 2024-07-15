@@ -12,15 +12,16 @@ const upload = multer({ dest: 'uploads/' });
 
 let clients = {};
 
+
 const QRcode = async (req, res) => {
     const userId = req.adminId;
     const sessionName = `session-${userId}`;
     let responseSent = false;
     let inactivityTimer;
 
-    const sendResponse = (status, message) => {
+    const sendResponse = (status, data) => {
         if (!responseSent) {
-            res.status(status).send(message);
+            res.status(status).json(data);
             responseSent = true;
         }
     };
@@ -37,48 +38,57 @@ const QRcode = async (req, res) => {
     };
 
     try {
-        if (clients[userId]) {
-            return sendResponse(200, { session: true });
+        let user = await User.findOne({ userId: userId });
+
+        if (!user) {
+            user = new User({ userId: userId, sessionName: sessionName });
         }
 
-        await User.findOneAndUpdate(
-            { userId: userId },
-            { sessionName: sessionName },
-            { new: true, upsert: true }
-        );
+        if (clients[userId]) {
+            return sendResponse(200, { success: true, session: true, message: 'Session already active' });
+        }
+
+        if (user.sessionActive) {
+            return sendResponse(200, { success: true, session: true, message: 'WhatsApp already connected' });
+        }
+
+        if (user.base64QR && user.sessionExpiry && user.sessionExpiry > new Date()) {
+            return sendResponse(200, {
+                success: true,
+                message: 'Existing QR Code retrieved successfully',
+                qrCode: user.base64QR
+            });
+        }
 
         venom.create(
             sessionName,
-            (base64Qr, asciiQR, attempts, urlCode) => {
+            async (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
                     const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
                     
-                    res.status(200).json({
+                    user.base64QR = base64Image;
+                    user.sessionExpiry = new Date(Date.now() + 5 * 60 * 1000); 
+                    await user.save();
+
+                    sendResponse(200, {
                         success: true,
                         message: 'QR Code generated successfully',
                         qrCode: base64Image
                     });
-                    
-                    responseSent = true;
                 }
-                
-
             },
             async (statusSession, session) => {
                 console.log('Status Session: ', statusSession);
                 console.log('Session name: ', session);
 
                 if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
-                    sendResponse(500, 'Failed to read QR code or session auto-closed.');
+                    sendResponse(500, { success: false, message: 'Failed to read QR code or session auto-closed.' });
                 }
 
                 if (statusSession === 'successChat') {
                     try {
-                        await User.findOneAndUpdate(
-                            { userId: userId },
-                            { sessionActive: true },
-                            { new: true, upsert: true }
-                        );
+                        user.sessionActive = true;
+                        await user.save();
 
                         await WhatsAppReport.findOneAndUpdate(
                             { userId: userId },
@@ -89,10 +99,10 @@ const QRcode = async (req, res) => {
                             { new: true, upsert: true }
                         );
 
-                        sendResponse(200, { session: true });
+                        sendResponse(200, { success: true, session: true, message: 'WhatsApp connected successfully' });
                     } catch (error) {
                         console.error('Error updating user data:', error);
-                        sendResponse(500, 'Failed to update user data');
+                        sendResponse(500, { success: false, message: 'Failed to update user data' });
                     }
                 }
             },
@@ -126,12 +136,12 @@ const QRcode = async (req, res) => {
             });
         }).catch((error) => {
             console.error('Error initializing venom-bot: ', error);
-            sendResponse(500, 'Failed to initialize venom-bot');
+            sendResponse(500, { success: false, message: 'Failed to initialize venom-bot' });
         });
 
     } catch (error) {
         console.error('Error in QRcode function: ', error);
-        sendResponse(500, 'Internal server error');
+        sendResponse(500, { success: false, message: 'Internal server error' });
     }
 };
 

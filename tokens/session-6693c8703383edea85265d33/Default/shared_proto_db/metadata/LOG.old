@@ -1,2 +1,3 @@
-2024/07/14-17:49:40.440 65568 Creating DB /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/shared_proto_db/metadata since it was missing.
-2024/07/14-17:49:40.447 65568 Reusing MANIFEST /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/shared_proto_db/metadata/MANIFEST-000001
+2024/07/15-16:58:23.087 aed5 Reusing MANIFEST /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/shared_proto_db/metadata/MANIFEST-000001
+2024/07/15-16:58:23.088 aed5 Recovering log #3
+2024/07/15-16:58:23.088 aed5 Reusing old log /home/osamahashmi/MD-/F~/<P>/CRM/tokens/session-6693c8703383edea85265d33/Default/shared_proto_db/metadata/000003.log 
