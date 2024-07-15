@@ -16,8 +16,15 @@ const QRcode = async (req, res) => {
     const sessionName = `session-${userId}`; 
 
     try {
+        // Check if a session already exists
         if (clients[userId]) {
-            return res.status(200).send({ session: true });
+            // If the client exists but is not ready, delete it
+            if (!clients[userId].isReady) {
+                await clients[userId].destroy();
+                delete clients[userId];
+            } else {
+                return res.status(200).send({ session: true });
+            }
         }
 
         await User.findOneAndUpdate(
@@ -28,17 +35,32 @@ const QRcode = async (req, res) => {
 
         let responseSent = false;
 
+        const venomOptions = {
+            headless: 'new',
+            devtools: false,
+            useChrome: true,
+            browserArgs: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ],
+            executablePath: '/usr/bin/google-chrome-stable',
+            disableSpins: true,
+            disableWelcome: true,
+            logQR: true,
+            autoClose: 300000,
+            createPathFileToken: false,
+            waitForLogin: false, 
+        };
+
         venom.create(
             sessionName,
             (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
                     const qrImageData = base64Qr.replace(/^data:image\/png;base64,/, "");
-                    
                     res.writeHead(200, {
                         'Content-Type': 'image/png',
                         'Content-Length': Buffer.from(qrImageData, 'base64').length
                     });
-                    
                     res.end(Buffer.from(qrImageData, 'base64'));
                     responseSent = true;
                 }
@@ -47,12 +69,11 @@ const QRcode = async (req, res) => {
                 console.log('Status Session: ', statusSession);
                 console.log('Session name: ', session);
 
-                if ((statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') && !responseSent) {
-                    res.status(500).send('Failed to read QR code or session auto-closed.');
-                    responseSent = true;
+                if (statusSession === 'qrReadSuccess') {
+                    console.log('QR Code scanned successfully');
                 }
 
-                if (statusSession === 'successChat' && !responseSent) {
+                if (statusSession === 'successChat') {
                     await User.findOneAndUpdate(
                         { userId: userId },
                         { sessionActive: true },
@@ -68,23 +89,24 @@ const QRcode = async (req, res) => {
                         { new: true, upsert: true }
                     );
 
-                    res.status(200).send({ session: true });
-                    responseSent = true;
+                    if (!responseSent) {
+                        res.status(200).send({ session: true });
+                        responseSent = true;
+                    }
+                }
+
+                if (statusSession === 'browserClose' || statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
+                    if (clients[userId]) {
+                        await clients[userId].destroy();
+                        delete clients[userId];
+                    }
+                    if (!responseSent) {
+                        res.status(500).send('Failed to read QR code or session closed.');
+                        responseSent = true;
+                    }
                 }
             },
-            {
-                headless: 'new',
-                devtools: false,
-                useChrome: true,
-                browserArgs: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ],
-                executablePath: '/usr/bin/google-chrome-stable',
-                disableSpins: true,
-                disableWelcome: true,
-                logQR: true,
-            }
+            venomOptions
         ).then((clientInstance) => {
             clients[userId] = clientInstance;
             clientInstance.onStateChange((state) => {
@@ -102,12 +124,13 @@ const QRcode = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error saving user data: ', error);
+        console.error('Error in QRcode function: ', error);
         if (!res.headersSent) {
-            res.status(500).send('Failed to save user data');
+            res.status(500).send('Internal server error');
         }
     }
 };
+
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
