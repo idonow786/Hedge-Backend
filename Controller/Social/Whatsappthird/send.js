@@ -32,41 +32,14 @@ const QRcode = async (req, res) => {
             sessionName,
             (base64Qr, asciiQR, attempts, urlCode) => {
                 if (!responseSent) {
-                    const htmlContent = `
-                        <html>
-                        <head>
-                            <title>WhatsApp QR Code</title>
-                            <style>
-                                body {
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    height: 100vh;
-                                    background-color: #f0f0f0;
-                                    font-family: Arial, sans-serif;
-                                }
-                                #qr-container {
-                                    text-align: center;
-                                    background: white;
-                                    padding: 20px;
-                                    border-radius: 10px;
-                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                                }
-                                #qr-code {
-                                    width: 300px;
-                                    height: 300px;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div id="qr-container">
-                                <h1>Scan this QR Code to connect to WhatsApp</h1>
-                                <img id="qr-code" src="${base64Qr}" alt="QR Code">
-                            </div>
-                        </body>
-                        </html>
-                    `;
-                    res.send(htmlContent);
+                    const qrImageData = base64Qr.replace(/^data:image\/png;base64,/, "");
+                    
+                    res.writeHead(200, {
+                        'Content-Type': 'image/png',
+                        'Content-Length': Buffer.from(qrImageData, 'base64').length
+                    });
+                    
+                    res.end(Buffer.from(qrImageData, 'base64'));
                     responseSent = true;
                 }
             },
@@ -135,7 +108,6 @@ const QRcode = async (req, res) => {
         }
     }
 };
-
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
