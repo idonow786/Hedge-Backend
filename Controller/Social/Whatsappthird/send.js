@@ -3,6 +3,7 @@ const User = require('../../../Model/whatsappUser');
 const Message = require('../../../Model/messageWhatsapp');
 const Business = require('../../../Model/Business');
 const WhatsAppReport = require('../../../Model/whatsAppReport');
+const WhatsAppSession = require('../../../Model/WhatsappSession');
 const xlsx = require('xlsx');
 const multer = require('multer');
 const path = require('path');
@@ -14,11 +15,12 @@ let clients = {};
 
 
 
+
+
 const QRcode = async (req, res) => {
     const userId = req.adminId;
     const sessionName = `session-${userId}`;
     let responseSent = false;
-    let inactivityTimer;
     let qrScanTimer;
     let retryCount = 0;
     const maxRetries = 3;
@@ -30,27 +32,24 @@ const QRcode = async (req, res) => {
         }
     };
 
-    const closeClientAfterInactivity = (client) => {
-        if (inactivityTimer) clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => {
-            console.log(`Closing client for ${userId} due to inactivity`);
-            if (client && typeof client.close === 'function') {
-                client.close();
-            }
-            delete clients[userId];
-        }, 5 * 60 * 1000);
+    const updateSessionActivity = async (userId) => {
+        await WhatsAppSession.findOneAndUpdate(
+            { userId: userId },
+            { lastActivity: new Date() },
+            { new: true }
+        );
     };
 
-    const removeInstanceAndSession = async (client) => {
+    const removeInstanceAndSession = async (userId) => {
         console.log(`Removing instance and session for ${userId}`);
-        if (client && typeof client.close === 'function') {
-            await client.close();
+        if (clients[userId] && typeof clients[userId].close === 'function') {
+            await clients[userId].close();
         }
         delete clients[userId];
         
-        await User.findOneAndUpdate(
+        await WhatsAppSession.findOneAndUpdate(
             { userId: userId },
-            { $unset: { base64QR: "", sessionExpiry: "" }, sessionActive: false }
+            { isActive: false, $unset: { base64QR: "", sessionExpiry: "" } }
         );
         
         if (retryCount < maxRetries) {
@@ -62,114 +61,118 @@ const QRcode = async (req, res) => {
         }
     };
 
-    const initializeVenom = () => {
-        venom.create(
-            sessionName,
-            async (base64Qr, asciiQR, attempts, urlCode) => {
-                if (!responseSent) {
-                    const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
-                    
-                    await User.findOneAndUpdate(
-                        { userId: userId },
-                        { 
-                            base64QR: base64Image,
-                            sessionExpiry: new Date(Date.now() + 5 * 60 * 1000)
-                        },
-                        { upsert: true, new: true }
-                    );
+    const initializeVenom = async () => {
+        try {
+            const client = await venom.create(
+                sessionName,
+                async (base64Qr, asciiQR, attempts, urlCode) => {
+                    if (!responseSent) {
+                        const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
+                        
+                        await WhatsAppSession.findOneAndUpdate(
+                            { userId: userId },
+                            { 
+                                base64QR: base64Image,
+                                sessionExpiry: new Date(Date.now() + 5 * 60 * 1000)
+                            },
+                            { upsert: true, new: true }
+                        );
 
-                    sendResponse(200, {
-                        success: true,
-                        message: 'QR Code generated successfully',
-                        qrCode: base64Image
-                    });
+                        sendResponse(200, {
+                            success: true,
+                            message: 'QR Code generated successfully',
+                            qrCode: base64Image
+                        });
 
-                    qrScanTimer = setTimeout(() => removeInstanceAndSession(clients[userId]), 30000); 
-                }
-            },
-            async (statusSession, session) => {
-                console.log('Status Session: ', statusSession);
-                console.log('Session name: ', session);
-
-                if (statusSession === 'qrReadSuccess' || statusSession === 'successChat') {
-                    if (qrScanTimer) clearTimeout(qrScanTimer);
-
-                    await User.findOneAndUpdate(
-                        { userId: userId },
-                        { sessionActive: true },
-                        { upsert: true }
-                    );
-
-                    await WhatsAppReport.findOneAndUpdate(
-                        { userId: userId },
-                        {
-                            sessionName: sessionName,
-                            userConnectedDate: new Date(),
-                        },
-                        { new: true, upsert: true }
-                    );
-
-                    if (statusSession === 'successChat') {
-                        sendResponse(200, { success: true, session: true, message: 'WhatsApp connected successfully' });
+                        // Set timer to remove session if QR is not scanned within 10 seconds
+                        qrScanTimer = setTimeout(() => removeInstanceAndSession(userId), 10000);
                     }
-                }
+                },
+                async (statusSession, session) => {
+                    console.log('Status Session: ', statusSession);
+                    console.log('Session name: ', session);
 
-                if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled' || statusSession === 'desconnectedMobile') {
-                    removeInstanceAndSession(clients[userId]);
-                }
-            },
-            {
-                headless: 'new',
-                devtools: false,
-                useChrome: true,
-                browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
-                executablePath: '/usr/bin/google-chrome-stable',
-                disableSpins: true,
-                disableWelcome: true,
-                logQR: true,
-                autoClose: 60000,
-                createPathFileToken: true,
-                waitForLogin: true,
-            }
-        ).then((clientInstance) => {
-            clients[userId] = clientInstance;
-            closeClientAfterInactivity(clientInstance);
+                    if (statusSession === 'qrReadSuccess' || statusSession === 'successChat') {
+                        if (qrScanTimer) clearTimeout(qrScanTimer);
 
-            clientInstance.onStateChange((state) => {
+                        await WhatsAppSession.findOneAndUpdate(
+                            { userId: userId },
+                            { isActive: true },
+                            { upsert: true }
+                        );
+
+                        await WhatsAppReport.findOneAndUpdate(
+                            { userId: userId },
+                            {
+                                sessionName: sessionName,
+                                userConnectedDate: new Date(),
+                            },
+                            { new: true, upsert: true }
+                        );
+
+                        if (statusSession === 'successChat') {
+                            sendResponse(200, { success: true, session: true, message: 'WhatsApp connected successfully' });
+                        }
+                    }
+
+                    if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled' || statusSession === 'desconnectedMobile') {
+                        removeInstanceAndSession(userId);
+                    }
+                },
+                {
+                    headless: 'new',
+                    devtools: false,
+                    useChrome: true,
+                    browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
+                    executablePath: '/usr/bin/google-chrome-stable',
+                    disableSpins: true,
+                    disableWelcome: true,
+                    logQR: true,
+                    autoClose: 60000,
+                    createPathFileToken: true,
+                    waitForLogin: true,
+                }
+            );
+
+            clients[userId] = client;
+            updateSessionActivity(userId);
+
+            client.onStateChange((state) => {
                 console.log('State changed: ', state);
                 if (state === 'CONNECTED') {
                     console.log('Client is ready!');
-                    closeClientAfterInactivity(clientInstance);
+                    updateSessionActivity(userId);
                 } else if (state === 'DISCONNECTED') {
-                    removeInstanceAndSession(clientInstance);
+                    removeInstanceAndSession(userId);
                 }
             });
 
-            clientInstance.onMessage(() => {
-                closeClientAfterInactivity(clientInstance);
+            client.onMessage(() => {
+                updateSessionActivity(userId);
             });
-        }).catch((error) => {
+
+        } catch (error) {
             console.error('Error initializing venom-bot: ', error);
             sendResponse(500, { success: false, message: 'Failed to initialize venom-bot' });
-        });
+        }
     };
 
     try {
-        let user = await User.findOne({ userId: userId });
+        let session = await WhatsAppSession.findOne({ userId: userId });
 
         if (clients[userId]) {
             return sendResponse(200, { success: true, session: true, message: 'Session already active' });
         }
 
-        if (user && user.sessionActive) {
+        if (session && session.isActive) {
             return sendResponse(200, { success: true, session: true, message: 'WhatsApp already connected' });
         }
 
-        if (user && user.base64QR && user.sessionExpiry && user.sessionExpiry > new Date()) {
+        if (session && session.base64QR && session.sessionExpiry && session.sessionExpiry > new Date()) {
             return sendResponse(200, {
                 success: true,
                 message: 'Existing QR Code retrieved successfully',
-                qrCode: user.base64QR
+                qrCode: session.base64QR
             });
         }
 
@@ -193,21 +196,27 @@ const sending = async (req, res) => {
         return res.status(400).send('Missing Excel file');
     }
 
-    if (!clients[userId]) {
-        return res.status(400).send('Client is not initialized. Please generate QR code first.');
-    }
-
     if (!message) {
         return res.status(400).send('Missing required fields: message');
     }
-    const business = await Business.findOne({ AdminID: userId });
-    if (!business) {
-        return res.status(400).send('Business details not found.');
-    }
-
-    const { BusinessName, BusinessPhoneNo } = business;
 
     try {
+        const session = await WhatsAppSession.findOne({ userId: userId, isActive: true });
+        if (!session) {
+            return res.status(400).send('WhatsApp session is not active. Please generate QR code and connect first.');
+        }
+
+        if (!clients[userId]) {
+            return res.status(400).send('Client is not initialized. Please reconnect to WhatsApp.');
+        }
+
+        const business = await Business.findOne({ AdminID: userId });
+        if (!business) {
+            return res.status(400).send('Business details not found.');
+        }
+
+        const { BusinessName, BusinessPhoneNo } = business;
+
         let imageUrl = null;
 
         if (base64Image && contentType) {
@@ -229,7 +238,7 @@ const sending = async (req, res) => {
 
         let report = await WhatsAppReport.findOne({ userId: userId });
         if (!report) {
-            report = new WhatsAppReport({ userId: userId, sessionName: clients[userId].sessionName });
+            report = new WhatsAppReport({ userId: userId, sessionName: session.sessionName });
         }
 
         if (report.dailyMessages.get(today) && report.dailyMessages.get(today) >= 400) {
@@ -281,6 +290,12 @@ const sending = async (req, res) => {
                 }
 
                 await delay(10000);
+
+                await WhatsAppSession.findOneAndUpdate(
+                    { userId: userId },
+                    { lastActivity: new Date() }
+                );
+
             } catch (error) {
                 console.error('Error sending message to: ', number, error);
             }
@@ -288,7 +303,6 @@ const sending = async (req, res) => {
 
         const week = getWeekNumber(new Date()).toString();
         const month = (new Date().getMonth() + 1).toString();
-
 
         report.weeklyMessages.set(week, (report.weeklyMessages.get(week) || 0) + bulkMessagesCount);
         report.monthlyMessages.set(month, (report.monthlyMessages.get(month) || 0) + bulkMessagesCount);
