@@ -13,11 +13,13 @@ const upload = multer({ dest: 'uploads/' });
 let clients = {};
 
 
+
 const QRcode = async (req, res) => {
     const userId = req.adminId;
     const sessionName = `session-${userId}`;
     let responseSent = false;
     let inactivityTimer;
+    let qrScanTimer;
 
     const sendResponse = (status, data) => {
         if (!responseSent) {
@@ -34,7 +36,23 @@ const QRcode = async (req, res) => {
                 client.close();
             }
             delete clients[userId];
-        }, 5 * 60 * 1000); 
+        }, 5 * 60 * 1000); // 5 minutes
+    };
+
+    const removeInstanceAndSession = async (client) => {
+        console.log(`Removing instance and session for ${userId} due to QR code not scanned`);
+        if (client && typeof client.close === 'function') {
+            await client.close();
+        }
+        delete clients[userId];
+        
+        // Remove the session from the database
+        await User.findOneAndUpdate(
+            { userId: userId },
+            { $unset: { base64QR: "", sessionExpiry: "" }, sessionActive: false }
+        );
+        
+        sendResponse(408, { success: false, message: 'QR code scan timeout. Please try again.' });
     };
 
     try {
@@ -75,11 +93,17 @@ const QRcode = async (req, res) => {
                         message: 'QR Code generated successfully',
                         qrCode: base64Image
                     });
+
+                    qrScanTimer = setTimeout(() => removeInstanceAndSession(clients[userId]), 10000);
                 }
             },
             async (statusSession, session) => {
                 console.log('Status Session: ', statusSession);
                 console.log('Session name: ', session);
+
+                if (statusSession === 'qrReadSuccess') {
+                    if (qrScanTimer) clearTimeout(qrScanTimer);
+                }
 
                 if (statusSession === 'qrReadFail' || statusSession === 'autocloseCalled') {
                     sendResponse(500, { success: false, message: 'Failed to read QR code or session auto-closed.' });
@@ -87,6 +111,8 @@ const QRcode = async (req, res) => {
 
                 if (statusSession === 'successChat') {
                     try {
+                        if (qrScanTimer) clearTimeout(qrScanTimer);
+
                         user.sessionActive = true;
                         await user.save();
 
