@@ -51,14 +51,6 @@ const QRcode = async (req, res) => {
             { userId: userId },
             { isActive: false, $unset: { base64QR: "", sessionExpiry: "" } }
         );
-        
-        if (retryCount < maxRetries) {
-            retryCount++;
-            console.log(`Retrying QR code generation. Attempt ${retryCount} of ${maxRetries}`);
-            await initializeVenom();
-        } else {
-            sendResponse(408, { success: false, message: 'Failed to establish connection after multiple attempts. Please try again later.' });
-        }
     };
 
     const initializeVenom = async () => {
@@ -135,7 +127,7 @@ const QRcode = async (req, res) => {
                         useChrome: true,
                         puppeteerOptions: {
                             args: ['--no-sandbox', '--disable-setuid-sandbox'],
-                            timeout: 120000 // Increased timeout to 2 minutes
+                            timeout: 120000
                         }
                     }
                 }
@@ -165,23 +157,7 @@ const QRcode = async (req, res) => {
     };
 
     try {
-        let session = await WhatsAppSession.findOne({ userId: userId });
-
-        if (clients[userId]) {
-            return sendResponse(200, { success: true, session: true, message: 'Session already active' });
-        }
-
-        if (session && session.isActive) {
-            return sendResponse(200, { success: true, session: true, message: 'WhatsApp already connected' });
-        }
-
-        if (session && session.base64QR && session.sessionExpiry && session.sessionExpiry > new Date()) {
-            return sendResponse(200, {
-                success: true,
-                message: 'Existing QR Code retrieved successfully',
-                qrCode: session.base64QR
-            });
-        }
+        await removeInstanceAndSession(userId);
 
         await initializeVenom();
 
@@ -190,7 +166,6 @@ const QRcode = async (req, res) => {
         sendResponse(500, { success: false, message: 'Internal server error' });
     }
 };
-
 
 
 
