@@ -142,7 +142,7 @@ const whatsappController = {
                     browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
                     disableSpins: true,
                     disableWelcome: true,
-                    logQR: false,
+                    logQR: true,
                     autoClose: 60000,
                     createPathFileToken: true,
                     waitForLogin: true,
@@ -238,7 +238,7 @@ async function sendMessages(req, userId, client) {
                     break;
                 }
 
-                await delay(10000); // 10 seconds delay between messages
+                await delay(10000);
 
                 await WhatsAppSession.findOneAndUpdate(
                     { userId: userId },
