@@ -37,8 +37,10 @@ router.post(
   verifyToken,
   upload.fields([
     { name: 'documentation.permits', maxCount: 5 },
-    { name: 'documentation.blueprints', maxCount: 5 },
+    { name: 'documentation.reports', maxCount: 5 },
     { name: 'documentation.contracts', maxCount: 5 },
+    { name: 'documentation.plansAndDrawings', maxCount: 5 },
+    { name: 'documentation.correspondence', maxCount: 5 },
   ]),
   addProjectConstruction
 );
@@ -49,9 +51,10 @@ router.put(
   verifyToken,
   upload.fields([
     { name: 'documentation.permits', maxCount: 5 },
-    { name: 'documentation.blueprints', maxCount: 5 },
+    { name: 'documentation.reports', maxCount: 5 },
     { name: 'documentation.contracts', maxCount: 5 },
-    { name: 'documentation.constructionPlans', maxCount: 5 },
+    { name: 'documentation.plansAndDrawings', maxCount: 5 },
+    { name: 'documentation.correspondence', maxCount: 5 },
   ]),
   updateProjectContruction
 );

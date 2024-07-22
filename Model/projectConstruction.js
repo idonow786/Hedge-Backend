@@ -6,6 +6,7 @@ const projectCSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
   projectId: { type: String, required: true},
   clientName: { type: String, required: true },
+  clientId: { type: String, required: true },
   clientContact: {
     phoneNumber: String,
     emailAddress: String,
