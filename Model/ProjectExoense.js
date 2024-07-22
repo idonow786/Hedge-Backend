@@ -3,12 +3,10 @@ const mongoose = require('mongoose');
 const SubcategoryExpenseSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
     trim: true
   },
   amount: {
     type: Number,
-    required: true,
     min: 0
   },
   description: {
@@ -20,7 +18,6 @@ const SubcategoryExpenseSchema = new mongoose.Schema({
 const ProjectExpenseSchema = new mongoose.Schema({
   projectId: {
     type: String,
-    required: true,
     index: true
   },
   description: {
@@ -29,12 +26,10 @@ const ProjectExpenseSchema = new mongoose.Schema({
   },
   totalAmount: {
     type: Number,
-    required: true,
     min: 0
   },
   category: {
     type: String,
-    required: true
   },
   subcategories: [SubcategoryExpenseSchema],
   date: {
@@ -43,7 +38,6 @@ const ProjectExpenseSchema = new mongoose.Schema({
   },
   paidBy: {
     type: String,
-    required: true
   },
   receipt: {
     type: String, 

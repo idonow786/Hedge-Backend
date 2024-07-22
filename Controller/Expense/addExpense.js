@@ -14,14 +14,7 @@ const addExpense = async (req, res) => {
     if (ExpenseTitle && Amount && expenseDate && expenseType) {
       const ID = Math.floor(Math.random() * 1000000);
 
-      let formattedDate;
-      if (typeof expenseDate === 'string') {
-        formattedDate = new Date(expenseDate.trim());
-      } else if (typeof expenseDate === 'number') {
-        formattedDate = new Date(expenseDate);
-      } else {
-        formattedDate = expenseDate;
-      }
+      let formattedDate = new Date(expenseDate);
 
       const newExpense = new Expense({
         ID,
@@ -44,20 +37,23 @@ const addExpense = async (req, res) => {
         return res.status(400).json({ message: 'ProjectId, category, subcategories, and paidBy are required for project expense' });
       }
 
+      const subcategoriesTotal = subcategories.reduce((total, subcat) => total + parseFloat(subcat.amount || 0), 0);
+
       const newProjectExpense = new ProjectExpense({
         projectId,
         description,
         category,
         subcategories,
         paidBy,
-        receipt,
+        receipt: receipt ? JSON.stringify(receipt) : undefined, 
         notes,
         isReimbursed,
         AdminID: adminId,
+        totalAmount: subcategoriesTotal,
       });
 
       savedProjectExpense = await newProjectExpense.save();
-      totalExpenseAmount += savedProjectExpense.totalAmount;
+      totalExpenseAmount += subcategoriesTotal;
     }
 
     if (familyExpense) {
@@ -88,7 +84,7 @@ const addExpense = async (req, res) => {
         savedFamilyExpense = await newFamilyExpense.save();
       }
 
-      totalExpenseAmount += expenses.reduce((total, expense) => total + expense.amount, 0);
+      totalExpenseAmount += expenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     }
 
     const currentDate = new Date();
@@ -105,7 +101,7 @@ const addExpense = async (req, res) => {
 
     if (wallet) {
       wallet.TotalExpenses = (parseFloat(wallet.TotalExpenses) + totalExpenseAmount).toString();
-      wallet.Profit = (parseFloat(wallet.TotalRevenue) - parseFloat(wallet.TotalExpenses)).toString();
+      wallet.Profit = (parseFloat(wallet.TotalRevenue || 0) - parseFloat(wallet.TotalExpenses)).toString();
     } else {
       wallet = new Wallet({
         TotalExpenses: totalExpenseAmount.toString(),
@@ -124,7 +120,7 @@ const addExpense = async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding expense:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 
