@@ -26,7 +26,7 @@ const upload = multer({
 router.post('/add', verifyToken, addProject);                                                                                       //working
 router.delete('/delete', verifyToken, deleteProject);                                                                               //working
 router.post('/update', verifyToken, upload.single('pic'), updateProject);                                                           //working
-router.get('/get', verifyToken,  getProjects);                                                                 //working
+router.get('/get', verifyToken,  getProjects);                                                                                      //working
 router.get('/get/projects/customer', verifyToken, getProjectsByCustomerId);      
 
 
