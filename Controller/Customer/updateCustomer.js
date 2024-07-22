@@ -1,12 +1,12 @@
 const Customer = require('../../Model/Customer');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
+const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const updateCustomer = async (req, res) => {
     try {
-        const customerId = req.body.id;
-        const { Name, Email, PhoneNo, DateJoined, DateofBirth } = req.body;
-        const adminId = req.adminId
-;
+        const customerId = req.body.id; 
+        const { Name, Email, PhoneNo, Number, CompanyName, DateJoined, DateofBirth } = req.body;
+        const adminId = req.adminId;
 
         const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 
@@ -14,25 +14,37 @@ const updateCustomer = async (req, res) => {
             return res.status(404).json({ message: 'Customer not found or not authorized' });
         }
 
-        let picUrl = customer.PicUrl;
-        if (req.file) {
-            const base64Image = req.file.buffer.toString('base64');
-            const contentType = req.file.mimetype;
+        if (req.files && req.files.profilePic) {
+            const base64Image = req.files.profilePic[0].buffer.toString('base64');
+            const contentType = req.files.profilePic[0].mimetype;
 
             try {
                 const imageUrl = await uploadImageToFirebase(base64Image, contentType);
-                picUrl = imageUrl;
+                customer.PicUrl = imageUrl;
             } catch (error) {
                 console.error('Error uploading image to Firebase:', error);
             }
         }
 
-        customer.Name = Name || customer.Name;
-        customer.Email = Email || customer.Email;
-        customer.PhoneNo = PhoneNo || customer.PhoneNo;
-        customer.DateJoined = DateJoined ? new Date(DateJoined) : customer.DateJoined;
-        customer.DateofBirth = DateofBirth ? new Date(DateofBirth) : customer.DateofBirth;
-        customer.PicUrl = picUrl;
+        if (req.files && req.files.documents) {
+            for (const file of req.files.documents) {
+                try {
+                    const fileUrl = await uploadFileToFirebase(file.buffer, file.originalname);
+                    customer.DocumentsUrls.push(fileUrl);
+                } catch (error) {
+                    console.error('Error uploading file to Firebase:', error);
+                }
+            }
+        }
+
+        // Update other fields if provided
+        if (Name) customer.Name = Name;
+        if (Email) customer.Email = Email;
+        if (PhoneNo) customer.PhoneNo = PhoneNo;
+        if (Number) customer.Number = Number;
+        if (CompanyName) customer.CompanyName = CompanyName;
+        if (DateJoined) customer.DateJoined = new Date(DateJoined);
+        if (DateofBirth) customer.DateofBirth = new Date(DateofBirth);
 
         const updatedCustomer = await customer.save();
 

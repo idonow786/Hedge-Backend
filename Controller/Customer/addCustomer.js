@@ -1,13 +1,15 @@
 const Customer = require('../../Model/Customer');
 const Wallet = require('../../Model/Wallet');
+const CustomerWallet = require('../../Model/CustomerWallet');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
+const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addCustomer = async (req, res) => {
   try {
-    const { Name, Email, PhoneNo, DateJoined, DateofBirth } = req.body;
+    const { Name, Email, PhoneNo, CompanyName, DateJoined, DateofBirth } = req.body;
 
-    if (!Name || !Email || !PhoneNo) {
-      return res.status(400).json({ message: 'Name, Email, and PhoneNo are required' });
+    if (!Name || !Email || !PhoneNo || !CompanyName) {
+      return res.status(400).json({ message: 'Name, Email, PhoneNo, and CompanyName are required' });
     }
 
     const existingCustomer = await Customer.findOne({ Email });
@@ -18,15 +20,26 @@ const addCustomer = async (req, res) => {
     const ID = Math.floor(Math.random() * 1000000);
 
     let picUrl = '';
-    if (req.file) {
-      const base64Image = req.file.buffer.toString('base64');
-      const contentType = req.file.mimetype;
+    if (req.files && req.files.profilePic) {
+      const base64Image = req.files.profilePic[0].buffer.toString('base64');
+      const contentType = req.files.profilePic[0].mimetype;
 
       try {
-        const imageUrl = await uploadImageToFirebase(base64Image, contentType);
-        picUrl = imageUrl;
+        picUrl = await uploadImageToFirebase(base64Image, contentType);
       } catch (error) {
         console.error('Error uploading image to Firebase:', error);
+      }
+    }
+
+    let documentUrls = [];
+    if (req.files && req.files.documents) {
+      for (const file of req.files.documents) {
+        try {
+          const fileUrl = await uploadFileToFirebase(file.buffer, file.originalname);
+          documentUrls.push(fileUrl);
+        } catch (error) {
+          console.error('Error uploading file to Firebase:', error);
+        }
       }
     }
 
@@ -35,13 +48,29 @@ const addCustomer = async (req, res) => {
       Name,
       Email,
       PhoneNo,
+      CompanyName,
       DateJoined: DateJoined ? new Date(DateJoined) : undefined,
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       PicUrl: picUrl,
+      DocumentsUrls: documentUrls,
       AdminID: req.adminId
     });
 
     const savedCustomer = await newCustomer.save();
+
+    const newCustomerWallet = new CustomerWallet({
+      adminId: req.adminId,
+      customerId: savedCustomer._id,
+      yearlyBalances: [{
+        year: new Date().getFullYear(),
+        monthlyBalances: Array.from({length: 12}, (_, i) => ({
+          month: i + 1,
+          balance: 0
+        }))
+      }]
+    });
+
+    await newCustomerWallet.save();
 
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();

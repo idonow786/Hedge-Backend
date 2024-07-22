@@ -8,7 +8,6 @@ const generateReports = async (req, res) => {
     const { startDate, endDate, specificDate, filter } = req.body;
     const adminId = req.adminId
 ;
-
     let dateFilter = {};
 
     if (startDate && endDate) {

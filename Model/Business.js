@@ -43,7 +43,7 @@ const businessSchema = new mongoose.Schema({
   },
   BusinessType: {
     type: String,
-    enum: ['Services', 'Product'],
+    enum: ['Services', 'Product','Service and Product'],
   },
   Services: [
     {

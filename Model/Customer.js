@@ -8,6 +8,15 @@ const customerSchema = new mongoose.Schema({
   Name: {
     type: String,
   },
+  Number: {
+    type: String,
+  },
+  CompanyName: {
+    type: String,
+  },
+  DocumentsUrls: [{
+    type: String,
+  }],
   PicUrl: {
     type: String,
   },
@@ -22,6 +31,15 @@ const customerSchema = new mongoose.Schema({
     type: String,
   },
   Email: {
+    type: String,
+  },
+  ProjectHistory: {
+    type: String,
+  },
+  ProjectsId: [{
+    type: String,
+  }],
+  FinancialInformation: {
     type: String,
   },
   AdminID: {
