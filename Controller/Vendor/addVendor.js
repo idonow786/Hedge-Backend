@@ -1,4 +1,4 @@
-const Vendor = require('../models/Vendor'); // Adjust the path as needed
+const Vendor = require('../../Model/vendorSchema'); 
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 const dotenv = require('dotenv');
@@ -30,6 +30,7 @@ const addVendor = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newVendor = new Vendor({
+      adminId:req.adminId,
       name,
       role: 'Vendor', 
       contactInformation: {
@@ -75,4 +76,129 @@ const addVendor = async (req, res) => {
   }
 };
 
-module.exports = { addVendor };
+const getVendors = async (req, res) => {
+  try {
+    const adminId = req.adminId; 
+
+    const vendors = await Vendor.find({ adminId: adminId });
+
+    if (!vendors || vendors.length === 0) {
+      return res.status(404).json({ message: 'No vendors found for this admin' });
+    }
+
+    const vendorsData = vendors.map(vendor => ({
+      id: vendor._id,
+      name: vendor.name,
+      role: vendor.role,
+      contactInformation: vendor.contactInformation
+    }));
+
+    res.status(200).json(vendorsData);
+
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+const updateVendor = async (req, res) => {
+  try {
+    const { vendorId } = req.body;
+    const { name, email, phoneNo, address, companyName, password } = req.body;
+    const adminId = req.adminId;
+
+    const vendor = await Vendor.findOne({ _id: vendorId, adminId: adminId });
+
+    if (!vendor) {
+      return res.status(404).json({ message: 'Vendor not found or you do not have permission to update this vendor' });
+    }
+
+    vendor.name = name || vendor.name;
+    vendor.contactInformation.email = email || vendor.contactInformation.email;
+    vendor.contactInformation.phone = phoneNo || vendor.contactInformation.phone;
+    vendor.contactInformation.address = address || vendor.contactInformation.address;
+    vendor.contactInformation.companyname = companyName || vendor.contactInformation.companyname;
+
+    let passwordChanged = false;
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      vendor.password = hashedPassword;
+      passwordChanged = true;
+    }
+
+    await vendor.save();
+
+    if (passwordChanged) {
+      const mailOptions = {
+        from: process.env.EMAIL_SENDER,
+        to: vendor.contactInformation.email,
+        subject: 'Your Vendor Account Password Has Been Updated',
+        html: `
+          <div>
+            <h2>Password Update Notification</h2>
+            <p>Your vendor account password has been updated.   ${password}</p>
+            <p>If you did not request this change, please contact support immediately.</p>
+          </div>
+        `,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log('Error sending email:', error);
+        } else {
+          console.log('Email sent:', info.response);
+        }
+      });
+    }
+
+    const updatedVendorData = {
+      id: vendor._id,
+      name: vendor.name,
+      role: vendor.role,
+      contactInformation: vendor.contactInformation
+    };
+
+    res.status(200).json({ 
+      message: 'Vendor updated successfully', 
+      vendor: updatedVendorData,
+      passwordChanged: passwordChanged
+    });
+
+  } catch (error) {
+    console.error('Error updating vendor:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid vendor ID' });
+    }
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+const deleteVendor = async (req, res) => {
+  try {
+    const { vendorId } = req.body;
+    const adminId = req.adminId; 
+
+    const vendor = await Vendor.findOne({ _id: vendorId, adminId: adminId });
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        message: 'Vendor not found or you do not have permission to delete this vendor' 
+      });
+    }
+
+    await Vendor.deleteOne({ _id: vendorId });
+
+    res.status(200).json({ message: 'Vendor deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting vendor:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid vendor ID' });
+    }
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { addVendor, getVendors, updateVendor, deleteVendor };
