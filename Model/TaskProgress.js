@@ -7,9 +7,7 @@ const taskProgressSchema = new mongoose.Schema({
     required: true
   },
   vendorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor',  
-    required: true
+    type: String
   },
   percentageGrowth: {
     type: Number,

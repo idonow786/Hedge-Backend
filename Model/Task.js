@@ -5,7 +5,7 @@ const taskSchema = new mongoose.Schema({
   TaskProgressId: { type: String },
   projectId: { type: String },
   description: String,
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedTo: { type: String },
   priorityLevel: String,
   startDate: Date,
   endDate: Date,
