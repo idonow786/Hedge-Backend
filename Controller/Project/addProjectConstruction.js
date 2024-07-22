@@ -11,13 +11,51 @@ const addProjectConstruction = async (req, res) => {
       return res.status(400).json({ message: 'Project name is required' });
     }
 
+    // Function to safely parse JSON
+    const safeJSONParse = (str) => {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        console.error('Error parsing JSON:', e);
+        return str;
+      }
+    };
+
+    // Handle budget
+    if (projectData.budget) {
+      projectData.budget = {
+        ...projectData.budget,
+        costBreakdown: typeof projectData.budget.costBreakdown === 'string'
+          ? safeJSONParse(projectData.budget.costBreakdown)
+          : projectData.budget.costBreakdown
+      };
+    }
+
+    // Handle other nested objects and arrays
+    const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
+    fieldsToProcess.forEach(field => {
+      if (projectData[field]) {
+        projectData[field] = typeof projectData[field] === 'string'
+          ? safeJSONParse(projectData[field])
+          : projectData[field];
+      }
+    });
+
+    // Special handling for stakeholders
+    if (projectData.communication && projectData.communication.stakeholders) {
+      projectData.communication.stakeholders = typeof projectData.communication.stakeholders === 'string'
+        ? safeJSONParse(projectData.communication.stakeholders)
+        : projectData.communication.stakeholders;
+    }
+
+    // Create new project with processed data
     const newProject = new projectC(projectData);
 
     // Handle file uploads
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
-        const docType = fieldName.split('[')[1].split(']')[0]; // Extract document type from field name
+        const docType = fieldName.split('[')[1].split(']')[0];
         const uploadedUrls = await Promise.all(
           files.map(async (file) => {
             const url = await uploadFileToFirebase(file.buffer, file.originalname);
@@ -28,30 +66,9 @@ const addProjectConstruction = async (req, res) => {
       }
     }
 
-    // Handle budget
-    if (projectData.budget) {
-      newProject.budget = {
-        estimatedBudget: projectData.budget.estimatedBudget,
-        fundingSource: projectData.budget.fundingSource,
-        costBreakdown: typeof projectData.budget.costBreakdown === 'string' 
-          ? JSON.parse(projectData.budget.costBreakdown)
-          : projectData.budget.costBreakdown
-      };
-    }
-
-    // Handle other nested objects and arrays
-    const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
-    fieldsToProcess.forEach(field => {
-      if (projectData[field]) {
-        newProject[field] = typeof projectData[field] === 'string' 
-          ? JSON.parse(projectData[field]) 
-          : projectData[field];
-      }
-    });
-
     // Handle tasks (if any)
     if (projectData.tasks) {
-      const tasks = typeof projectData.tasks === 'string' ? JSON.parse(projectData.tasks) : projectData.tasks;
+      const tasks = typeof projectData.tasks === 'string' ? safeJSONParse(projectData.tasks) : projectData.tasks;
       for (const taskData of tasks) {
         const newTask = new Task(taskData);
 
