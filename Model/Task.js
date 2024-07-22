@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   name: { type: String, required: true },
   TaskProgressId: { type: String },
+  projectId: { type: String },
   description: String,
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   priorityLevel: String,

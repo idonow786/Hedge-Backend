@@ -4,6 +4,8 @@ const vendorSchema = new mongoose.Schema({
 
   name: { type: String, required: true },
   adminId: { type: String },
+  tasksId: [{ type: String }],
+
   role: String,
   contactInformation: {
     email: String,
