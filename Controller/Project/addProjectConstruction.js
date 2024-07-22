@@ -17,7 +17,7 @@ const addProjectConstruction = async (req, res) => {
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
-        const docType = fieldName.split('.')[1]; 
+        const docType = fieldName.split('[')[1].split(']')[0]; // Extract document type from field name
         const uploadedUrls = await Promise.all(
           files.map(async (file) => {
             const url = await uploadFileToFirebase(file.buffer, file.originalname);
@@ -33,27 +33,25 @@ const addProjectConstruction = async (req, res) => {
       newProject.budget = {
         estimatedBudget: projectData.budget.estimatedBudget,
         fundingSource: projectData.budget.fundingSource,
-        costBreakdown: JSON.parse(projectData.budget.costBreakdown)
+        costBreakdown: typeof projectData.budget.costBreakdown === 'string' 
+          ? JSON.parse(projectData.budget.costBreakdown)
+          : projectData.budget.costBreakdown
       };
     }
 
-    // Handle other nested objects
-    ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation'].forEach(field => {
+    // Handle other nested objects and arrays
+    const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
+    fieldsToProcess.forEach(field => {
       if (projectData[field]) {
-        newProject[field] = JSON.parse(projectData[field]);
-      }
-    });
-
-    // Handle arrays
-    ['resources', 'risks'].forEach(field => {
-      if (projectData[field]) {
-        newProject[field] = JSON.parse(projectData[field]);
+        newProject[field] = typeof projectData[field] === 'string' 
+          ? JSON.parse(projectData[field]) 
+          : projectData[field];
       }
     });
 
     // Handle tasks (if any)
     if (projectData.tasks) {
-      const tasks = JSON.parse(projectData.tasks);
+      const tasks = typeof projectData.tasks === 'string' ? JSON.parse(projectData.tasks) : projectData.tasks;
       for (const taskData of tasks) {
         const newTask = new Task(taskData);
 
