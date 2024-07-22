@@ -156,31 +156,42 @@ const updateTask = async (req, res) => {
 
 const getTaskWithProgress = async (req, res) => {
   try {
-    const { taskId } = req.params;
+    const { projectId } = req.query;
+    console.log(projectId)
+    console.log(await Task.find())
+    const tasks = await Task.find({ projectId });
 
-    const task = await Task.findById(taskId)
-
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+    if (!tasks || tasks.length === 0) {
+      return res.status(404).json({ message: 'No tasks found for this project' });
     }
 
-    const taskProgress = await TaskProgress.findOne({ taskId: task._id });
+    const taskIds = tasks.map(task => task._id);
 
-    const taskWithProgress = {
-      ...task.toObject(),
-      progress: taskProgress ? taskProgress.toObject() : null
-    };
+    const taskProgresses = await TaskProgress.find({ taskId: { $in: taskIds } });
+
+    const progressMap = taskProgresses.reduce((map, progress) => {
+      map[progress.taskId.toString()] = progress;
+      return map;
+    }, {});
+
+    const tasksWithProgress = tasks.map(task => {
+      const taskObject = task.toObject();
+      const progress = progressMap[task._id.toString()];
+      return {
+        ...taskObject,
+        progress: progress ? progress.toObject() : null
+      };
+    });
 
     res.status(200).json({
-      message: 'Task and progress retrieved successfully',
-      data: taskWithProgress
+      message: 'Tasks and progress retrieved successfully',
+      data: tasksWithProgress
     });
 
   } catch (error) {
-    console.error('Error retrieving task and progress:', error);
-    res.status(500).json({ message: 'Error retrieving task and progress', error: error.message });
+    console.error('Error retrieving tasks and progress:', error);
+    res.status(500).json({ message: 'Error retrieving tasks and progress', error: error.message });
   }
 };
-
 
 module.exports = { updateTask,addTask,getTaskWithProgress };
