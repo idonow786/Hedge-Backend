@@ -31,7 +31,6 @@ const addProjectConstruction = async (req, res) => {
       };
     }
 
-    // Handle other nested objects and arrays
     const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
     fieldsToProcess.forEach(field => {
       if (projectData[field]) {
@@ -41,17 +40,14 @@ const addProjectConstruction = async (req, res) => {
       }
     });
 
-    // Special handling for stakeholders
     if (projectData.communication && projectData.communication.stakeholders) {
       projectData.communication.stakeholders = typeof projectData.communication.stakeholders === 'string'
         ? safeJSONParse(projectData.communication.stakeholders)
         : projectData.communication.stakeholders;
     }
 
-    // Create new project with processed data
     const newProject = new projectC(projectData);
 
-    // Handle file uploads
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
@@ -113,7 +109,6 @@ const addProjectConstruction = async (req, res) => {
       }
     }
 
-    // Add the admin to the project team
     if (!newProject.projectTeam.teamMembers) newProject.projectTeam.teamMembers = [];
     if (!newProject.projectTeam.teamMembers.includes(req.adminId)) {
       newProject.projectTeam.teamMembers.push(req.adminId);

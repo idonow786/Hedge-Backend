@@ -11,7 +11,7 @@ const getConstructionProjects = async (req, res) => {
     }
     console.log(adminId)
     console.log(await ProjectC.find())
-    const projects = await ProjectC.findOne({ clientId:adminId })
+    const projects = await ProjectC.find({ adminId })
       .populate('projectTeam.projectManager', 'name email')
       .populate('projectTeam.teamMembers', 'name email')
       .populate('projectTeam.subcontractors', 'name contactInfo') 
