@@ -8,6 +8,7 @@ const { updateProject } = require('../Controller/Project/updateProject')
 
 const { addProjectConstruction } = require('../Controller/Project/addProjectConstruction')
 const { updateProjectContruction } = require('../Controller/Project/updateProjectContruction')
+const { getConstructionProjects } = require('../Controller/Project/getConstruction')
 
 
 const { verifyToken } = require('../Middleware/jwt');
@@ -57,6 +58,11 @@ router.put(
     { name: 'documentation[correspondence]', maxCount: 5 },
   ]),
   updateProjectContruction
+);
+router.get(
+  '/get-project',
+  verifyToken,
+  getConstructionProjects
 );
 
 module.exports = router;

@@ -118,7 +118,7 @@ const addProjectConstruction = async (req, res) => {
     if (!newProject.projectTeam.teamMembers.includes(req.adminId)) {
       newProject.projectTeam.teamMembers.push(req.adminId);
     }
-
+    newProject.adminId=req.adminId
     await newProject.save();
 
     res.status(201).json({
