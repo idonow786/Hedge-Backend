@@ -1,4 +1,4 @@
-const Project = require('../../Model/Project');
+const ProjectC = require('../../Model/Project');
 const Customer = require('../../Model/Customer');
 const Vendor = require('../../Model/vendorSchema');
 const Task = require('../../Model/Task');
@@ -24,7 +24,7 @@ const updateProjectContruction = async (req, res) => {
       return res.status(400).json({ message: 'Project ID is required' });
     }
 
-    const project = await Project.findOne({ _id: projectId, AdminID: adminId });
+    const project = await ProjectC.findOne({ _id: projectId, AdminID: adminId });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found or not authorized' });

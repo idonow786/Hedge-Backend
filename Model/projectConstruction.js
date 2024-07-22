@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const projectSchema = new mongoose.Schema({
+const projectCSchema = new mongoose.Schema({
 
   adminId: { type: String, required: true },
   projectName: { type: String, required: true },
@@ -118,5 +118,5 @@ const projectSchema = new mongoose.Schema({
   comments: [String]
 });
 
-module.exports = mongoose.model('Project', projectSchema);
+module.exports = mongoose.model('ProjectC', projectCSchema);
 

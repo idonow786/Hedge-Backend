@@ -1,4 +1,4 @@
-const  Project = require('../../Model/projectConstruction');
+const  projectC = require('../../Model/projectConstruction');
 const  Vendor  = require('../../Model/vendorSchema');
 const Task  = require('../../Model/Task');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
@@ -11,7 +11,7 @@ const addProjectConstruction = async (req, res) => {
       return res.status(400).json({ message: 'Project name is required' });
     }
 
-    const newProject = new Project(projectData);
+    const newProject = new projectC(projectData);
 
     if (projectData.documentation) {
       for (const docType in projectData.documentation) {

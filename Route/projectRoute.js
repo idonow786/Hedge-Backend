@@ -6,7 +6,7 @@ const { getProjects,getProjectsByCustomerId } = require('../Controller/Project/g
 const { updateProject } = require('../Controller/Project/updateProject')
 
 
-const { addProjectContruction } = require('../Controller/Project/addProjectConstruction')
+const { addProjectConstruction } = require('../Controller/Project/addProjectConstruction')
 const { updateProjectContruction } = require('../Controller/Project/updateProjectContruction')
 
 
@@ -40,7 +40,7 @@ router.post(
     { name: 'documentation.blueprints', maxCount: 5 },
     { name: 'documentation.contracts', maxCount: 5 },
   ]),
-  addProjectContruction
+  addProjectConstruction
 );
 
 // Route for updating an existing project
