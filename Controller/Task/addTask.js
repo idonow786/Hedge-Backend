@@ -24,7 +24,7 @@ const addTask = async (req, res) => {
     const newTask = new Task({
       name,
       description,
-      assignedTo,
+      assignedTo, // This is now a single ObjectId
       priorityLevel,
       startDate,
       endDate,
