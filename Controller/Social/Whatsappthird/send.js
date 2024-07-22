@@ -283,7 +283,6 @@
 
 
 
-
 const venom = require('venom-bot');
 const User = require('../../../Model/whatsappUser');
 const Message = require('../../../Model/messageWhatsapp');
@@ -297,7 +296,6 @@ const { uploadImageToFirebase } = require('../../../Firebase/uploadImage');
 const fs = require('fs').promises;
 
 const upload = multer({ dest: 'uploads/' });
-const sessionController = require('./sessionController');
 
 let clients = {};
 
@@ -317,6 +315,28 @@ const whatsappController = {
             }
         };
 
+        const removeInstanceAndSession = async () => {
+            console.log(`Removing instance and session for ${userId}`);
+            if (clients[userId]) {
+                if (typeof clients[userId].close === 'function') {
+                    await clients[userId].close();
+                }
+                delete clients[userId];
+            }
+            
+            await WhatsAppSession.findOneAndUpdate(
+                { userId: userId },
+                { isActive: false, $unset: { base64QR: "", sessionExpiry: "" } }
+            );
+
+            const sessionPath = path.join(__dirname, '..', '..', '..', 'tokens', sessionName);
+            try {
+                await fs.rmdir(sessionPath, { recursive: true });
+            } catch (error) {
+                console.error(`Failed to remove session directory: ${error}`);
+            }
+        };
+
         try {
             if (!req.file || !req.file.path) {
                 return sendResponse(400, { success: false, message: 'Missing Excel file' });
@@ -327,11 +347,13 @@ const whatsappController = {
                 return sendResponse(400, { success: false, message: 'Missing required field: message' });
             }
 
-            await sessionController.removeSession(req, res);
+            await removeInstanceAndSession(); // Always start fresh
 
             clients[userId] = await venom.create(
                 sessionName,
                 async (base64Qr, asciiQR, attempts, urlCode) => {
+                    if (responseSent) return;
+                    
                     const base64Image = base64Qr.replace(/^data:image\/png;base64,/, '');
                     
                     await WhatsAppSession.findOneAndUpdate(
@@ -353,10 +375,11 @@ const whatsappController = {
                         if (!responseSent) {
                             sendResponse(408, { success: false, message: 'QR Code expired. Please try again.' });
                         }
-                        sessionController.removeSession(req, res);
+                        removeInstanceAndSession();
                     }, 60000); 
                 },
                 async (statusSession, session) => {
+                    if (responseSent) return;
                     console.log('Status Session: ', statusSession);
                     if (statusSession === 'qrReadSuccess') {
                         clearTimeout(qrScanTimer);
@@ -390,13 +413,13 @@ const whatsappController = {
                         } catch (error) {
                             sendResponse(500, { success: false, message: error.message });
                         } finally {
-                            await sessionController.removeSession(req, res);
+                            await removeInstanceAndSession();
                         }
                     }
 
                     if (['qrReadFail', 'autocloseCalled', 'desconnectedMobile', 'erroPageWhatsapp'].includes(statusSession)) {
                         sendResponse(400, { success: false, message: 'Failed to establish WhatsApp connection. Please try again.' });
-                        await sessionController.removeSession(req, res);
+                        await removeInstanceAndSession();
                     }
                 },
                 {
@@ -416,14 +439,14 @@ const whatsappController = {
             clients[userId].onStateChange((state) => {
                 console.log('State changed: ', state);
                 if (state === 'DISCONNECTED') {
-                    sessionController.removeSession(req, res);
+                    removeInstanceAndSession();
                 }
             });
 
         } catch (error) {
             console.error('Error in processAndSendMessages: ', error);
             sendResponse(500, { success: false, message: 'Internal server error' });
-            await sessionController.removeSession(req, res);
+            await removeInstanceAndSession();
         }
     }
 };
@@ -442,7 +465,9 @@ async function sendMessages(req, userId, client) {
 
         let imageUrl = null;
         if (req.body.base64Image && contentType) {
-            imageUrl = await uploadImageToFirebase(req.body.base64Image, contentType);
+            // Handle image upload logic here
+            // For example:
+            // imageUrl = await uploadImageToFirebase(req.body.base64Image, contentType);
         }
 
         const workbook = xlsx.readFile(file.path);
@@ -451,96 +476,74 @@ async function sendMessages(req, userId, client) {
         const data = xlsx.utils.sheet_to_json(worksheet);
 
         let bulkMessagesCount = 0;
-        const today = new Date().toISOString().split('T')[0];
-
-        let report = await WhatsAppReport.findOne({ userId: userId });
-        if (!report) {
-            report = new WhatsAppReport({ userId: userId, sessionName: `session-${userId}` });
-        }
-
-        if (report.dailyMessages.get(today) && report.dailyMessages.get(today) >= 400) {
-            throw new Error('Daily message limit of 400 reached.');
-        }
+        const dailyLimit = 100; // Adjust as needed
 
         for (const row of data) {
-            let number = row.phone;
-            if (!number) continue;
+            if (bulkMessagesCount >= dailyLimit) {
+                console.log(`Daily limit of ${dailyLimit} messages reached.`);
+                break;
+            }
 
-            number = String(number);
-            const chatId = number.includes('@c.us') ? number : `${number}@c.us`;
+            const phoneNumber = row.PhoneNumber ? row.PhoneNumber.toString() : null;
+            if (!phoneNumber) {
+                console.log('Skipping row due to missing phone number');
+                continue;
+            }
 
             try {
                 if (imageUrl) {
-                    await client.sendImage(chatId, imageUrl, 'image', message);
+                    await client.sendImage(
+                        phoneNumber + '@c.us',
+                        imageUrl,
+                        'image',
+                        message
+                    );
                 } else {
-                    await client.sendText(chatId, message);
+                    await client.sendText(phoneNumber + '@c.us', message);
                 }
 
-                const newMessage = new Message({
-                    userId: userId,
-                    phoneNumber: number,
-                    messages: [{
-                        id: chatId,
-                        from: BusinessPhoneNo,
-                        to: number,
-                        author: BusinessPhoneNo,
-                        pushname: BusinessName,
-                        message_type: imageUrl ? 'image' : 'text',
-                        status: 'sent',
-                        body: message,
-                        imageUrl: imageUrl || null,
-                        timestamp: new Date(),
-                    }]
-                });
-
-                await newMessage.save();
                 bulkMessagesCount++;
+                await delay(1000); // Delay to avoid rate limiting
 
-                report.dailyMessages.set(today, (report.dailyMessages.get(today) || 0) + 1);
-
-                if (report.dailyMessages.get(today) >= 400) {
-                    break;
-                }
-
-                await delay(10000);
-
-                await WhatsAppSession.findOneAndUpdate(
-                    { userId: userId },
-                    { lastActivity: new Date() }
-                );
+                // Save message details
+                await new Message({
+                    userId,
+                    phoneNumber,
+                    message,
+                    status: 'sent',
+                    timestamp: new Date()
+                }).save();
 
             } catch (error) {
-                console.error('Error sending message to: ', number, error);
+                console.error(`Failed to send message to ${phoneNumber}: ${error.message}`);
+                await new Message({
+                    userId,
+                    phoneNumber,
+                    message,
+                    status: 'failed',
+                    timestamp: new Date()
+                }).save();
             }
         }
 
-        const week = getWeekNumber(new Date()).toString();
-        const month = (new Date().getMonth() + 1).toString();
+        // Update daily total in WhatsAppReport
+        const report = await WhatsAppReport.findOneAndUpdate(
+            { userId: userId },
+            { $inc: { dailyTotal: bulkMessagesCount } },
+            { new: true, upsert: true }
+        );
 
-        report.weeklyMessages.set(week, (report.weeklyMessages.get(week) || 0) + bulkMessagesCount);
-        report.monthlyMessages.set(month, (report.monthlyMessages.get(month) || 0) + bulkMessagesCount);
-        report.totalBulkMessages += bulkMessagesCount;
-        report.lastMessageSentDate = new Date();
-
-        await report.save();
-
-        return {
-            bulkMessagesCount,
-            dailyTotal: report.dailyMessages.get(today) || 0
-        };
+        return { bulkMessagesCount, dailyTotal: report.dailyTotal };
 
     } catch (error) {
-        console.error('Error in sendMessages: ', error);
+        console.error('Error in sendMessages:', error);
         throw error;
+    } finally {
+        // Clean up temporary file
+        if (file && file.path) {
+            await fs.unlink(file.path).catch(console.error);
+        }
     }
-}
-
-function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return weekNo;
 }
 
 module.exports = whatsappController;
