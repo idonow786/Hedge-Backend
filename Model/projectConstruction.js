@@ -2,11 +2,9 @@ const mongoose = require('mongoose');
 
 const projectCSchema = new mongoose.Schema({
 
-  adminId: { type: String, required: true },
-  projectName: { type: String, required: true },
-  projectId: { type: String, required: true},
-  clientName: { type: String, required: true },
-  clientId: { type: String, required: true },
+  adminId: { type: String,  },
+  projectName: { type: String, },
+  clientId: { type: String},
   clientContact: {
     phoneNumber: String,
     emailAddress: String,
