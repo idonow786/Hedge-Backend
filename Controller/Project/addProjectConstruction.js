@@ -1,6 +1,6 @@
-const  projectC = require('../../Model/projectConstruction');
-const  Vendor  = require('../../Model/vendorSchema');
-const Task  = require('../../Model/Task');
+const projectC = require('../../Model/projectConstruction');
+const Vendor = require('../../Model/vendorSchema');
+const Task = require('../../Model/Task');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addProjectConstruction = async (req, res) => {
@@ -13,23 +13,48 @@ const addProjectConstruction = async (req, res) => {
 
     const newProject = new projectC(projectData);
 
-    if (projectData.documentation) {
-      for (const docType in projectData.documentation) {
-        if (Array.isArray(projectData.documentation[docType])) {
-          const uploadedUrls = await Promise.all(
-            projectData.documentation[docType].map(async (doc) => {
-              const fileBuffer = Buffer.from(doc.buffer, 'base64');
-              const url = await uploadFileToFirebase(fileBuffer, doc.originalname);
-              return url;
-            })
-          );
-          newProject.documentation[docType] = uploadedUrls;
-        }
+    // Handle file uploads
+    if (req.files) {
+      newProject.documentation = {};
+      for (const [fieldName, files] of Object.entries(req.files)) {
+        const docType = fieldName.split('.')[1]; // Extract document type from field name
+        const uploadedUrls = await Promise.all(
+          files.map(async (file) => {
+            const url = await uploadFileToFirebase(file.buffer, file.originalname);
+            return url;
+          })
+        );
+        newProject.documentation[docType] = uploadedUrls;
       }
     }
 
-    if (projectData.tasks && Array.isArray(projectData.tasks)) {
-      for (const taskData of projectData.tasks) {
+    // Handle budget
+    if (projectData.budget) {
+      newProject.budget = {
+        estimatedBudget: projectData.budget.estimatedBudget,
+        fundingSource: projectData.budget.fundingSource,
+        costBreakdown: JSON.parse(projectData.budget.costBreakdown)
+      };
+    }
+
+    // Handle other nested objects
+    ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation'].forEach(field => {
+      if (projectData[field]) {
+        newProject[field] = JSON.parse(projectData[field]);
+      }
+    });
+
+    // Handle arrays
+    ['resources', 'risks'].forEach(field => {
+      if (projectData[field]) {
+        newProject[field] = JSON.parse(projectData[field]);
+      }
+    });
+
+    // Handle tasks (if any)
+    if (projectData.tasks) {
+      const tasks = JSON.parse(projectData.tasks);
+      for (const taskData of tasks) {
         const newTask = new Task(taskData);
 
         if (!taskData.assignedTo || taskData.assignedTo === 'self') {
