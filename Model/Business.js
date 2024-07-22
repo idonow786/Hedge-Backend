@@ -55,6 +55,11 @@ const businessSchema = new mongoose.Schema({
       type: String,
     },
   ],
+  ServiceandProduct: [
+    {
+      type: String,
+    },
+  ],
 });
 
 const Business = mongoose.model('Business', businessSchema);

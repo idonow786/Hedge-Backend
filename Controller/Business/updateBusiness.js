@@ -15,6 +15,8 @@ const updateBusiness = async (req, res) => {
       BusinessType,
       Services,
       Products,
+      ServiceandProduct
+
     } = req.body;
 
     const adminId = req.adminId;
@@ -44,6 +46,9 @@ const updateBusiness = async (req, res) => {
       business.Services = Services || business.Services;
     } else if (BusinessType === 'Product') {
       business.Products = Products || business.Products;
+    }
+     else if (BusinessType === 'Service and Product') {
+      business.ServiceandProduct = ServiceandProduct || business.ServiceandProduct;
     }
 
     const updatedBusiness = await business.save();

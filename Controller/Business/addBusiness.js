@@ -15,6 +15,7 @@ const addBusiness = async (req, res) => {
       BusinessType,
       Services,
       Products,
+      ServiceandProduct
     } = req.body;
 
     if (!BusinessName || !BusinessAddress || !BusinessType) {
@@ -45,6 +46,7 @@ const addBusiness = async (req, res) => {
       BusinessType,
       Services: BusinessType === 'Services' ? Services : [],
       Products: BusinessType === 'Product' ? Products : [],
+      ServiceandProduct: BusinessType === 'Service and Product' ? ServiceandProduct : [],
     });
 
     const savedBusiness = await newBusiness.save();
