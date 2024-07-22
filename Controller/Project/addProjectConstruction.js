@@ -17,7 +17,7 @@ const addProjectConstruction = async (req, res) => {
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
-        const docType = fieldName.split('.')[1]; // Extract document type from field name
+        const docType = fieldName.split('.')[1]; 
         const uploadedUrls = await Promise.all(
           files.map(async (file) => {
             const url = await uploadFileToFirebase(file.buffer, file.originalname);

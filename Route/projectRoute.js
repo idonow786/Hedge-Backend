@@ -36,11 +36,11 @@ router.post(
   '/add-project',
   verifyToken,
   upload.fields([
-    { name: 'documentation.permits', maxCount: 5 },
-    { name: 'documentation.reports', maxCount: 5 },
-    { name: 'documentation.contracts', maxCount: 5 },
-    { name: 'documentation.plansAndDrawings', maxCount: 5 },
-    { name: 'documentation.correspondence', maxCount: 5 },
+    { name: 'documentation[contracts]', maxCount: 5 },
+    { name: 'documentation[permits]', maxCount: 5 },
+    { name: 'documentation[plansAndDrawings]', maxCount: 5 },
+    { name: 'documentation[reports]', maxCount: 5 },
+    { name: 'documentation[correspondence]', maxCount: 5 },
   ]),
   addProjectConstruction
 );
@@ -50,11 +50,11 @@ router.put(
   '/update-project',
   verifyToken,
   upload.fields([
-    { name: 'documentation.permits', maxCount: 5 },
-    { name: 'documentation.reports', maxCount: 5 },
-    { name: 'documentation.contracts', maxCount: 5 },
-    { name: 'documentation.plansAndDrawings', maxCount: 5 },
-    { name: 'documentation.correspondence', maxCount: 5 },
+    { name: 'documentation[contracts]', maxCount: 5 },
+    { name: 'documentation[permits]', maxCount: 5 },
+    { name: 'documentation[plansAndDrawings]', maxCount: 5 },
+    { name: 'documentation[reports]', maxCount: 5 },
+    { name: 'documentation[correspondence]', maxCount: 5 },
   ]),
   updateProjectContruction
 );
