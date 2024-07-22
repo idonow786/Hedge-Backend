@@ -1,4 +1,4 @@
-const Vendor = require('../../Model/vendorSchema'); 
+const Vendor = require('../../Model/vendorSchema');
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 const dotenv = require('dotenv');
@@ -30,7 +30,7 @@ const addVendor = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newVendor = new Vendor({
-      adminId:req.adminId,
+      adminId: req.adminId,
       name,
       role: 'Vendor', 
       contactInformation: {
@@ -45,7 +45,10 @@ const addVendor = async (req, res) => {
     await newVendor.save();
 
     const mailOptions = {
-      from: process.env.EMAIL_SENDER,
+      from: {
+        name: 'Your Company Name',
+        address: process.env.EMAIL_SENDER
+      },
       to: email,
       subject: 'Your Vendor Account Details',
       html: `
@@ -54,27 +57,36 @@ const addVendor = async (req, res) => {
           <p>Your vendor account has been created successfully.</p>
           <p>Here are your login details:</p>
           <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Password:strong> ${password}</p>
+          <p><strong>Password:</strong> ${password}</p>
           <p>Please change your password after your first login.</p>
         </div>
       `,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log('Error sending email:', error);
-        return res.status(500).json({ message: 'Vendor created but failed to send email' });
-      } else {
-        console.log('Email sent:', info.response);
-        res.status(201).json({ message: 'Vendor created and email sent successfully' });
-      }
-    });
+    try {
+      await transporter.sendMail(mailOptions);
+      res.status(201).json({ 
+        message: 'Vendor created and email sent successfully',
+        vendorEmail: email
+      });
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      res.status(201).json({ 
+        message: 'Vendor created successfully, but email could not be sent',
+        vendorEmail: email,
+        tempPassword: password 
+      });
+    }
 
   } catch (error) {
     console.error('Error adding vendor:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ 
+      message: 'Internal server error', 
+      error: error.message 
+    });
   }
 };
+
 
 const getVendors = async (req, res) => {
   try {
