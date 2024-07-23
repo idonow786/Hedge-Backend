@@ -4,7 +4,7 @@ const { sendMessage, upload } = require('../Controller/Social/Whatsappthird/send
 const { getAllMessages } = require('../Controller/Social/Whatsappthird/allMessages');
 const { getReport,getMessages } = require('../Controller/Social/Whatsappthird/getReport');
 const whatsappController = require('../Controller/Social/Whatsappthird/send');
-const sessionController = require('../Controller/Social/Whatsappthird/sessionController');
+// const sessionController = require('../Controller/Social/Whatsappthird/sessionController');
 const { verifyToken } = require('../Middleware/jwt');
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.get('/messages',verifyToken, getAllMessages);
 router.get('/inbox',verifyToken, getMessages);
 router.get('/report',verifyToken, getReport);
 router.post('/send-messages', upload.single('file'),verifyToken, whatsappController.processAndSendMessages);
-router.post('/removeSession',verifyToken, sessionController.removeSession);
+// router.post('/removeSession',verifyToken, sessionController.removeSession);
 
 
 module.exports = router;
