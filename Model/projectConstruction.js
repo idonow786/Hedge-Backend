@@ -28,9 +28,9 @@ const projectCSchema = new mongoose.Schema({
     country: String
   },
   projectTeam: {
-    projectManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    subcontractors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' }]
+    projectManager: { type: String },
+    teamMembers: [{ type: String }],
+    subcontractors: [{ type: String }]
   },
   budget: {
     estimatedBudget: Number,
@@ -55,13 +55,13 @@ const projectCSchema = new mongoose.Schema({
       description: String
     }]
   },
-  tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
+  tasks: [{ type: String }],
   risks: [{
     description: String,
     probability: String,
     impact: String,
     mitigationPlan: String,
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    owner: { type: String }
   }],
   resources: [{
     name: String,

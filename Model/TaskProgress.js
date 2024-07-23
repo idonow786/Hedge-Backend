@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const taskProgressSchema = new mongoose.Schema({
   taskId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task', 
+    type: String,
     required: true
   },
   vendorId: {

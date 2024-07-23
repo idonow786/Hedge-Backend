@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'Not Started'
   },
-  dependencies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]
+  dependencies: [{ type: String }]
 });
 
 module.exports = mongoose.model('Task', taskSchema);
