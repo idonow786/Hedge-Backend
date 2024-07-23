@@ -1,6 +1,7 @@
 const Customer = require('../../Model/Customer');
 const CustomerWallet = require('../../Model/CustomerWallet');
-
+const ProjectC = require('../../Model/projectConstruction');
+const Project = require('../../Model/Project');
 const getCustomers = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
@@ -122,4 +123,55 @@ function calculateMonthlyPayments(yearlyBalances) {
 }
 
 
-module.exports = { getCustomers,getCustomerWalletData };
+
+
+
+const getCustomerProjects = async (req, res) => {
+    try {
+        const { customerId } = req.body;
+
+        if (!customerId) {
+            return res.status(400).json({ message: "Customer ID is required" });
+        }
+
+        const projectsC = await ProjectC.find({ clientId: customerId })
+            .select('projectName projectDescription startDate estimatedCompletionDate budget.estimatedBudget');
+
+        const projects = await Project.find({ CustomerId: customerId })
+            .select('Title Description StartDate Deadline Budget');
+
+        const formattedProjects = [
+            ...projectsC.map(project => ({
+                type: 'Construction',
+                title: project.projectName,
+                description: project.projectDescription,
+                startDate: project.startDate,
+                endDate: project.estimatedCompletionDate,
+                budget: project.budget?.estimatedBudget
+            })),
+            ...projects.map(project => ({
+                type: 'General',
+                title: project.Title,
+                description: project.Description,
+                startDate: project.StartDate,
+                endDate: project.Deadline,
+                budget: project.Budget
+            }))
+        ];
+
+        formattedProjects.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+        res.status(200).json({
+            message: "Projects fetched successfully",
+            count: formattedProjects.length,
+            projects: formattedProjects
+        });
+
+    } catch (error) {
+        console.error('Error in getCustomerProjects:', error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+
+module.exports = { getCustomers,getCustomerWalletData,getCustomerProjects };
