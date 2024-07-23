@@ -43,9 +43,15 @@ router.post(
     { name: 'documentation[plansAndDrawings]', maxCount: 5 },
     { name: 'documentation[reports]', maxCount: 5 },
     { name: 'documentation[correspondence]', maxCount: 5 },
+    { name: 'documentation[safetyReports]', maxCount: 5 },
+    { name: 'documentation[qualityReports]', maxCount: 5 },
+    { name: 'documentation[progressReports]', maxCount: 5 },
+    { name: 'documentation[financialReports]', maxCount: 5 },
+    { name: 'documentation[environmentalReports]', maxCount: 5 },
   ]),
   addProjectConstruction
 );
+
 
 // Route for updating an existing project
 router.put(
