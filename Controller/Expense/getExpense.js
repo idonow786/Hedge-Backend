@@ -38,31 +38,24 @@ const getExpenses = async (req, res) => {
     }
 
     const expenses = await Expense.find(query);
-    console.log(await ProjectExpense.find())
-    console.log(await FamilyExpense.find())
 
     const expensesWithDetails = await Promise.all(expenses.map(async (expense) => {
       const expenseObj = expense.toObject();
       // Fetch project expense details
-      console.log(expense.ProjectId )
-      console.log( expense._id)
       const projectExpense = await ProjectExpense.findOne({ projectId: expense.ProjectId });
       if (projectExpense) {
         expenseObj.projectExpense = projectExpense;
       }
-
-      // Fetch family expense details
-      const familyExpense = await FamilyExpense.findOne({  userId: adminId});
-      if (familyExpense) {
-        expenseObj.familyExpense = familyExpense;
-      }
-
       return expenseObj;
     }));
+
+    // Fetch family expenses separately
+    const familyExpenses = await FamilyExpense.find({ userId: adminId });
 
     res.status(200).json({
       message: 'Expenses retrieved successfully',
       expenses: expensesWithDetails,
+      familyExpenses: familyExpenses,
     });
   } catch (error) {
     console.error('Error retrieving expenses:', error);
