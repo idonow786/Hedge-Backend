@@ -13,7 +13,6 @@ const taskSchema = new mongoose.Schema({
   actualHours: Number,
   status: {
     type: String,
-    enum: ['Not Started', 'In Progress', 'Completed'],
     default: 'Not Started'
   },
   dependencies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]
