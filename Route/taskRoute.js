@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const {  updateTask,addTask,getTaskWithProgress } = require('../Controller/Task/addTask')
+const {  updateTask,addTask,getTaskWithProgress,deleteTask } = require('../Controller/Task/addTask')
 const { verifyToken } = require('../Middleware/jwt');
 const multer = require('multer');
 
@@ -20,7 +20,7 @@ const upload = multer({
 router.post('/add', verifyToken, addTask);                                                               //working
 router.get('/get', verifyToken, getTaskWithProgress);                                                              //working
 router.put('/update', verifyToken, updateTask);                                                            //working
-// router.delete('/delete', verifyToken, deleteVendor);                                                            //working
+router.delete('/delete', verifyToken, deleteTask);                                                            //working
 
 module.exports = router;
 

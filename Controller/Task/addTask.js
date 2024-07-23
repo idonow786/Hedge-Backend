@@ -196,4 +196,29 @@ const getTaskWithProgress = async (req, res) => {
   }
 };
 
-module.exports = { updateTask,addTask,getTaskWithProgress };
+
+const deleteTask=async (req, res) => {
+  const { taskId } = req.body;
+
+  if (!taskId) {
+    return res.status(400).json({ message: 'taskId is required in the request body' });
+  }
+
+  try {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    await Task.findByIdAndDelete(taskId);
+
+    await TaskProgress.deleteMany({ taskId: taskId });
+
+    res.status(200).json({ message: 'Task and associated progress records deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the task', error: error.message });
+  }
+};
+
+module.exports = { updateTask,addTask,getTaskWithProgress,deleteTask };
