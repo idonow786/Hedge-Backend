@@ -11,7 +11,11 @@ const verifyToken = (req, res, next) => {
   }
 
   const decodedToken = jwt.decode(token);
-  const secretKey = decodedToken.role === 'superadmin' ? process.env.JWT_SECRET_Super : process.env.JWT_SECRET;
+  const secretKey = decodedToken.role === 'superadmin' 
+  ? process.env.JWT_SECRET_Super 
+  : (decodedToken.role === 'admin' 
+    ? process.env.JWT_SECRET 
+    : process.env.JWT_SECRET_VENDOR);
 
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {

@@ -24,7 +24,7 @@ const addTask = async (req, res) => {
     const newTask = new Task({
       name,
       description,
-      assignedTo, // This is now a single ObjectId
+      assignedTo, 
       priorityLevel,
       startDate,
       endDate,
@@ -51,9 +51,11 @@ const addTask = async (req, res) => {
 
     if (vendorId) {
       const vendor = await Vendor.findById(vendorId);
+      console.log(vendor)
       if (vendor) {
         vendor.tasksId.push(savedTask._id.toString());
         await vendor.save();
+        console.log(vendor)
       } else {
         console.warn(`Vendor with ID ${vendorId} not found.`);
       }

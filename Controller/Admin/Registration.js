@@ -1,5 +1,6 @@
 const Admin = require('../../Model/Admin');
 const SuperAdmin = require('../../Model/superAdmin');
+const Vendor = require('../../Model/vendorSchema');
 const Business = require('../../Model/Business');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
