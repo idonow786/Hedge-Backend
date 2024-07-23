@@ -181,7 +181,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// Signin controller
 const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -196,19 +195,26 @@ const signin = async (req, res) => {
       secretKey = process.env.JWT_SECRET_Super;
     } else {
       user = await Admin.findOne({ Email: email });
-      secretKey = process.env.JWT_SECRET;
+      if (user) {
+        secretKey = process.env.JWT_SECRET;
+      } else {
+        user = await Vendor.findOne({ 'contactInformation.email': email });
+        if (user) {
+          secretKey = process.env.JWT_SECRET_VENDOR; // You might want to use a different secret for vendors
+        }
+      }
     }
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.Password);
+    const isPasswordValid = await bcrypt.compare(password, user.Password || user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // if (user.role !== 'superadmin') {
+       // if (user.role !== 'superadmin' !==user.role!=='vendor') {
     //   const payment = await Payment.findOne({ UserID: user._id });
     //   console.log(payment);
     //   if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
@@ -226,7 +232,12 @@ const signin = async (req, res) => {
     // }
 
     const token = jwt.sign(
-      { userId: user._id, username: user.Name, email: user.Email, role: user.role },
+      { 
+        userId: user._id, 
+        username: user.Name || user.name, 
+        email: user.Email || user.contactInformation.email, 
+        role: user.role
+      },
       secretKey,
       { expiresIn: '30d' }
     );
@@ -243,6 +254,7 @@ const signin = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 
