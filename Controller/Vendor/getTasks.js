@@ -4,11 +4,23 @@ const TaskProgress = require('../../Model/TaskProgress');
 
 const getVendorTasksInfo = async (req, res) => {
   try {
-    const  adminId  = req.adminId;
-    console.log(await Vendor.find())
-    const vendor = await Vendor.find({_id:adminId});
+    const adminId = req.adminId;
+    
+    const vendor = await Vendor.findOne({ _id: adminId });
     if (!vendor) {
       return res.status(404).json({ message: 'Vendor not found' });
+    }
+
+    if (!vendor.tasksId || vendor.tasksId.length === 0) {
+      return res.status(200).json({
+        vendor: {
+          name: vendor.name,
+          email: vendor.contactInformation?.email,
+          phone: vendor.contactInformation?.phone,
+          companyName: vendor.contactInformation?.companyname
+        },
+        tasks: []
+      });
     }
 
     const tasks = await Task.find({ _id: { $in: vendor.tasksId } });
@@ -55,4 +67,4 @@ const getVendorTasksInfo = async (req, res) => {
   }
 };
 
-module.exports = {getVendorTasksInfo};
+module.exports = { getVendorTasksInfo };
