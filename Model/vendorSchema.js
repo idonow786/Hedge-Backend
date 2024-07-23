@@ -6,7 +6,7 @@ const vendorSchema = new mongoose.Schema({
   adminId: { type: String },
   tasksId: [{ type: String }],
 
-  role: String,
+  role: {type:String,default:'vendor'},
   contactInformation: {
     email: String,
     phone: String,
