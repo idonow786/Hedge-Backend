@@ -9,6 +9,7 @@ const { updateProject } = require('../Controller/Project/updateProject')
 const { addProjectConstruction } = require('../Controller/Project/addProjectConstruction')
 const { updateProjectContruction } = require('../Controller/Project/updateProjectContruction')
 const { getConstructionProjects } = require('../Controller/Project/getConstruction')
+const { getProjectExpenses } = require('../Controller/Project/getProjectExpense')
 
 
 const { verifyToken } = require('../Middleware/jwt');
@@ -64,6 +65,12 @@ router.get(
   verifyToken,
   getConstructionProjects
 );
+router.post(
+  '/get-expense',
+  verifyToken,
+  getProjectExpenses
+);
+
 
 module.exports = router;
 
