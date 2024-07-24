@@ -1,4 +1,4 @@
-const ProjectC = require('../../Model/Project');
+const ProjectC = require('../../Model/projectConstruction');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addProjectConstruction = async (req, res) => {
