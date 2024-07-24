@@ -99,7 +99,7 @@ const addProjectConstruction = async (req, res) => {
       projectData.communication.stakeholders = safeParseOrSplit(projectData.communication.stakeholders);
     }
 
-    const newProject = new projectC(projectData);
+    const newProject = new ProjectC(projectData);
 
     // Handle file uploads (if any)
     if (req.files) {
