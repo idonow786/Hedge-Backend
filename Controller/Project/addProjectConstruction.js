@@ -1,8 +1,3 @@
-const projectC = require('../../Model/projectConstruction');
-const Vendor = require('../../Model/vendorSchema');
-const Task = require('../../Model/Task');
-const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
-
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
@@ -21,17 +16,13 @@ const addProjectConstruction = async (req, res) => {
       }
     };
 
-    // Handle budget
-    if (projectData.budget) {
-      projectData.budget = {
-        ...projectData.budget,
-        costBreakdown: typeof projectData.budget.costBreakdown === 'string'
-          ? safeJSONParse(projectData.budget.costBreakdown)
-          : projectData.budget.costBreakdown
-      };
-    }
+    // Process all fields that might be stringified JSON
+    const fieldsToProcess = [
+      'clientContact', 'projectScope', 'projectLocation', 'projectTeam',
+      'budget', 'timeline', 'risks', 'resources', 'qualityManagement',
+      'communication', 'healthAndSafety', 'changeManagement', 'completion'
+    ];
 
-    const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
     fieldsToProcess.forEach(field => {
       if (projectData[field]) {
         projectData[field] = typeof projectData[field] === 'string'
@@ -40,14 +31,44 @@ const addProjectConstruction = async (req, res) => {
       }
     });
 
-    if (projectData.communication && projectData.communication.stakeholders) {
-      projectData.communication.stakeholders = typeof projectData.communication.stakeholders === 'string'
-        ? safeJSONParse(projectData.communication.stakeholders)
-        : projectData.communication.stakeholders;
+    // Handle dates
+    const datesToProcess = ['startDate', 'estimatedCompletionDate', 'actualCompletionDate'];
+    datesToProcess.forEach(dateField => {
+      if (projectData[dateField]) {
+        projectData[dateField] = new Date(projectData[dateField]);
+      }
+    });
+
+    // Handle nested dates
+    if (projectData.timeline && projectData.timeline.projectSchedule) {
+      projectData.timeline.projectSchedule.startDate = new Date(projectData.timeline.projectSchedule.startDate);
+      projectData.timeline.projectSchedule.endDate = new Date(projectData.timeline.projectSchedule.endDate);
     }
+
+    if (projectData.timeline && projectData.timeline.milestones) {
+      projectData.timeline.milestones = projectData.timeline.milestones.map(milestone => ({
+        ...milestone,
+        date: new Date(milestone.date)
+      }));
+    }
+
+    // Handle arrays that might be strings
+    ['projectTeam.teamMembers', 'projectTeam.subcontractors', 'projectScope.objectives', 'projectScope.deliverables', 'projectScope.exclusions']
+      .forEach(path => {
+        const parts = path.split('.');
+        let obj = projectData;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (obj[parts[i]]) obj = obj[parts[i]];
+        }
+        const field = parts[parts.length - 1];
+        if (obj[field] && typeof obj[field] === 'string') {
+          obj[field] = obj[field].split(',').map(item => item.trim());
+        }
+      });
 
     const newProject = new projectC(projectData);
 
+    // Handle file uploads (documentation)
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
@@ -62,58 +83,25 @@ const addProjectConstruction = async (req, res) => {
       }
     }
 
-    // Handle tasks (if any)
+    // Handle tasks
     if (projectData.tasks) {
       const tasks = typeof projectData.tasks === 'string' ? safeJSONParse(projectData.tasks) : projectData.tasks;
       for (const taskData of tasks) {
         const newTask = new Task(taskData);
-
-        if (!taskData.assignedTo || taskData.assignedTo === 'self') {
-          newTask.assignedTo = null;
-        } else {
-          let assignee;
-          if (typeof taskData.assignedTo === 'object') {
-            assignee = await Vendor.findOneAndUpdate(
-              { email: taskData.assignedTo.email },
-              taskData.assignedTo,
-              { upsert: true, new: true }
-            );
-          } else {
-            assignee = await Vendor.findById(taskData.assignedTo);
-          }
-
-          if (!assignee) {
-            return res.status(400).json({ message: `Assignee with ID ${taskData.assignedTo} not found` });
-          }
-
-          newTask.assignedTo = assignee._id;
-
-          if (assignee instanceof Vendor) {
-            if (!assignee.assignedTasks) assignee.assignedTasks = [];
-            assignee.assignedTasks.push(newTask._id);
-            if (!assignee.projects) assignee.projects = [];
-            if (!assignee.projects.includes(newProject._id)) {
-              assignee.projects.push(newProject._id);
-            }
-            await assignee.save();
-
-            if (!newProject.projectTeam.subcontractors) newProject.projectTeam.subcontractors = [];
-            if (!newProject.projectTeam.subcontractors.includes(assignee._id)) {
-              newProject.projectTeam.subcontractors.push(assignee._id);
-            }
-          }
-        }
-
         await newTask.save();
         newProject.tasks.push(newTask._id);
       }
     }
 
+    // Set adminId
+    newProject.adminId = req.adminId;
+
+    // Ensure projectTeam.teamMembers includes the admin
     if (!newProject.projectTeam.teamMembers) newProject.projectTeam.teamMembers = [];
     if (!newProject.projectTeam.teamMembers.includes(req.adminId)) {
       newProject.projectTeam.teamMembers.push(req.adminId);
     }
-    newProject.adminId=req.adminId
+
     await newProject.save();
 
     res.status(201).json({
@@ -131,5 +119,3 @@ const addProjectConstruction = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
-
-module.exports = { addProjectConstruction };
