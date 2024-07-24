@@ -9,6 +9,7 @@ const { updateProject } = require('../Controller/Project/updateProject')
 const { addProjectConstruction } = require('../Controller/Project/addProjectConstruction')
 const { updateProjectConstruction } = require('../Controller/Project/updateProjectContruction')
 const { getConstructionProjects,getProjectContruct } = require('../Controller/Project/getConstruction')
+const { deleteProjectConstruction } = require('../Controller/Project/deleteContruction')
 const { getProjectExpenses } = require('../Controller/Project/getProjectExpense')
 
 
@@ -95,6 +96,11 @@ router.get(
   '/get-project',
   verifyToken,
   getConstructionProjects
+);
+router.delete(
+  '/delete-contruct',
+  verifyToken,
+  deleteProjectConstruction
 );
 router.post(
   '/get-expense',
