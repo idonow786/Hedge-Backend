@@ -12,11 +12,6 @@ const getConstructionProjects = async (req, res) => {
     console.log(adminId)
     console.log(await ProjectC.find())
     const projects = await ProjectC.find({ adminId })
-      .populate('projectTeam.projectManager', 'name email')
-      .populate('projectTeam.teamMembers', 'name email')
-      .populate('projectTeam.subcontractors', 'name contactInfo') 
-      .populate('tasks') 
-      .populate('risks.owner', 'name email'); 
 
     if (!projects || projects.length === 0) {
       return res.status(404).json({ message: 'No construction projects found for this admin' });
