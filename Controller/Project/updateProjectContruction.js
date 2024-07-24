@@ -1,3 +1,6 @@
+const ProjectC = require('../../Model/projectConstruction');
+const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
+
 const updateProjectConstruction = async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -107,3 +110,6 @@ const updateProjectConstruction = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
+
+
+module.exports={updateProjectConstruction}
