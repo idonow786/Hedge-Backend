@@ -1,12 +1,10 @@
 const projectC = require('../../Model/projectConstruction');
-const Vendor = require('../../Model/vendorSchema');
-const Task = require('../../Model/Task');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
-    console.log(" project Data  :  " ,projectData);
+    console.log('Project Data:', projectData);
 
     if (!projectData.projectName) {
       return res.status(400).json({ message: 'Project name is required' });
@@ -79,9 +77,14 @@ const addProjectConstruction = async (req, res) => {
     if (projectData.timeline && projectData.timeline.milestones) {
       projectData.timeline.milestones = projectData.timeline.milestones.map(milestone => ({
         name: milestone.name,
-        date: new Date(milestone.date),
+        date: milestone.date ? new Date(milestone.date) : null,
         description: milestone.description
       }));
+    }
+
+    // Handle communication
+    if (projectData.communication && projectData.communication.stakeholders) {
+      projectData.communication.stakeholders = safeParseOrSplit(projectData.communication.stakeholders);
     }
 
     const newProject = new projectC(projectData);
