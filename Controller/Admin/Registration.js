@@ -190,6 +190,7 @@ const signin = async (req, res) => {
     let secretKey;
     let features = null;
     let totals = null;
+    let business = null;
 
     user = await SuperAdmin.findOne({ Email: email });
     if (user) {
@@ -198,10 +199,12 @@ const signin = async (req, res) => {
       user = await Admin.findOne({ Email: email });
       if (user) {
         secretKey = process.env.JWT_SECRET;
+        // Find associated business for Admin
+        business = await Business.findOne({ AdminID: user._id });
       } else {
         user = await Vendor.findOne({ 'contactInformation.email': email });
         if (user) {
-          secretKey = process.env.JWT_SECRET_VENDOR; // You might want to use a different secret for vendors
+          secretKey = process.env.JWT_SECRET_VENDOR;
         }
       }
     }
@@ -231,7 +234,6 @@ const signin = async (req, res) => {
     //     TotalSocialMediaPosts: payment.TotalSocialMediaPosts
     //   };
     // }
-
     const token = jwt.sign(
       { 
         userId: user._id, 
@@ -243,18 +245,25 @@ const signin = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.status(200).json({ 
+    const response = { 
       message: 'Signin successful', 
       token, 
       role: user.role,
       features,
       totals
-    });
+    };
+
+    if (business) {
+      response.business = business;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error signing in:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 
