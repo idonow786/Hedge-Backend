@@ -3,10 +3,12 @@ const mongoose = require('mongoose');
 const FamilyExpenseItemSchema = new mongoose.Schema({
   expenseType: {
     type: String,
+    required: true,
     trim: true
   },
   amount: {
     type: Number,
+    required: true,
     min: 0
   },
   description: {
@@ -15,29 +17,14 @@ const FamilyExpenseItemSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now
+    required: true
   }
 });
 
 const FamilyExpenseSchema = new mongoose.Schema({
   userId: {
     type: String,
-  },
-  expenseId: {
-    type: String,
-  },
-
-  month: {
-    type: Number,
-    min: 1,
-    max: 12
-  },
-  year: {
-    type: Number,
-  },
-  totalAmount: {
-    type: Number,
-    default: 0
+    required: true
   },
   expenses: [FamilyExpenseItemSchema],
   notes: {
@@ -48,15 +35,26 @@ const FamilyExpenseSchema = new mongoose.Schema({
   timestamps: true
 });
 
-FamilyExpenseSchema.index({ userId: 1, year: 1, month: 1 });
+// Index for efficient querying
+FamilyExpenseSchema.index({ userId: 1, 'expenses.date': 1 });
 
-FamilyExpenseSchema.virtual('calculatedTotalAmount').get(function() {
+// Virtual for calculating total amount
+FamilyExpenseSchema.virtual('totalAmount').get(function() {
   return this.expenses.reduce((total, expense) => total + expense.amount, 0);
 });
 
-FamilyExpenseSchema.pre('save', function(next) {
-  this.totalAmount = this.expenses.reduce((total, expense) => total + expense.amount, 0);
-  next();
+// Virtual for getting daily expenses
+FamilyExpenseSchema.virtual('dailyExpenses').get(function() {
+  const dailyExpenses = {};
+  this.expenses.forEach(expense => {
+    const dateString = expense.date.toISOString().split('T')[0];
+    if (!dailyExpenses[dateString]) {
+      dailyExpenses[dateString] = { date: expense.date, expenses: [], totalAmount: 0 };
+    }
+    dailyExpenses[dateString].expenses.push(expense);
+    dailyExpenses[dateString].totalAmount += expense.amount;
+  });
+  return Object.values(dailyExpenses);
 });
 
 const FamilyExpense = mongoose.model('FamilyExpense', FamilyExpenseSchema);
