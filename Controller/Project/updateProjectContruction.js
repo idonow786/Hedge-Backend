@@ -4,7 +4,7 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const updateProjectConstruction = async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.query;
     const adminId = req.adminId;
     const projectData = req.body;
 
