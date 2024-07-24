@@ -72,7 +72,7 @@ const addProjectConstruction = async (req, res) => {
         }
       });
 
-    const newProject = new projectC(projectData);
+    const newProject = new ProjectC(projectData);
 
     // Handle file uploads (documentation)
     if (req.files) {
