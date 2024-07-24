@@ -4,8 +4,8 @@ const projectConstructionSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   projectDescription: { type: String, required: true },
-  startDate: { type: Date, required: true },
-  estimatedCompletionDate: { type: Date, required: true },
+  startDate: { type: Date },
+  estimatedCompletionDate: { type: Date },
   projectLocation: {
     siteAddress: { type: String, required: true },
     city: { type: String, required: true },
@@ -37,8 +37,8 @@ const projectConstructionSchema = new mongoose.Schema({
   },
   timeline: {
     projectSchedule: {
-      startDate: { type: Date, required: true },
-      endDate: { type: Date, required: true },
+      startDate: { type: Date },
+      endDate: { type: Date },
     },
     milestones: [{
       name: String,
