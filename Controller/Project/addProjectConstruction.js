@@ -6,48 +6,87 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
-    console.log(projectData)
+    console.log(" project Data  :  " ,projectData);
+
     if (!projectData.projectName) {
       return res.status(400).json({ message: 'Project name is required' });
     }
 
-    // Function to safely parse JSON
-    const safeJSONParse = (str) => {
-      try {
-        return JSON.parse(str);
-      } catch (e) {
-        console.error('Error parsing JSON:', e);
-        return str;
+    // Function to safely parse JSON or split string
+    const safeParseOrSplit = (value) => {
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch (e) {
+          return value.split(',').map(item => item.trim());
+        }
       }
+      return value;
     };
 
     // Handle budget
     if (projectData.budget) {
       projectData.budget = {
         ...projectData.budget,
-        costBreakdown: typeof projectData.budget.costBreakdown === 'string'
-          ? safeJSONParse(projectData.budget.costBreakdown)
-          : projectData.budget.costBreakdown
+        estimatedBudget: Number(projectData.budget.estimatedBudget),
+        costBreakdown: Object.entries(projectData.budget.costBreakdown).reduce((acc, [key, value]) => {
+          acc[key] = Number(value);
+          return acc;
+        }, {})
       };
     }
 
-    const fieldsToProcess = ['healthAndSafety', 'communication', 'qualityManagement', 'projectScope', 'projectLocation', 'resources', 'risks'];
-    fieldsToProcess.forEach(field => {
-      if (projectData[field]) {
-        projectData[field] = typeof projectData[field] === 'string'
-          ? safeJSONParse(projectData[field])
-          : projectData[field];
-      }
-    });
+    // Handle projectScope
+    if (projectData.projectScope) {
+      ['objectives', 'deliverables', 'exclusions'].forEach(field => {
+        if (projectData.projectScope[field]) {
+          projectData.projectScope[field] = safeParseOrSplit(projectData.projectScope[field]);
+        }
+      });
+    }
 
-    if (projectData.communication && projectData.communication.stakeholders) {
-      projectData.communication.stakeholders = typeof projectData.communication.stakeholders === 'string'
-        ? safeJSONParse(projectData.communication.stakeholders)
-        : projectData.communication.stakeholders;
+    // Handle projectTeam
+    if (projectData.projectTeam) {
+      ['teamMembers', 'subcontractors'].forEach(field => {
+        if (projectData.projectTeam[field]) {
+          projectData.projectTeam[field] = safeParseOrSplit(projectData.projectTeam[field]);
+        }
+      });
+    }
+
+    // Handle resources
+    if (projectData.resources) {
+      projectData.resources = projectData.resources.map(resource => ({
+        name: resource.resourceName,
+        type: resource.resourceType,
+        allocation: Number(resource.quantity),
+        cost: Number(resource.unitCost)
+      }));
+    }
+
+    // Handle risks
+    if (projectData.risks) {
+      projectData.risks = projectData.risks.map(risk => ({
+        description: risk.description,
+        probability: risk.probability,
+        impact: risk.impact,
+        mitigationPlan: risk.mitigationStrategy,
+        owner: risk.riskName
+      }));
+    }
+
+    // Handle timeline
+    if (projectData.timeline && projectData.timeline.milestones) {
+      projectData.timeline.milestones = projectData.timeline.milestones.map(milestone => ({
+        name: milestone.name,
+        date: new Date(milestone.date),
+        description: milestone.description
+      }));
     }
 
     const newProject = new projectC(projectData);
 
+    // Handle file uploads (if any)
     if (req.files) {
       newProject.documentation = {};
       for (const [fieldName, files] of Object.entries(req.files)) {
@@ -62,58 +101,15 @@ const addProjectConstruction = async (req, res) => {
       }
     }
 
-    // Handle tasks (if any)
-    if (projectData.tasks) {
-      const tasks = typeof projectData.tasks === 'string' ? safeJSONParse(projectData.tasks) : projectData.tasks;
-      for (const taskData of tasks) {
-        const newTask = new Task(taskData);
+    // Set adminId
+    newProject.adminId = req.adminId;
 
-        if (!taskData.assignedTo || taskData.assignedTo === 'self') {
-          newTask.assignedTo = null;
-        } else {
-          let assignee;
-          if (typeof taskData.assignedTo === 'object') {
-            assignee = await Vendor.findOneAndUpdate(
-              { email: taskData.assignedTo.email },
-              taskData.assignedTo,
-              { upsert: true, new: true }
-            );
-          } else {
-            assignee = await Vendor.findById(taskData.assignedTo);
-          }
-
-          if (!assignee) {
-            return res.status(400).json({ message: `Assignee with ID ${taskData.assignedTo} not found` });
-          }
-
-          newTask.assignedTo = assignee._id;
-
-          if (assignee instanceof Vendor) {
-            if (!assignee.assignedTasks) assignee.assignedTasks = [];
-            assignee.assignedTasks.push(newTask._id);
-            if (!assignee.projects) assignee.projects = [];
-            if (!assignee.projects.includes(newProject._id)) {
-              assignee.projects.push(newProject._id);
-            }
-            await assignee.save();
-
-            if (!newProject.projectTeam.subcontractors) newProject.projectTeam.subcontractors = [];
-            if (!newProject.projectTeam.subcontractors.includes(assignee._id)) {
-              newProject.projectTeam.subcontractors.push(assignee._id);
-            }
-          }
-        }
-
-        await newTask.save();
-        newProject.tasks.push(newTask._id);
-      }
-    }
-
+    // Ensure projectTeam.teamMembers includes the admin
     if (!newProject.projectTeam.teamMembers) newProject.projectTeam.teamMembers = [];
     if (!newProject.projectTeam.teamMembers.includes(req.adminId)) {
       newProject.projectTeam.teamMembers.push(req.adminId);
     }
-    newProject.adminId=req.adminId
+
     await newProject.save();
 
     res.status(201).json({
