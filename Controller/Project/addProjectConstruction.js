@@ -52,40 +52,19 @@ const addProjectConstruction = async (req, res) => {
       });
     }
 
-    // Handle resources
-    if (projectData.resources) {
-      projectData.resources = Array.isArray(projectData.resources) 
-        ? projectData.resources.map(resource => ({
-            name: resource.resourceName,
-            type: resource.resourceType,
-            allocation: Number(resource.quantity),
-            cost: Number(resource.unitCost)
-          }))
-        : [];
+    // Handle timeline
+    if (projectData.timeline && projectData.timeline.milestones) {
+      projectData.timeline.milestones = safeParseOrSplit(projectData.timeline.milestones);
     }
 
     // Handle risks
     if (projectData.risks) {
-      projectData.risks = Array.isArray(projectData.risks)
-        ? projectData.risks.map(risk => ({
-            description: risk.description,
-            probability: risk.probability,
-            impact: risk.impact,
-            mitigationPlan: risk.mitigationStrategy,
-            owner: risk.riskName
-          }))
-        : [];
+      projectData.risks = safeParseOrSplit(projectData.risks);
     }
 
-    // Handle timeline
-    if (projectData.timeline && projectData.timeline.milestones) {
-      projectData.timeline.milestones = Array.isArray(projectData.timeline.milestones)
-        ? projectData.timeline.milestones.map(milestone => ({
-            name: milestone.name,
-            date: milestone.date ? new Date(milestone.date) : null,
-            description: milestone.description
-          }))
-        : [];
+    // Handle resources
+    if (projectData.resources) {
+      projectData.resources = safeParseOrSplit(projectData.resources);
     }
 
     // Handle communication
@@ -112,12 +91,6 @@ const addProjectConstruction = async (req, res) => {
 
     // Set adminId
     newProject.adminId = req.adminId;
-
-    // Ensure projectTeam.teamMembers includes the admin
-    if (!newProject.projectTeam.teamMembers) newProject.projectTeam.teamMembers = [];
-    if (!newProject.projectTeam.teamMembers.includes(req.adminId)) {
-      newProject.projectTeam.teamMembers.push(req.adminId);
-    }
 
     await newProject.save();
 

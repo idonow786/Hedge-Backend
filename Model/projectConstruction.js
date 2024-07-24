@@ -1,121 +1,97 @@
 const mongoose = require('mongoose');
 
-const projectCSchema = new mongoose.Schema({
-
-  adminId: { type: String,  },
-  projectName: { type: String, },
-  clientId: { type: String},
-  clientContact: {
-    phoneNumber: String,
-    emailAddress: String,
-    address: String
-  },
-  startDate: Date,
-  estimatedCompletionDate: Date,
-  actualCompletionDate: Date,
-  projectDescription: String,
-  projectScope: {
-    objectives: [String],
-    deliverables: [String],
-    scopeOfWork: String,
-    exclusions: [String]
-  },
+const projectConstructionSchema = new mongoose.Schema({
+  projectName: { type: String, required: true },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
+  projectDescription: { type: String, required: true },
+  startDate: { type: Date, required: true },
+  estimatedCompletionDate: { type: Date, required: true },
   projectLocation: {
-    siteAddress: String,
-    city: String,
-    stateProvince: String,
-    postalCode: String,
-    country: String
-  },
-  projectTeam: {
-    projectManager: { type: String },
-    teamMembers: [{ type: String }],
-    subcontractors: [{ type: String }]
+    siteAddress: { type: String, required: true },
+    city: { type: String, required: true },
+    stateProvince: { type: String, required: true },
+    postalCode: { type: String, required: true },
+    country: { type: String, required: true },
   },
   budget: {
-    estimatedBudget: Number,
-    actualBudget: Number,
+    estimatedBudget: { type: Number, required: true },
+    fundingSource: { type: String, required: true },
     costBreakdown: {
-      laborCosts: Number,
-      materialCosts: Number,
-      equipmentCosts: Number,
-      subcontractorCosts: Number,
-      miscellaneousCosts: Number
+      laborCosts: { type: Number, default: 0 },
+      materialCosts: { type: Number, default: 0 },
+      equipmentCosts: { type: Number, default: 0 },
+      subcontractorCosts: { type: Number, default: 0 },
+      miscellaneousCosts: { type: Number, default: 0 },
     },
-    fundingSource: String
+  },
+  projectScope: {
+    scopeOfWork: { type: String, required: true },
+    objectives: [String],
+    deliverables: [String],
+    exclusions: [String],
+  },
+  projectTeam: {
+    projectManager: { type: String, required: true },
+    teamMembers: [String],
+    subcontractors: [String],
   },
   timeline: {
     projectSchedule: {
-      startDate: Date,
-      endDate: Date
+      startDate: { type: Date, required: true },
+      endDate: { type: Date, required: true },
     },
     milestones: [{
       name: String,
       date: Date,
-      description: String
-    }]
+      description: String,
+    }],
   },
-  tasks: [{ type: String }],
   risks: [{
+    riskName: String,
     description: String,
     probability: String,
     impact: String,
-    mitigationPlan: String,
-    owner: { type: String }
+    mitigationStrategy: String,
   }],
   resources: [{
-    name: String,
-    type: String,
-    allocation: Number,
-    availability: String,
-    cost: Number
+    resourceName: String,
+    resourceType: String,
+    quantity: Number,
+    unitCost: Number,
   }],
-  qualityManagement: {
-    qualityStandards: [String],
-    qualityControlProcedures: [String],
-    inspectionSchedule: [Date],
-    inspectionResults: [String]
-  },
   communication: {
-    communicationPlan: String,
-    meetingSchedule: [Date],
-    meetingNotes: [String],
     stakeholders: [{
       name: String,
       role: String,
-      contactInformation: String
-    }]
+      contactInfo: String,
+      communicationPreference: String,
+    }],
   },
   documentation: {
     contracts: [String],
     permits: [String],
     plansAndDrawings: [String],
     reports: [String],
-    correspondence: [String]
+    correspondence: [String],
+    safetyReports: [String],
+    qualityReports: [String],
+    progressReports: [String],
+    financialReports: [String],
+    environmentalReports: [String],
+    changeOrders: [String],
+    submittals: [String],
+    inspectionReports: [String],
+    meetingMinutes: [String],
+    photos: [String],
+    warranties: [String],
+    asBuiltDrawings: [String],
+    operationManuals: [String],
+    certifications: [String],
+    insuranceDocuments: [String],
   },
-  healthAndSafety: {
-    safetyPlan: String,
-    safetyInspections: [Date],
-    incidentReports: [String],
-    emergencyContacts: [String]
-  },
-  changeManagement: [{
-    changeDescription: String,
-    reasonForChange: String,
-    impactOnScope: String,
-    impactOnSchedule: String,
-    impactOnBudget: Number,
-    approved: Boolean
-  }],
-  completion: {
-    finalInspectionReport: String,
-    punchList: [String],
-    handoverDocuments: [String],
-    clientSignOff: Boolean
-  },
-  notes: [String],
-  comments: [String]
+  adminId: { type:String},
 });
 
-module.exports = mongoose.model('ProjectC', projectCSchema);
+const ProjectC = mongoose.model('ProjectC', projectConstructionSchema);
 
+module.exports = ProjectC;
