@@ -123,6 +123,7 @@ const addProjectConstruction = async (req, res) => {
       message: 'Project created successfully',
       project: newProject
     });
+    console.log(newProject)
   } catch (error) {
     console.error('Error in addProjectConstruction:', error);
     if (error.name === 'ValidationError') {
