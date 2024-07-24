@@ -1,4 +1,5 @@
-const { DailyFinancialRecord } = require('../../Model/ProjectExoense');
+const Expense = require('../../Model/Expense');
+const ProjectExpense = require('../../Model/ProjectExoense');
 const FamilyExpense = require('../../Model/FamilyAccount');
 
 const getExpenses = async (req, res) => {
@@ -6,53 +7,54 @@ const getExpenses = async (req, res) => {
     const { startDate, endDate, search } = req.body;
     const adminId = req.adminId;
 
-    let query = { 'projectExpenses.adminId': adminId };
+    let query = { AdminID: adminId };
 
     if (startDate && endDate) {
-      query.date = {
+      query.Date = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       };
     } else if (startDate) {
-      query.date = {
+      query.Date = {
         $gte: new Date(startDate),
       };
     } else if (endDate) {
-      query.date = {
+      query.Date = {
         $lte: new Date(endDate),
       };
     }
 
-    let dailyRecords = await DailyFinancialRecord.find(query);
-
     if (search) {
       const searchNumber = parseFloat(search);
-      dailyRecords = dailyRecords.map(record => {
-        const filteredProjectExpenses = record.projectExpenses.filter(expense => {
-          if (!isNaN(searchNumber)) {
-            return expense.description.toLowerCase().includes(search.toLowerCase()) ||
-                   expense.totalAmount >= searchNumber;
-          } else {
-            return expense.description.toLowerCase().includes(search.toLowerCase());
-          }
-        });
-        return { ...record.toObject(), projectExpenses: filteredProjectExpenses };
-      }).filter(record => record.projectExpenses.length > 0);
+
+      if (!isNaN(searchNumber)) {
+        query.$or = [
+          { ExpenseTitle: { $regex: search, $options: 'i' } },
+          { Amount: { $gte: searchNumber } },
+        ];
+      } else {
+        query.ExpenseTitle = { $regex: search, $options: 'i' };
+      }
     }
 
-    const expenses = dailyRecords.flatMap(record => 
-      record.projectExpenses.map(expense => ({
-        ...expense,
-        date: record.date
-      }))
-    );
+    const expenses = await Expense.find(query);
+
+    const expensesWithDetails = await Promise.all(expenses.map(async (expense) => {
+      const expenseObj = expense.toObject();
+      // Fetch project expense details
+      const projectExpense = await ProjectExpense.findOne({ projectId: expense.ProjectId });
+      if (projectExpense) {
+        expenseObj.projectExpense = projectExpense;
+      }
+      return expenseObj;
+    }));
 
     // Fetch family expenses separately
     const familyExpenses = await FamilyExpense.find({ userId: adminId });
 
     res.status(200).json({
       message: 'Expenses retrieved successfully',
-      expenses: expenses,
+      expenses: expensesWithDetails,
       familyExpenses: familyExpenses,
     });
   } catch (error) {
