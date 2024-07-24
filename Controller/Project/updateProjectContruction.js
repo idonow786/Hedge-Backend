@@ -1,7 +1,3 @@
-const ProjectC = require('../../Model/projectConstruction');
-const Customer = require('../../Model/Customer');
-const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
-
 const updateProjectConstruction = async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -18,92 +14,69 @@ const updateProjectConstruction = async (req, res) => {
       return res.status(404).json({ message: 'Project not found or not authorized' });
     }
 
-    // Function to safely parse JSON or split string
-    const safeParseOrSplit = (value) => {
+    // Helper function to safely parse JSON
+    const safeParse = (value) => {
       if (typeof value === 'string') {
         try {
           return JSON.parse(value);
         } catch (e) {
-          return value.split(',').map(item => item.trim());
+          return value;
         }
       }
       return value;
     };
 
-    // Function to parse date strings
-    const parseDate = (dateString) => {
-      if (dateString) {
-        return new Date(dateString);
+    // Helper function to update nested objects
+    const updateNestedObject = (obj, path, value) => {
+      const keys = path.split('.');
+      let current = obj;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
       }
-      return null;
+      current[keys[keys.length - 1]] = value;
     };
 
-    // Update top-level fields
-    ['projectName', 'projectDescription', 'clientId'].forEach(field => {
-      if (projectData[field] !== undefined) {
-        project[field] = projectData[field];
-      }
-    });
-
-    // Handle dates
-    ['startDate', 'estimatedCompletionDate'].forEach(field => {
-      if (projectData[field]) {
-        project[field] = parseDate(projectData[field]);
-      }
-    });
-
-    // Handle nested objects
-    ['projectLocation', 'budget', 'projectScope', 'projectTeam', 'timeline', 'communication'].forEach(field => {
-      if (projectData[field]) {
-        project[field] = { ...project[field], ...projectData[field] };
-      }
-    });
-
-    // Handle arrays
-    ['risks', 'resources'].forEach(field => {
-      if (projectData[field]) {
-        project[field] = safeParseOrSplit(projectData[field]);
-      }
-    });
-
-    // Handle special cases
-    if (projectData.budget) {
-      project.budget.estimatedBudget = Number(projectData.budget.estimatedBudget);
-      if (projectData.budget.costBreakdown) {
-        Object.entries(projectData.budget.costBreakdown).forEach(([key, value]) => {
-          project.budget.costBreakdown[key] = Number(value);
-        });
-      }
-    }
-
-    if (projectData.projectScope) {
-      ['objectives', 'deliverables', 'exclusions'].forEach(field => {
-        if (projectData.projectScope[field]) {
-          project.projectScope[field] = safeParseOrSplit(projectData.projectScope[field]);
+    // Update fields
+    Object.keys(projectData).forEach(key => {
+      if (key !== 'documentation') {
+        switch (key) {
+          case 'projectName':
+          case 'projectDescription':
+          case 'adminId':
+            project[key] = projectData[key];
+            break;
+          case 'clientId':
+            project[key] = new mongoose.Types.ObjectId(projectData[key]);
+            break;
+          case 'startDate':
+          case 'estimatedCompletionDate':
+            project[key] = projectData[key] ? new Date(projectData[key]) : null;
+            break;
+          case 'projectLocation':
+          case 'budget':
+          case 'projectScope':
+          case 'projectTeam':
+          case 'timeline':
+          case 'communication':
+            Object.keys(projectData[key]).forEach(subKey => {
+              updateNestedObject(project[key], subKey, safeParse(projectData[key][subKey]));
+            });
+            break;
+          case 'risks':
+          case 'resources':
+            project[key] = safeParse(projectData[key]).map(item => {
+              if (item._id) {
+                item._id = new mongoose.Types.ObjectId(item._id);
+              }
+              return item;
+            });
+            break;
+          default:
+            project[key] = safeParse(projectData[key]);
         }
-      });
-    }
-
-    if (projectData.projectTeam) {
-      ['teamMembers', 'subcontractors'].forEach(field => {
-        if (projectData.projectTeam[field]) {
-          project.projectTeam[field] = safeParseOrSplit(projectData.projectTeam[field]);
-        }
-      });
-    }
-
-    if (projectData.timeline) {
-      if (projectData.timeline.projectSchedule) {
-        project.timeline.projectSchedule.startDate = parseDate(projectData.timeline.projectSchedule.startDate);
-        project.timeline.projectSchedule.endDate = parseDate(projectData.timeline.projectSchedule.endDate);
       }
-      if (projectData.timeline.milestones) {
-        project.timeline.milestones = safeParseOrSplit(projectData.timeline.milestones).map(milestone => ({
-          ...milestone,
-          date: parseDate(milestone.date)
-        }));
-      }
-    }
+    });
 
     // Handle file uploads (if any)
     if (req.files) {
@@ -134,5 +107,3 @@ const updateProjectConstruction = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
-
-module.exports = { updateProjectConstruction };
