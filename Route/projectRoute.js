@@ -102,7 +102,7 @@ router.post(
   getProjectExpenses
 );
 router.get(
-  '/get-project',
+  '/get-projectspecific',
   verifyToken,
   getProjectContruct
 );
