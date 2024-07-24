@@ -54,32 +54,38 @@ const addProjectConstruction = async (req, res) => {
 
     // Handle resources
     if (projectData.resources) {
-      projectData.resources = projectData.resources.map(resource => ({
-        name: resource.resourceName,
-        type: resource.resourceType,
-        allocation: Number(resource.quantity),
-        cost: Number(resource.unitCost)
-      }));
+      projectData.resources = Array.isArray(projectData.resources) 
+        ? projectData.resources.map(resource => ({
+            name: resource.resourceName,
+            type: resource.resourceType,
+            allocation: Number(resource.quantity),
+            cost: Number(resource.unitCost)
+          }))
+        : [];
     }
 
     // Handle risks
     if (projectData.risks) {
-      projectData.risks = projectData.risks.map(risk => ({
-        description: risk.description,
-        probability: risk.probability,
-        impact: risk.impact,
-        mitigationPlan: risk.mitigationStrategy,
-        owner: risk.riskName
-      }));
+      projectData.risks = Array.isArray(projectData.risks)
+        ? projectData.risks.map(risk => ({
+            description: risk.description,
+            probability: risk.probability,
+            impact: risk.impact,
+            mitigationPlan: risk.mitigationStrategy,
+            owner: risk.riskName
+          }))
+        : [];
     }
 
     // Handle timeline
     if (projectData.timeline && projectData.timeline.milestones) {
-      projectData.timeline.milestones = projectData.timeline.milestones.map(milestone => ({
-        name: milestone.name,
-        date: milestone.date ? new Date(milestone.date) : null,
-        description: milestone.description
-      }));
+      projectData.timeline.milestones = Array.isArray(projectData.timeline.milestones)
+        ? projectData.timeline.milestones.map(milestone => ({
+            name: milestone.name,
+            date: milestone.date ? new Date(milestone.date) : null,
+            description: milestone.description
+          }))
+        : [];
     }
 
     // Handle communication
