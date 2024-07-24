@@ -1,6 +1,6 @@
 const ProjectC = require('../../Model/projectConstruction');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
-
+const mongoose = require('mongoose');
 const updateProjectConstruction = async (req, res) => {
   try {
     const { projectId } = req.query;
