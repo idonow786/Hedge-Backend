@@ -6,7 +6,7 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
-
+    console.log(projectData)
     if (!projectData.projectName) {
       return res.status(400).json({ message: 'Project name is required' });
     }
