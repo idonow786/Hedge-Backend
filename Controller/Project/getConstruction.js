@@ -35,7 +35,7 @@ const getConstructionProjects = async (req, res) => {
 
 const getProjectContruct=async (req,res)=>{
   try {
-    const projectId = req.params.id;
+    const projectId = req.query.id;
 
     const project = await ProjectC.findById(projectId);
 
