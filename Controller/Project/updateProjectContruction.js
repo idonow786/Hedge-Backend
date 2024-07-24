@@ -1,130 +1,122 @@
 const ProjectC = require('../../Model/Project');
 const Customer = require('../../Model/Customer');
-const Vendor = require('../../Model/vendorSchema');
-const Task = require('../../Model/Task');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
-const updateProjectContruction = async (req, res) => {
+const updateProjectConstruction = async (req, res) => {
   try {
-    const { projectId, CustomerId } = req.body;
+    const { projectId } = req.params;
     const adminId = req.adminId;
-    const {
-      Description,
-      Title,
-      StartDate,
-      Deadline,
-      Budget,
-      ProgressUpdate,
-      DynamicFields,
-      documentation,
-      tasks
-    } = req.body;
+    const projectData = req.body;
 
     if (!projectId) {
       return res.status(400).json({ message: 'Project ID is required' });
     }
 
-    const project = await ProjectC.findOne({ _id: projectId, AdminID: adminId });
+    const project = await ProjectC.findOne({ _id: projectId, adminId: adminId });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found or not authorized' });
     }
 
-    if (CustomerId) {
-      const customer = await Customer.findById(CustomerId);
-      if (!customer) {
-        return res.status(404).json({ message: 'Customer not found' });
-      }
-      project.CustomerId = CustomerId;
-    }
-
-    project.Description = Description || project.Description;
-    project.Title = Title || project.Title;
-    project.StartDate = StartDate || project.StartDate;
-    project.Deadline = Deadline || project.Deadline;
-    project.Budget = Budget || project.Budget;
-    project.ProgressUpdate = ProgressUpdate || project.ProgressUpdate;
-
-    if (DynamicFields) {
-      project.DynamicFields = DynamicFields;
-    }
-
-    // Handle documentation updates
-    if (documentation) {
-      for (const docType in documentation) {
-        if (Array.isArray(documentation[docType])) {
-          const uploadedUrls = await Promise.all(
-            documentation[docType].map(async (doc) => {
-              if (doc.buffer) {
-                const fileBuffer = Buffer.from(doc.buffer, 'base64');
-                return await uploadFileToFirebase(fileBuffer, doc.originalname);
-              }
-              return doc;
-            })
-          );
-          project.documentation[docType] = uploadedUrls;
+    // Function to safely parse JSON or split string
+    const safeParseOrSplit = (value) => {
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch (e) {
+          return value.split(',').map(item => item.trim());
         }
       }
+      return value;
+    };
+
+    // Function to parse date strings
+    const parseDate = (dateString) => {
+      if (dateString) {
+        return new Date(dateString);
+      }
+      return null;
+    };
+
+    // Update top-level fields
+    ['projectName', 'projectDescription', 'clientId'].forEach(field => {
+      if (projectData[field] !== undefined) {
+        project[field] = projectData[field];
+      }
+    });
+
+    // Handle dates
+    ['startDate', 'estimatedCompletionDate'].forEach(field => {
+      if (projectData[field]) {
+        project[field] = parseDate(projectData[field]);
+      }
+    });
+
+    // Handle nested objects
+    ['projectLocation', 'budget', 'projectScope', 'projectTeam', 'timeline', 'communication'].forEach(field => {
+      if (projectData[field]) {
+        project[field] = { ...project[field], ...projectData[field] };
+      }
+    });
+
+    // Handle arrays
+    ['risks', 'resources'].forEach(field => {
+      if (projectData[field]) {
+        project[field] = safeParseOrSplit(projectData[field]);
+      }
+    });
+
+    // Handle special cases
+    if (projectData.budget) {
+      project.budget.estimatedBudget = Number(projectData.budget.estimatedBudget);
+      if (projectData.budget.costBreakdown) {
+        Object.entries(projectData.budget.costBreakdown).forEach(([key, value]) => {
+          project.budget.costBreakdown[key] = Number(value);
+        });
+      }
     }
 
-    // Handle tasks updates
-    if (tasks && Array.isArray(tasks)) {
-      for (const taskData of tasks) {
-        let task;
-        if (taskData._id) {
-          // Update existing task
-          task = await Task.findById(taskData._id);
-          if (!task) {
-            return res.status(404).json({ message: `Task with ID ${taskData._id} not found` });
-          }
-          Object.assign(task, taskData);
-        } else {
-          // Create new task
-          task = new Task(taskData);
+    if (projectData.projectScope) {
+      ['objectives', 'deliverables', 'exclusions'].forEach(field => {
+        if (projectData.projectScope[field]) {
+          project.projectScope[field] = safeParseOrSplit(projectData.projectScope[field]);
         }
+      });
+    }
 
-        if (taskData.assignedTo && taskData.assignedTo !== 'self') {
-          let assignee;
-          if (typeof taskData.assignedTo === 'object') {
-            assignee = await Vendor.findOneAndUpdate(
-              { email: taskData.assignedTo.email },
-              taskData.assignedTo,
-              { upsert: true, new: true }
-            );
-          } else {
-            assignee = await Vendor.findById(taskData.assignedTo);
-          }
-
-          if (!assignee) {
-            return res.status(400).json({ message: `Assignee with ID ${taskData.assignedTo} not found` });
-          }
-
-          task.assignedTo = assignee._id;
-
-          if (assignee instanceof Vendor) {
-            if (!assignee.assignedTasks) assignee.assignedTasks = [];
-            if (!assignee.assignedTasks.includes(task._id)) {
-              assignee.assignedTasks.push(task._id);
-            }
-            if (!assignee.projects) assignee.projects = [];
-            if (!assignee.projects.includes(project._id)) {
-              assignee.projects.push(project._id);
-            }
-            await assignee.save();
-
-            if (!project.projectTeam.subcontractors) project.projectTeam.subcontractors = [];
-            if (!project.projectTeam.subcontractors.includes(assignee._id)) {
-              project.projectTeam.subcontractors.push(assignee._id);
-            }
-          }
-        } else {
-          task.assignedTo = null;
+    if (projectData.projectTeam) {
+      ['teamMembers', 'subcontractors'].forEach(field => {
+        if (projectData.projectTeam[field]) {
+          project.projectTeam[field] = safeParseOrSplit(projectData.projectTeam[field]);
         }
+      });
+    }
 
-        await task.save();
-        if (!project.tasks.includes(task._id)) {
-          project.tasks.push(task._id);
-        }
+    if (projectData.timeline) {
+      if (projectData.timeline.projectSchedule) {
+        project.timeline.projectSchedule.startDate = parseDate(projectData.timeline.projectSchedule.startDate);
+        project.timeline.projectSchedule.endDate = parseDate(projectData.timeline.projectSchedule.endDate);
+      }
+      if (projectData.timeline.milestones) {
+        project.timeline.milestones = safeParseOrSplit(projectData.timeline.milestones).map(milestone => ({
+          ...milestone,
+          date: parseDate(milestone.date)
+        }));
+      }
+    }
+
+    // Handle file uploads (if any)
+    if (req.files) {
+      project.documentation = project.documentation || {};
+      for (const [fieldName, files] of Object.entries(req.files)) {
+        const docType = fieldName.split('[')[1].split(']')[0];
+        const uploadedUrls = await Promise.all(
+          files.map(async (file) => {
+            const url = await uploadFileToFirebase(file.buffer, file.originalname);
+            return url;
+          })
+        );
+        project.documentation[docType] = (project.documentation[docType] || []).concat(uploadedUrls);
       }
     }
 
@@ -143,4 +135,4 @@ const updateProjectContruction = async (req, res) => {
   }
 };
 
-module.exports = { updateProjectContruction };
+module.exports = { updateProjectConstruction };

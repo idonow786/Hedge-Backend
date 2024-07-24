@@ -1,12 +1,10 @@
 const ProjectC = require('../../Model/Project');
-const Customer = require('../../Model/Customer');
-const Vendor = require('../../Model/vendorSchema');
-const Task = require('../../Model/Task');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
+
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
-    console.log('Project Data:', projectData);
+    console.log('Project Data: ', projectData);
 
     if (!projectData.projectName) {
       return res.status(400).json({ message: 'Project name is required' });
@@ -100,7 +98,7 @@ const addProjectConstruction = async (req, res) => {
     }
 
     const newProject = new ProjectC(projectData);
-
+    
     // Handle file uploads (if any)
     if (req.files) {
       newProject.documentation = {};
@@ -137,5 +135,4 @@ const addProjectConstruction = async (req, res) => {
   }
 };
 
-
-module.exports={addProjectConstruction}
+module.exports = { addProjectConstruction };
