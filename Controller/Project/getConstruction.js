@@ -29,4 +29,32 @@ const getConstructionProjects = async (req, res) => {
   }
 };
 
-module.exports={getConstructionProjects}
+
+
+
+
+const getProjectContruct=async (req,res)=>{
+  try {
+    const projectId = req.params.id;
+
+    const project = await ProjectC.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: project
+    });
+
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching project',
+      error: error.message
+    });
+  }
+}
+module.exports={getConstructionProjects,getProjectContruct}
