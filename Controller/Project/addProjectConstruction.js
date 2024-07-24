@@ -1,6 +1,3 @@
-const projectC = require('../../Model/projectConstruction');
-const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
-
 const addProjectConstruction = async (req, res) => {
   try {
     const projectData = req.body;
@@ -21,6 +18,18 @@ const addProjectConstruction = async (req, res) => {
       }
       return value;
     };
+
+    // Function to parse date strings
+    const parseDate = (dateString) => {
+      if (dateString) {
+        return new Date(dateString);
+      }
+      return null;
+    };
+
+    // Handle top-level dates
+    projectData.startDate = parseDate(projectData.startDate);
+    projectData.estimatedCompletionDate = parseDate(projectData.estimatedCompletionDate);
 
     // Handle budget
     if (projectData.budget) {
@@ -53,8 +62,17 @@ const addProjectConstruction = async (req, res) => {
     }
 
     // Handle timeline
-    if (projectData.timeline && projectData.timeline.milestones) {
-      projectData.timeline.milestones = safeParseOrSplit(projectData.timeline.milestones);
+    if (projectData.timeline) {
+      if (projectData.timeline.projectSchedule) {
+        projectData.timeline.projectSchedule.startDate = parseDate(projectData.timeline.projectSchedule.startDate);
+        projectData.timeline.projectSchedule.endDate = parseDate(projectData.timeline.projectSchedule.endDate);
+      }
+      if (projectData.timeline.milestones) {
+        projectData.timeline.milestones = safeParseOrSplit(projectData.timeline.milestones).map(milestone => ({
+          ...milestone,
+          date: parseDate(milestone.date)
+        }));
+      }
     }
 
     // Handle risks
@@ -64,7 +82,11 @@ const addProjectConstruction = async (req, res) => {
 
     // Handle resources
     if (projectData.resources) {
-      projectData.resources = safeParseOrSplit(projectData.resources);
+      projectData.resources = safeParseOrSplit(projectData.resources).map(resource => ({
+        ...resource,
+        quantity: Number(resource.quantity),
+        unitCost: Number(resource.unitCost)
+      }));
     }
 
     // Handle communication
@@ -109,5 +131,3 @@ const addProjectConstruction = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
-
-module.exports = { addProjectConstruction };
