@@ -11,6 +11,7 @@ const { updateProjectConstruction } = require('../Controller/Project/updateProje
 const { getConstructionProjects,getProjectContruct } = require('../Controller/Project/getConstruction')
 const { deleteProjectConstruction } = require('../Controller/Project/deleteContruction')
 const { getProjectExpenses } = require('../Controller/Project/getProjectExpense')
+const { getProjectExpensesC } = require('../Controller/Project/getProjectConstructionEx')
 
 
 const { verifyToken } = require('../Middleware/jwt');
@@ -111,6 +112,11 @@ router.get(
   '/get-projectspecific',
   verifyToken,
   getProjectContruct
+);
+router.get(
+  '/expense-dashboard',
+  verifyToken,
+  getProjectExpensesC
 );
 
 
