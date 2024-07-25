@@ -113,7 +113,7 @@ router.get(
   verifyToken,
   getProjectContruct
 );
-router.get(
+router.post(
   '/expense-dashboard',
   verifyToken,
   getProjectExpensesC
