@@ -83,17 +83,118 @@ const signup = async (req, res) => {
     const mailOptions = {
       from: process.env.Email_Sender,
       to: email,
-      subject: 'Welcome to our CRM',
-      html: `<div style="background-color: #f4f4f4; padding: 20px; border-radius: 10px; font-family: Arial, sans-serif;">
-               <h2 style="color: #333; margin-bottom: 10px;">Welcome ${username},</h2>
-               <p style="color: #666; font-size: 16px;">We're glad to have you on board.</p>
-               <p style="color: #666; font-size: 16px;">Your login credentials are:</p>
-               <ul style="color: #666; font-size: 16px;">
-                 <li>Username: ${username}</li>
-                 <li>Password: ${password}</li>
-               </ul>
-             </div>`,
+      subject: 'Welcome to IDO - Your Business Growth Partner',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to IDO</title>
+          <style>
+            body, html {
+              margin: 0;
+              padding: 0;
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #f9f9f9;
+            }
+            .header {
+              text-align: center;
+              padding: 20px 0;
+            }
+            .logo {
+              max-width: 150px;
+              height: auto;
+            }
+            .content {
+              background-color: #ffffff;
+              padding: 30px;
+              border-radius: 5px;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            h1, h2, h3 {
+              color: #2c3e50;
+            }
+            .credentials {
+              background-color: #e8f4fd;
+              padding: 15px;
+              border-radius: 5px;
+              margin: 20px 0;
+            }
+            .btn {
+              display: inline-block;
+              padding: 10px 20px;
+              background-color: #3498db;
+              color: #ffffff;
+              text-decoration: none;
+              border-radius: 5px;
+              margin-top: 20px;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 20px;
+              font-size: 0.9em;
+              color: #7f8c8d;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="https://firebasestorage.googleapis.com/v0/b/crem-40ccb.appspot.com/o/images%2Fido-logo.png?alt=media" alt="IDO Logo" class="logo">
+            </div>
+            <div class="content">
+              <h1>Welcome to IDO, ${username}!</h1>
+              <p>We are thrilled to have you on board and excited to be part of your business growth journey. At IDO, we provide powerful software solutions to help small businesses manage and grow their operations effortlessly.</p>
+              
+              <div class="credentials">
+                <h2>Your Sign-In Credentials</h2>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Username:</strong> ${username}</p>
+                <p><strong>Password:strong> ${password}</p>
+              </div>
+              
+              <a href="https://ido-crm.netlify.app/" class="btn">Log In to Your Account</a>
+              
+              <h3>What You Can Expect:</h3>
+              <ul>
+                <li><strong>Comprehensive Tools:</strong> From CRM to inventory management, our suite streamlines your business processes.</li>
+                <li><strong>User-Friendly Interface:</strong> Intuitive and easy to navigate for a smooth experience.</li>
+                <li><strong>24/7 Support:</strong> Our dedicated team is here to assist you anytime.</li>
+              </ul>
+              
+              <h3>Next Steps:</h3>
+              <ol>
+                <li>Log In:</strong> Use your credentials to access your account.</li>
+                <li>Explore:</strong> Take a tour of our platform and discover its features.</li>
+                <li><strong>Get Started:</strong> Begin managing your business more efficiently.</li>
+              </ol>
+              
+              <p>If you need any assistance, please don't hesitate to contact our support team at <a href="mailto:support@ido.company">support@ido.company</a>.p>
+              
+              <p>Thank you for choosing IDO. We're excited to help you achieve your business goals!</p>
+              
+              <p>Best regards,<br>
+              Ameer A<br>
+              Founder & CEO<br>
+              IDO</p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2024 IDO. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
     };
+    
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
