@@ -1,5 +1,6 @@
 const Invoice = require('../../Model/Invoices');
 const Project = require('../../Model/Project');
+const ProjectC = require('../../Model/projectConstruction');
 const Customer = require('../../Model/Customer');
 const Wallet = require('../../Model/Wallet');
 const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
@@ -46,7 +47,8 @@ const createInvoice = async (req, res) => {
     }
 
     const project = await Project.findOne({ _id: ProjectId, AdminID: adminId });
-    if (!project) {
+    const projectC = await ProjectC.findOne({ clientId: CustomerId, adminId: adminId,_id: ProjectId});
+    if (!projectC && !project) {
       return res.status(404).json({ message: 'Project not found or does not belong to the admin' });
     }
 
