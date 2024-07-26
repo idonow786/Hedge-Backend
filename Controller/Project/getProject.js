@@ -1,4 +1,5 @@
 const Project = require('../../Model/Project');
+const ProjectC = require('../../Model/projectConstruction');
 
 const getProjects = async (req, res) => {
   try {
@@ -42,7 +43,7 @@ const getProjects = async (req, res) => {
 
 const getProjectsByCustomerId = async (req, res) => {
   try {
-    const { CustomerId } = req.body;
+    const { CustomerId } = req.query;
     const adminId = req.adminId;
 
     if (!CustomerId) {
@@ -51,15 +52,21 @@ const getProjectsByCustomerId = async (req, res) => {
 
     const projects = await Project.find({ CustomerId, AdminID: adminId });
 
+   
+    const projectsC = await ProjectC.find({ clientId: CustomerId, adminId: adminId });
+
+    const allProjects = [...projects, ...projectsC];
+
     res.status(200).json({
       message: 'Projects retrieved successfully',
-      projects,
+      projects: allProjects,
     });
   } catch (error) {
     console.error('Error retrieving projects:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 module.exports = { getProjects,getProjectsByCustomerId };
