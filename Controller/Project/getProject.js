@@ -1,5 +1,7 @@
 const Project = require('../../Model/Project');
 const ProjectC = require('../../Model/projectConstruction');
+const ProjectExpense = require('../../Model/ProjectExoense');
+const Expense = require('../../Model/Expense');
 
 const getProjects = async (req, res) => {
   try {
@@ -51,11 +53,37 @@ const getProjectsByCustomerId = async (req, res) => {
     }
 
     const projects = await Project.find({ CustomerId, AdminID: adminId });
-
-   
     const projectsC = await ProjectC.find({ clientId: CustomerId, adminId: adminId });
 
-    const allProjects = [...projects, ...projectsC];
+    const projectsWithCost = await Promise.all(projects.map(async (project) => {
+      const expenses = await Expense.find({ ProjectId: project.ID });
+      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.Amount, 0);
+      
+      return {
+        ...project.toObject(),
+        totalCost: parseFloat(project.Budget) || 0,
+        totalExpenses: totalExpenses
+      };
+    }));
+
+    const projectsCWithCost = await Promise.all(projectsC.map(async (project) => {
+      const expenses = await ProjectExpense.find({ projectId: project._id });
+      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.totalAmount, 0);
+      
+      const resourcesCost = project.resources.reduce((sum, resource) => sum + (resource.quantity * resource.unitCost), 0);
+      
+      const estimatedBudget = project.budget.estimatedBudget || 0;
+      const costBreakdown = project.budget.costBreakdown || {};
+      const budgetTotal = Object.values(costBreakdown).reduce((sum, cost) => sum + cost, 0);
+
+      return {
+        ...project.toObject(),
+        totalCost: Math.max(estimatedBudget, budgetTotal, resourcesCost),
+        totalExpenses: totalExpenses
+      };
+    }));
+
+    const allProjects = [...projectsWithCost, ...projectsCWithCost];
 
     res.status(200).json({
       message: 'Projects retrieved successfully',
@@ -66,6 +94,7 @@ const getProjectsByCustomerId = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 
