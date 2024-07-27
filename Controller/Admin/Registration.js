@@ -157,7 +157,6 @@ const signup = async (req, res) => {
               <div class="credentials">
                 <h2>Your Sign-In Credentials</h2>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Username:</strong> ${username}</p>
                 <p><strong>Password:strong> ${password}</p>
               </div>
               
