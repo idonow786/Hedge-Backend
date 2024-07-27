@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const projectConstructionSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
+  Status: { type: String},
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   projectDescription: { type: String, required: true },
   startDate: { type: Date },

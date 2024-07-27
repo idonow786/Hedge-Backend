@@ -12,6 +12,7 @@ const { getConstructionProjects,getProjectContruct } = require('../Controller/Pr
 const { deleteProjectConstruction } = require('../Controller/Project/deleteContruction')
 const { getProjectExpenses } = require('../Controller/Project/getProjectExpense')
 const { getProjectExpensesC } = require('../Controller/Project/getProjectConstructionEx')
+const { updateProjectStatus } = require('../Controller/Project/updateStatus')
 
 
 const { verifyToken } = require('../Middleware/jwt');
@@ -117,6 +118,11 @@ router.post(
   '/expense-dashboard',
   verifyToken,
   getProjectExpensesC
+);
+router.put(
+  '/update-status',
+  verifyToken,
+  updateProjectStatus
 );
 
 
