@@ -29,7 +29,7 @@ const updateInvoice = async (req, res) => {
 
     const invoice = await Invoice.findOne({ _id: invoiceId, AdminID: adminId });
     console.log(" AdminId  " ,adminId)
-    console.log(" Customer  " ,CustomerId)
+    console.log(" Invoice Id  " ,invoiceId)
     console.log(" Invoice  " ,await Invoice.find())
 
     if (!invoice) {
