@@ -6,22 +6,15 @@ const Business = require('../../Model/Business');
 
 const getInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find().populate('CustomerId');
+    const adminId = req.adminId; 
+
+    const invoices = await Invoice.find({ AdminID: adminId }).populate('CustomerId');
 
     const invoicesWithDetails = await Promise.all(invoices.map(async (invoice) => {
       let project, customer, business;
 
-      console.log(`Processing invoice: ${invoice._id}`);
-      console.log(`ProjectId: ${invoice.ProjectId}`);
-
       if (invoice.ProjectId) {
         project = await Project.findById(invoice.ProjectId) || await ProjectC.findById(invoice.ProjectId);
-        console.log(`Project found: ${project ? 'Yes' : 'No'}`);
-        if (project) {
-          console.log(`Project type: ${project.projectName ? 'ProjectC' : 'Project'}`);
-        }
-      } else {
-        console.log('No ProjectId found for this invoice');
       }
 
       customer = invoice.CustomerId;
@@ -37,11 +30,22 @@ const getInvoices = async (req, res) => {
 
       if (businessId) {
         business = await Business.findById(businessId);
-        console.log(`Business found: ${business ? 'Yes' : 'No'}`);
       }
 
       return {
-        ...invoice.toObject(),
+        ID: invoice.ID,
+        OrderNumber: invoice.OrderNumber,
+        PicUrl: invoice.PicUrl,
+        InvoiceDate: invoice.InvoiceDate,
+        Quantity: invoice.Quantity,
+        Amount: invoice.Amount,
+        ProjectId: invoice.ProjectId,
+        Status: invoice.Status,
+        InvoiceNumber: invoice.InvoiceNumber,
+        SubTotal: invoice.SubTotal,
+        Vat: invoice.Vat,
+        InvoiceTotal: invoice.InvoiceTotal,
+        Description: invoice.Description,
         ProjectDetails: project ? {
           ID: isProjectC ? project._id : project.ID,
           Title: isProjectC ? project.projectName : project.Title,
