@@ -60,6 +60,10 @@ const businessSchema = new mongoose.Schema({
       type: String,
     },
   ],
+  features: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  }
 });
 
 const Business = mongoose.model('Business', businessSchema);
