@@ -321,9 +321,9 @@ const signin = async (req, res) => {
     if (user.role !== 'superadmin' !== user.role !== 'vendor') {
       const payment = await Payment.findOne({ UserID: user._id });
       console.log(payment);
-      if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
-        return res.status(404).json({ message: 'Payment not completed' });
-      }
+      // if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
+      //   return res.status(404).json({ message: 'Payment not completed' });
+      // }
 
       // Extract features and totals from the payment
       features = payment.Features;
