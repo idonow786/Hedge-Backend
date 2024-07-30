@@ -317,8 +317,9 @@ const signin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    console.log(user.role)
 
-    if (user.role !== 'superadmin' !== user.role !== 'vendor') {
+    if (user.role != 'superadmin' && user.role != 'vendor') {
       const payment = await Payment.findOne({ UserID: user._id });
       console.log(payment);
       // if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
