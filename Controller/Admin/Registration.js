@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport(
 // Signup controller
 const signup = async (req, res) => {
   try {
-    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType,CompanyActivity } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
 
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
@@ -193,7 +193,7 @@ const signup = async (req, res) => {
         </html>
       `
     };
-    
+
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -212,7 +212,7 @@ const signup = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.body;
-    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType,CompanyType,CompanyActivity } = req.body;
+    const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
 
     let user;
     if (role === 'superadmin') {
@@ -318,36 +318,36 @@ const signin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-       // if (user.role !== 'superadmin' !==user.role!=='vendor') {
-    //   const payment = await Payment.findOne({ UserID: user._id });
-    //   console.log(payment);
-    //   if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
-    //     return res.status(404).json({ message: 'Payment not completed' });
-    //   }
-      
-    //   // Extract features and totals from the payment
-    //   features = payment.Features;
-    //   totals = {
-    //     TotalStaff: payment.TotalStaff,
-    //     TotalExpenses: payment.TotalExpenses,
-    //     TotalCustomers: payment.TotalCustomers,
-    //     TotalSocialMediaPosts: payment.TotalSocialMediaPosts
-    //   };
-    // }
+    if (user.role !== 'superadmin' !== user.role !== 'vendor') {
+      const payment = await Payment.findOne({ UserID: user._id });
+      console.log(payment);
+      if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
+        return res.status(404).json({ message: 'Payment not completed' });
+      }
+
+      // Extract features and totals from the payment
+      features = payment.Features;
+      totals = {
+        TotalStaff: payment.TotalStaff,
+        TotalExpenses: payment.TotalExpenses,
+        TotalCustomers: payment.TotalCustomers,
+        TotalSocialMediaPosts: payment.TotalSocialMediaPosts
+      };
+    }
     const token = jwt.sign(
-      { 
-        userId: user._id, 
-        username: user.Name || user.name, 
-        email: user.Email || user.contactInformation.email, 
+      {
+        userId: user._id,
+        username: user.Name || user.name,
+        email: user.Email || user.contactInformation.email,
         role: user.role
       },
       secretKey,
       { expiresIn: '30d' }
     );
 
-    const response = { 
-      message: 'Signin successful', 
-      token, 
+    const response = {
+      message: 'Signin successful',
+      token,
       role: user.role,
       features,
       totals
@@ -368,4 +368,4 @@ const signin = async (req, res) => {
 
 
 
-module.exports = { signup, signin ,updateUser,deleteUser};
+module.exports = { signup, signin, updateUser, deleteUser };

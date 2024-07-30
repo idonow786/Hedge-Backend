@@ -55,6 +55,10 @@ const paymentSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },
+    Whatsapp: {
+      type: Boolean,
+      default: false,
+    },
   },
   TotalStaff: {
     type: Number,

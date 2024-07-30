@@ -21,6 +21,7 @@ const addPayment = async (req, res) => {
         Customers: Features?.Customers ?? false,
         Staff: Features?.Staff ?? false,
         SocialMedia: Features?.SocialMedia ?? false,
+        Whatsapp: Features?.Whatsapp ?? false,
       },
       SubscriptionStatus,
       TotalStaff: TotalStaff ?? 0,
@@ -63,6 +64,7 @@ const updatePayment = async (req, res) => {
         Customers: Features.Customers ?? false,
         Staff: Features.Staff ?? false,
         SocialMedia: Features.SocialMedia ?? false,
+        Whatsapp: Features?.Whatsapp ?? false,
       };
     }
 

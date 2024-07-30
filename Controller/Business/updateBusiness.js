@@ -50,9 +50,7 @@ const updateBusiness = async (req, res) => {
       business.ServiceandProduct = ServiceandProduct || business.ServiceandProduct;
     }
 
-    if (features) {
-      business.features = { ...business.features, ...features };
-    }
+
 
     const updatedBusiness = await business.save();
 
