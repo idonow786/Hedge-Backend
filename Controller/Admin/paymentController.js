@@ -2,12 +2,40 @@ const Payment = require('../../Model/Payment');
 
 const addPayment = async (req, res) => {
   try {
-    const { UserID, SubscriptionMonth, Amount, Currency, PaymentMethod, Features, TotalStaff, TotalExpenses, TotalCustomers, TotalSocialMediaPosts,
-      SubscriptionStatus } = req.body;
+    const { 
+      UserID, 
+      SubscriptionMonth, 
+      Amount, 
+      Currency, 
+      PaymentMethod, 
+      Features, 
+      TotalStaff, 
+      TotalExpenses, 
+      TotalCustomers, 
+      TotalSocialMediaPosts,
+      SubscriptionStatus 
+    } = req.body;
 
     if (req.role !== 'superadmin') {
       return res.status(400).json({ message: 'You are not Super Admin' });
     }
+
+    const defaultFeatures = {
+      Expense: false,
+      Projects: false,
+      Customers: false,
+      Staff: false,
+      SocialMedia: false,
+      Whatsapp: false
+    };
+
+    const mergedFeatures = Features ? {
+      ...defaultFeatures,
+      ...Object.fromEntries(
+        Object.entries(Features)
+          .filter(([key, value]) => value !== undefined)
+      )
+    } : defaultFeatures;
 
     const newPayment = new Payment({
       UserID,
@@ -15,14 +43,7 @@ const addPayment = async (req, res) => {
       Amount,
       Currency,
       PaymentMethod,
-      Features: {
-        Expense: Features?.Expense ?? false,
-        Projects: Features?.Projects ?? false,
-        Customers: Features?.Customers ?? false,
-        Staff: Features?.Staff ?? false,
-        SocialMedia: Features?.SocialMedia ?? false,
-        Whatsapp: Features?.Whatsapp ?? false,
-      },
+      Features: mergedFeatures,
       SubscriptionStatus,
       TotalStaff: TotalStaff ?? 0,
       TotalExpenses: TotalExpenses ?? 0,
@@ -41,47 +62,63 @@ const addPayment = async (req, res) => {
 
 
 
+
 const updatePayment = async (req, res) => {
   try {
     if (req.role !== 'superadmin') {
       return res.status(400).json({ message: 'You are not Super Admin' });
     }
 
-    const { paymentId, SubscriptionMonth, Amount, Currency, PaymentMethod, Status, Features, TotalStaff, TotalExpenses, TotalCustomers, TotalSocialMediaPosts,SubscriptionStatus } = req.body;
+    const { 
+      paymentId, 
+      SubscriptionMonth, 
+      Amount, 
+      Currency, 
+      PaymentMethod, 
+      Status, 
+      Features, 
+      TotalStaff, 
+      TotalExpenses, 
+      TotalCustomers, 
+      TotalSocialMediaPosts,
+      SubscriptionStatus 
+    } = req.body;
 
-    const updateFields = {};
-    if (SubscriptionMonth !== undefined) updateFields.SubscriptionMonth = SubscriptionMonth;
-    if (Amount !== undefined) updateFields.Amount = Amount;
-    if (Currency !== undefined) updateFields.Currency = Currency;
-    if (PaymentMethod !== undefined) updateFields.PaymentMethod = PaymentMethod;
-    if (Status !== undefined) updateFields.Status = Status;
-    if (SubscriptionStatus !== undefined) updateFields.SubscriptionStatus = SubscriptionStatus;
+    const existingPayment = await Payment.findById(paymentId);
+    if (!existingPayment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    const updateFields = {
+      ...(SubscriptionMonth !== undefined && { SubscriptionMonth }),
+      ...(Amount !== undefined && { Amount }),
+      ...(Currency !== undefined && { Currency }),
+      ...(PaymentMethod !== undefined && { PaymentMethod }),
+      ...(Status !== undefined && { Status }),
+      ...(SubscriptionStatus !== undefined && { SubscriptionStatus }),
+      ...(TotalStaff !== undefined && { TotalStaff }),
+      ...(TotalExpenses !== undefined && { TotalExpenses }),
+      ...(TotalCustomers !== undefined && { TotalCustomers }),
+      ...(TotalSocialMediaPosts !== undefined && { TotalSocialMediaPosts }),
+    };
 
     if (Features !== undefined) {
       updateFields.Features = {
-        Expense: Features.Expense ?? false,
-        Projects: Features.Projects ?? false,
-        Customers: Features.Customers ?? false,
-        Staff: Features.Staff ?? false,
-        SocialMedia: Features.SocialMedia ?? false,
-        Whatsapp: Features?.Whatsapp ?? false,
+        ...existingPayment.Features,
+        ...(Features.Expense !== undefined && { Expense: Features.Expense }),
+        ...(Features.Projects !== undefined && { Projects: Features.Projects }),
+        ...(Features.Customers !== undefined && { Customers: Features.Customers }),
+        ...(Features.Staff !== undefined && { Staff: Features.Staff }),
+        ...(Features.SocialMedia !== undefined && { SocialMedia: Features.SocialMedia }),
+        ...(Features.Whatsapp !== undefined && { Whatsapp: Features.Whatsapp }),
       };
     }
-
-    if (TotalStaff !== undefined) updateFields.TotalStaff = TotalStaff;
-    if (TotalExpenses !== undefined) updateFields.TotalExpenses = TotalExpenses;
-    if (TotalCustomers !== undefined) updateFields.TotalCustomers = TotalCustomers;
-    if (TotalSocialMediaPosts !== undefined) updateFields.TotalSocialMediaPosts = TotalSocialMediaPosts;
 
     const updatedPayment = await Payment.findByIdAndUpdate(
       paymentId,
       updateFields,
-      { new: true }
+      { new: true, runValidators: true }
     );
-
-    if (!updatedPayment) {
-      return res.status(404).json({ message: 'Payment not found' });
-    }
 
     res.status(200).json({ message: 'Payment updated successfully', payment: updatedPayment });
   } catch (error) {
@@ -89,7 +126,6 @@ const updatePayment = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 
 
