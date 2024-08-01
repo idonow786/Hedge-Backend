@@ -55,7 +55,8 @@ const addExpense = async (req, res) => {
       savedProjectExpense = await newProjectExpense.save();
       totalExpenseAmount += subcategoriesTotal;
     }
-
+    
+    console.log(savedProjectExpense)
     if (familyExpense) {
       const { month, year, expenses, notes } = familyExpense;
 

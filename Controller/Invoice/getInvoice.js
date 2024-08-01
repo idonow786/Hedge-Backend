@@ -53,7 +53,7 @@ const getInvoices = async (req, res) => {
           Description: project.Description || project.projectDescription,
         } : null,
         CustomerDetails: customer ? {
-          ID: customer.ID,
+          ID: customer._id,
           Name: customer.Name,
           Email: customer.Email,
         } : null,
