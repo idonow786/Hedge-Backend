@@ -1,5 +1,5 @@
 const ProjectC = require('../../Model/projectConstruction');
-const Wallet = require('../../Model/wallet');
+const Wallet = require('../../Model/Wallet');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 const mongoose = require('mongoose');
 
