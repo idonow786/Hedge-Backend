@@ -1,6 +1,8 @@
 const ProjectC = require('../../Model/projectConstruction');
+const Wallet = require('../../Model/wallet');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 const mongoose = require('mongoose');
+
 const updateProjectConstruction = async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -16,6 +18,9 @@ const updateProjectConstruction = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: 'Project not found or not authorized' });
     }
+
+    // Store old project data for wallet update
+    const oldProjectData = project.toObject();
 
     // Helper function to safely parse JSON
     const safeParse = (value) => {
@@ -98,6 +103,9 @@ const updateProjectConstruction = async (req, res) => {
 
     const updatedProject = await project.save();
 
+    // Update wallet
+    await updateWallet(adminId, oldProjectData, updatedProject.toObject());
+
     res.status(200).json({
       message: 'Project updated successfully',
       project: updatedProject,
@@ -111,5 +119,46 @@ const updateProjectConstruction = async (req, res) => {
   }
 };
 
+const updateWallet = async (adminId, oldProjectData, newProjectData) => {
+  try {
+    let wallet = await Wallet.findOne({ AdminID: adminId });
+    
+    if (!wallet) {
+      wallet = new Wallet({ AdminID: adminId });
+    }
 
-module.exports={updateProjectConstruction}
+    // Calculate old expenses
+    let oldExpenses = 0;
+    if (oldProjectData.budget && oldProjectData.budget.costBreakdown) {
+      oldExpenses = Object.values(oldProjectData.budget.costBreakdown).reduce((sum, cost) => sum + Number(cost), 0);
+    }
+    if (oldProjectData.resources) {
+      oldExpenses += oldProjectData.resources.reduce((sum, resource) => {
+        return sum + (Number(resource.quantity) * Number(resource.unitCost));
+      }, 0);
+    }
+
+    // Calculate new expenses
+    let newExpenses = 0;
+    if (newProjectData.budget && newProjectData.budget.costBreakdown) {
+      newExpenses = Object.values(newProjectData.budget.costBreakdown).reduce((sum, cost) => sum + Number(cost), 0);
+    }
+    if (newProjectData.resources) {
+      newExpenses += newProjectData.resources.reduce((sum, resource) => {
+        return sum + (Number(resource.quantity) * Number(resource.unitCost));
+      }, 0);
+    }
+
+    // Update wallet
+    wallet.TotalExpenses = (Number(wallet.TotalExpenses) - oldExpenses + newExpenses).toString();
+    
+    // Recalculate Profit
+    wallet.Profit = (Number(wallet.TotalRevenue) - Number(wallet.TotalExpenses)).toString();
+
+    await wallet.save();
+  } catch (error) {
+    console.error('Error updating wallet:', error);
+  }
+};
+
+module.exports = { updateProjectConstruction };

@@ -1,4 +1,5 @@
 const ProjectC = require('../../Model/projectConstruction');
+const Wallet = require('../../Model/wallet');
 const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addProjectConstruction = async (req, res) => {
@@ -119,11 +120,14 @@ const addProjectConstruction = async (req, res) => {
 
     await newProject.save();
 
+    // Update wallet
+    await updateWallet(req.adminId, projectData);
+
     res.status(201).json({
       message: 'Project created successfully',
       project: newProject
     });
-    console.log(newProject)
+    console.log(newProject);
   } catch (error) {
     console.error('Error in addProjectConstruction:', error);
     if (error.name === 'ValidationError') {
@@ -133,6 +137,40 @@ const addProjectConstruction = async (req, res) => {
       return res.status(400).json({ message: 'Duplicate project name or vendor email' });
     }
     res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
+const updateWallet = async (adminId, projectData) => {
+  try {
+    let wallet = await Wallet.findOne({ AdminID: adminId });
+    
+    if (!wallet) {
+      wallet = new Wallet({ AdminID: adminId });
+    }
+
+    // Calculate total expenses from budget
+    let totalExpenses = 0;
+    if (projectData.budget && projectData.budget.costBreakdown) {
+      totalExpenses = Object.values(projectData.budget.costBreakdown).reduce((sum, cost) => sum + Number(cost), 0);
+    }
+
+    // Add expenses from resources
+    if (projectData.resources) {
+      totalExpenses += projectData.resources.reduce((sum, resource) => {
+        return sum + (Number(resource.quantity) * Number(resource.unitCost));
+      }, 0);
+    }
+
+    // Update wallet
+    wallet.TotalExpenses = (Number(wallet.TotalExpenses) + totalExpenses).toString();
+    wallet.TotalOrders = (Number(wallet.TotalOrders) + 1).toString();
+    
+    // Recalculate Profit
+    wallet.Profit = (Number(wallet.TotalRevenue) - Number(wallet.TotalExpenses)).toString();
+
+    await wallet.save();
+  } catch (error) {
+    console.error('Error updating wallet:', error);
   }
 };
 
