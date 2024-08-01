@@ -33,7 +33,7 @@ const getInvoices = async (req, res) => {
       }
 
       return {
-        _id:ininvoice._id,
+        _id:invoice._id,
         ID: invoice.ID,
         OrderNumber: invoice.OrderNumber,
         PicUrl: invoice.PicUrl,
