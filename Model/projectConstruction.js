@@ -1,22 +1,22 @@
 const mongoose = require('mongoose');
 
 const projectConstructionSchema = new mongoose.Schema({
-  projectName: { type: String, required: true },
+  projectName: { type: String },
   Status: { type: String},
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-  projectDescription: { type: String, required: true },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  projectDescription: { type: String },
   startDate: { type: Date },
   estimatedCompletionDate: { type: Date },
   projectLocation: {
-    siteAddress: { type: String, required: true },
-    city: { type: String, required: true },
-    stateProvince: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    country: { type: String, required: true },
+    siteAddress: { type: String},
+    city: { type: String},
+    stateProvince: { type: String},
+    postalCode: { type: String},
+    country: { type: String },
   },
   budget: {
-    estimatedBudget: { type: Number, required: true },
-    fundingSource: { type: String, required: true },
+    estimatedBudget: { type: Number },
+    fundingSource: { type: String },
     costBreakdown: {
       laborCosts: { type: Number, default: 0 },
       materialCosts: { type: Number, default: 0 },
@@ -26,13 +26,13 @@ const projectConstructionSchema = new mongoose.Schema({
     },
   },
   projectScope: {
-    scopeOfWork: { type: String, required: true },
+    scopeOfWork: { type: String },
     objectives: [String],
     deliverables: [String],
     exclusions: [String],
   },
   projectTeam: {
-    projectManager: { type: String, required: true },
+    projectManager: { type: String },
     teamMembers: [String],
     subcontractors: [String],
   },
