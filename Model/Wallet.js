@@ -23,26 +23,19 @@ const walletSchema = new mongoose.Schema({
   },
   TotalOrders: {
     type: String,
-    default:'0',
+    default: '0',
   },
   TotalCustomers: {
     type: String,
-    default:'0',
+    default: '0',
   },
   PaidInvoices: {
     type: String,
-    default:'0',
+    default: '0',
   },
   UnPaidInvoices: {
     type: String,
-    default:'0',
-  },
-
-  Profit: {
-    type: String,
-    default: function() {
-      return (parseFloat(this.TotalRevenue) - parseFloat(this.TotalExpenses)).toString();
-    }
+    default: '0',
   },
   AdminID: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,6 +49,13 @@ const walletSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+walletSchema.virtual('Profit').get(function() {
+  return (parseFloat(this.TotalRevenue) - parseFloat(this.TotalExpenses)).toString();
+});
+
+walletSchema.set('toJSON', { virtuals: true });
+walletSchema.set('toObject', { virtuals: true });
 
 const Wallet = mongoose.model('Wallet', walletSchema);
 
