@@ -11,11 +11,21 @@ const verifyToken = (req, res, next) => {
   }
 
   const decodedToken = jwt.decode(token);
-  const secretKey = decodedToken.role === 'superadmin' 
-  ? process.env.JWT_SECRET_Super 
-  : (decodedToken.role === 'admin' 
-    ? process.env.JWT_SECRET 
-    : process.env.JWT_SECRET_VENDOR);
+  let secretKey;
+
+  switch (decodedToken.role) {
+    case 'superadmin':
+      secretKey = process.env.JWT_SECRET_Super;
+      break;
+    case 'vendor':
+      secretKey = process.env.JWT_SECRET_VENDOR;
+      break;
+    case 'gaapadmin':
+      secretKey = process.env.JWT_SECRET_GAAP;
+      break;
+    default:
+      secretKey = process.env.JWT_SECRET;
+  }
 
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {

@@ -4,27 +4,50 @@ const Business = require('../../Model/Business');
 const Payment = require('../../Model/Payment');
 const Staff = require('../../Model/Staff');
 const Project = require('../../Model/Project');
+const GaapUser = require('../../Model/Gaap/gaap_user'); 
 
 const getAdminProfile = async (req, res) => {
   try {
-    const adminId = req.adminId
-;
-    console.log(adminId)
-    const admin = await Admin.findById(adminId);
+    const userId = req.adminId; 
 
-    if (!admin) {
-      return res.status(404).json({ message: 'Admin not found' });
+    let user = await Admin.findById(userId);
+
+    if (!user) {
+      user = await GaapUser.findById(userId);
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userProfile = {
+      id: user._id,
+      username: user.username || user.Name,
+      email: user.email || user.Email,
+      role: user.role,
+      fullName: user.fullName,
+      department: user.department,
+    };
+
+    if (user.constructor.modelName === 'GaapUser') {
+      userProfile.isActive = user.isActive;
+      userProfile.lastLogin = user.lastLogin;
     }
 
     res.status(200).json({
-      message: 'Admin profile retrieved successfully',
-      admin
+      message: 'User profile retrieved successfully',
+      user: userProfile
     });
   } catch (error) {
-    console.error('Error retrieving admin profile:', error);
+    console.error('Error retrieving user profile:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+
+
+
 
 
 const getAllUsersWithBusinesses = async (req, res) => {
@@ -35,8 +58,9 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const admins = await Admin.find();
     const superAdmins = await SuperAdmin.find();
+    const gaapUsers = await GaapUser.find();
 
-    const users = [...admins, ...superAdmins];
+    const users = [...admins, ...superAdmins, ...gaapUsers];
 
     const usersWithBusinessesAndPayments = await Promise.all(users.map(async (user) => {
       const payments = await Payment.find({ UserID: user._id });
@@ -45,10 +69,22 @@ const getAllUsersWithBusinesses = async (req, res) => {
         status = payments[0].Status;
       }
 
-      const businesses = await Business.find({ AdminID: user._id });
+      let businesses = [];
+      if (user.constructor.modelName !== 'GaapUser') {
+        businesses = await Business.find({ AdminID: user._id });
+      }
+
+      const userObject = user.toObject();
+
+      // Add GAAP-specific fields if it's a GAAP user
+      if (user.constructor.modelName === 'GaapUser') {
+        userObject.isActive = user.isActive;
+        userObject.lastLogin = user.lastLogin;
+      }
 
       return {
-        ...user.toObject(),
+        ...userObject,
+        userType: user.constructor.modelName,
         status,
         payments,
         businesses
@@ -62,34 +98,44 @@ const getAllUsersWithBusinesses = async (req, res) => {
   }
 };
 
+
+
 const DeleteUser = async (req, res) => {
   try {
     if (req.role !== 'superadmin') {
       return res.status(403).json({ message: 'Access denied. Only superadmins can delete users.' });
     }
 
-    const adminId = req.body.adminId;
+    const userId = req.body.userId;
 
-    // Delete the admin
-    const deletedAdmin = await Admin.findByIdAndDelete(adminId);
-    if (!deletedAdmin) {
-      return res.status(404).json({ message: 'Admin not found' });
+    let deletedUser = await Admin.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      deletedUser = await GaapUser.findByIdAndDelete(userId);
     }
 
-    // Delete associated businesses
-    await Business.deleteMany({ AdminID: adminId });
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-    // Delete associated payments
-    await Payment.deleteMany({ UserID: adminId });
-    await Staff.deleteMany({ AdminID: adminId });
-    await Project.deleteMany({ AdminID: adminId });
+    if (deletedUser.constructor.modelName === 'Admin') {
+      await Business.deleteMany({ AdminID: userId });
 
-    res.status(200).json({ message: 'Admin and associated data deleted successfully' });
+      await Staff.deleteMany({ AdminID: userId });
+
+      await Project.deleteMany({ AdminID: userId });
+    }
+
+    await Payment.deleteMany({ UserID: userId });
+
+    res.status(200).json({ message: 'User and associated data deleted successfully' });
   } catch (error) {
-    console.error('Error deleting admin and associated data:', error);
+    console.error('Error deleting user and associated data:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+module.exports = { DeleteUser };
 
 
 

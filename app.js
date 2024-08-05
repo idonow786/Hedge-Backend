@@ -34,6 +34,11 @@ const vendorRoute=require('./Route/vendorRoute')
 const taskRoute=require('./Route/taskRoute') 
 
 
+//GAAP
+const userGaapRoute=require('./Route/Gaap/user.gaap') 
+
+
+
 
 // Connect to MongoDB
 const db = require('./Config/db');
@@ -77,6 +82,13 @@ app.use('/api/social',socialRoute)
 app.use('/api/whatsapp',whatsappRoute)
 app.use('/api/vendor',vendorRoute)
 app.use('/api/task',taskRoute)
+
+
+
+
+
+//GAAP ROUTES
+app.use('/api/gaap',userGaapRoute)
 
 
 // Error handling middleware
