@@ -10,35 +10,46 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: 'No token provided' });
   }
 
-  const decodedToken = jwt.decode(token);
-  let secretKey;
 
-  switch (decodedToken.role) {
-    case 'superadmin':
-      secretKey = process.env.JWT_SECRET_Super;
+  const secretKeys = [
+    process.env.JWT_SECRET,
+    process.env.JWT_SECRET_Super,
+    process.env.JWT_SECRET_VENDOR,
+    process.env.JWT_SECRET_GAAP,
+    process.env.JWT_SECRET_GAAP_USER,
+  ];
+
+
+  let decoded;
+  let lastError;
+  for (let secretKey of secretKeys) {
+    try {
+      decoded = jwt.verify(token, secretKey);
       break;
-    case 'vendor':
-      secretKey = process.env.JWT_SECRET_VENDOR;
-      break;
-    case 'gaapadmin':
-      secretKey = process.env.JWT_SECRET_GAAP;
-      break;
-    default:
-      secretKey = process.env.JWT_SECRET;
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
   }
 
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Invalid token' });
+  if (!decoded) {
+    console.error('Token verification failed with all keys. Last error:', lastError);
+    if (lastError.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token signature' });
+    } else if (lastError.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token has expired' });
+    } else {
+      return res.status(401).json({ message: 'Invalid token', error: lastError.message });
     }
+  }
 
-    req.adminId = decoded.userId;
-    req.username = decoded.username;
-    req.email = decoded.email;
-    req.role = decoded.role;
 
-    next();
-  });
+  req.adminId = decoded.userId;
+  req.username = decoded.username;
+  req.email = decoded.email;
+  req.role = decoded.role;
+
+  next();
 };
 
 module.exports = { verifyToken };
