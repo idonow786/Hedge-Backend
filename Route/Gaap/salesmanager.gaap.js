@@ -6,6 +6,11 @@ const multer = require('multer');
 //==============Customer
 const { getProjectsAll } = require('../../Controller/Gaap/SalesManager/Project/project.gaap');
 
+//==============Target
+const { addSalesTarget,
+    getManagedUsersData,
+    updateSalesTarget,
+    deleteSalesTarget } = require('../../Controller/Gaap/SalesManager/Target/target.gaap');
 
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -15,6 +20,15 @@ const { verifyToken } = require('../../Middleware/jwt');
 
 
 
-router.get('/projects',verifyToken, getProjectsAll);
+router.get('/projects', verifyToken, getProjectsAll);
+
+
+
+
+
+router.post('/add-target', verifyToken, addSalesTarget);
+router.get('/get-targets', verifyToken, getManagedUsersData);
+router.put('/update-target', verifyToken, updateSalesTarget);
+router.delete('/delete-target', verifyToken, deleteSalesTarget);
 
 module.exports = router;
