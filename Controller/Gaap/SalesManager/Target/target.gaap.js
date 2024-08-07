@@ -6,8 +6,8 @@ const addSalesTarget = async (req, res) => {
     try {
         const {  targetType, targetValue } = req.body;
 
-        if (!user || !targetType || !targetValue) {
-            return res.status(400).json({ message: 'User, target type, and target value are required' });
+        if (!targetType || !targetValue) {
+            return res.status(400).json({ message: ' target type, and target value are required' });
         }
 
         const newTarget = new GaapSalesTarget({
