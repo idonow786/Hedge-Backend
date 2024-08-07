@@ -28,16 +28,16 @@ const addSalesTarget = async (req, res) => {
 const getManagedUsersData = async (req, res) => {
     try {
         const adminId = req.adminId; 
-
+        let dsrs=null
         const managedUsers = await GaapUser.find({ createdBy: adminId });
 
-        if (!managedUsers.length) {
-            return res.status(404).json({ message: 'No managed users found' });
+        if (managedUsers.length) {
+            // return res.status(404).json({ message: 'No managed users found' });
+            
+            const userIds = managedUsers.map(user => user._id);
+            
+             dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
         }
-
-        const userIds = managedUsers.map(user => user._id);
-
-        const dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
 
         const salesTargets = await GaapSalesTarget.find({ user: req.adminId}).populate('user', 'fullName');
 
