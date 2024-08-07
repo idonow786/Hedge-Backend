@@ -1,11 +1,19 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const gaapproductSchema = new Schema({
+const gaapProjectProductSchema = new Schema({
+  project: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapProject',
+    required: true
+  },
+  baseProduct: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapProduct',
+  },
   name: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   category: {
     type: String,
@@ -25,12 +33,15 @@ const gaapproductSchema = new Schema({
   },
   price: {
     type: Number,
-    required: function() {
-      return this.priceType === 'Fixed Price';
-    }
+    required: true
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    default: 1
   },
   timeDeadline: {
-    type: Number,
+    type: Date,
     required: function() {
       return this.priceType === 'Fixed Price';
     }
@@ -56,6 +67,6 @@ const gaapproductSchema = new Schema({
   timestamps: true
 });
 
-const GaapProduct = mongoose.model('GaapProduct', gaapproductSchema);
+const GaapProjectProduct = mongoose.model('GaapProjectProduct', gaapProjectProductSchema);
 
-module.exports = GaapProduct;
+module.exports = GaapProjectProduct;

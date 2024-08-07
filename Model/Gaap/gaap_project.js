@@ -51,6 +51,10 @@ const gaapprojectSchema = new Schema({
     type: Number,
     required: true
   },
+  Progress: {
+    type: Number,
+    default:0
+  },
   appliedDiscount: {
     type: Number,
     default: 0
