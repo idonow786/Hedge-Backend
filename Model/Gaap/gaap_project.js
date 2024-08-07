@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-
 const gaapprojectSchema = new Schema({
   projectName: {
     type: String,
@@ -15,12 +14,12 @@ const gaapprojectSchema = new Schema({
   },
   projectType: {
     type: String,
-    enum: ['Audit', 'Tax', 'ICV', 'Bookkeeping', 'Other'],
+    enum: ['External Audit', 'ICV', 'ICV+external Audit', 'Audit & Assurance', 'Book keeping', 'Registration & Filing', 'Taxation', 'Compliance', 'Other'],
     required: true
   },
   department: {
     type: String,
-    enum: ['Audit', 'Tax', 'ICV', 'Finance', 'Other'],
+    enum: ['Audit', 'Accounts Manager', 'VAT Filing', 'Compliance Manager', 'Other'],
     required: true
   },
   assignedTo: {
@@ -52,10 +51,28 @@ const gaapprojectSchema = new Schema({
     type: Number,
     required: true
   },
-  tasks:{
-    type: Schema.Types.ObjectId,
-    ref:'GaapTask'
+  appliedDiscount: {
+    type: Number,
+    default: 0
   },
+  discountApprovedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapUser'
+  },
+  products: [{
+    product: {
+      type: Schema.Types.ObjectId,
+      ref: 'GaapProduct'
+    },
+    quantity: Number,
+    price: Number,
+    turnoverRange: String,
+    timeDeadline: Number
+  }],
+  tasks: [{
+    type: Schema.Types.ObjectId,
+    ref: 'GaapTask'
+  }],
   documents: [{
     name: String,
     url: String,
@@ -83,6 +100,13 @@ const gaapprojectSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'GaapPayment'
   }],
+  vatDetails: {
+    vatNumber: String,
+    vatCertificate: String,
+    ftaUsername: String,
+    ftaPassword: String,
+    vatPaymentBatch: String
+  },
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
@@ -126,6 +150,6 @@ gaapprojectSchema.pre('save', function(next) {
   next();
 });
 
-const GaapProject = mongoose.model('GaapProject', gaapgaapprojectSchema);
+const GaapProject = mongoose.model('GaapProject', gaapprojectSchema);
 
 module.exports = GaapProject;

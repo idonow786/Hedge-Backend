@@ -517,6 +517,7 @@ const deleteUser = async (req, res) => {
 const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const lowercaseEmail = email.toLowerCase(); // Convert email to lowercase
 
     let user;
     let secretKey;
@@ -525,24 +526,24 @@ const signin = async (req, res) => {
     let business = null;
 
     // Check GAAP User
-    user = await GaapUser.findOne({ email });
+    user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
     if (user) {
       secretKey = user.role === 'Parent User' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
     } else {
       // Check SuperAdmin
-      user = await SuperAdmin.findOne({ Email: email });
+      user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
       if (user) {
         secretKey = process.env.JWT_SECRET_Super;
       } else {
         // Check Admin
-        user = await Admin.findOne({ Email: email });
+        user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
         if (user) {
           secretKey = process.env.JWT_SECRET;
           // Find associated business for Admin
           business = await Business.findOne({ AdminID: user._id });
         } else {
           // Check Vendor
-          user = await Vendor.findOne({ 'contactInformation.email': email });
+          user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
           if (user) {
             secretKey = process.env.JWT_SECRET_VENDOR;
           }
@@ -565,7 +566,7 @@ const signin = async (req, res) => {
     }
 
     // Check payment status for non-superadmin and non-vendor users
-    if (user.role !== 'superadmin' && user.role !== 'vendor'&& user.constructor.modelName !== 'GaapUser') {
+    if (user.role !== 'superadmin' && user.role !== 'vendor' && user.constructor.modelName !== 'GaapUser') {
       const payment = await Payment.findOne({ UserID: user._id });
       console.log(payment);
       // Uncomment the following lines if you want to enforce payment check
@@ -628,6 +629,7 @@ const signin = async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
+
 
 
 

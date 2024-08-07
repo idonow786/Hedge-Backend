@@ -14,6 +14,10 @@ const gaapproductSchema = new Schema({
   subCategory: {
     type: String
   },
+  department: {
+    type: String,
+    required: true
+  },
   priceType: {
     type: String,
     enum: ['Fixed Price', 'Variable Price'],
@@ -22,17 +26,24 @@ const gaapproductSchema = new Schema({
   price: {
     type: Number,
     required: function() {
-      return this.priceType === 'Fixed Price'; // Price is required only for fixed price products
+      return this.priceType === 'Fixed Price';
     }
   },
   timeDeadline: {
     type: Number,
     required: function() {
-      return this.priceType === 'Fixed Price'; // Time deadline is required only for fixed price products
+      return this.priceType === 'Fixed Price';
     }
   },
   turnoverRange: {
     type: String,
+    required: function() {
+      return this.priceType === 'Fixed Price';
+    }
+  },
+  isVatProduct: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,

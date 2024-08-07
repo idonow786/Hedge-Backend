@@ -7,7 +7,8 @@ const gaapcustomerContactSchema = new Schema({
     required: true
   },
   designation: {
-    type: String
+    type: String,
+    required: true
   },
   email: {
     type: String,
@@ -19,16 +20,27 @@ const gaapcustomerContactSchema = new Schema({
   }
 });
 
+const gaapcustomerDocumentSchema = new Schema({
+  documentType: {
+    type: String,
+    enum: ['tradeLicense', 'vatCertificate', 'otherDocuments'],
+    required: true
+  },
+  documentUrl: {
+    type: String,
+    required: true
+  },
+  uploadDate: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const gaapcustomerSchema = new Schema({
   companyName: {
     type: String,
     required: true,
     trim: true
-  },
-  tradeLicenseNumber: {
-    type: String,
-    unique: true,
-    required: true
   },
   landline: {
     type: String
@@ -37,12 +49,6 @@ const gaapcustomerSchema = new Schema({
     type: String,
     required: true
   },
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true
-  },
   address: {
     street: String,
     city: String,
@@ -50,31 +56,22 @@ const gaapcustomerSchema = new Schema({
     country: String,
     postalCode: String
   },
-  contacts: [gaapcustomerContactSchema],
+  contactPerson1: gaapcustomerContactSchema,
+  contactPerson2: gaapcustomerContactSchema,
+  trNumber: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  documents: [gaapcustomerDocumentSchema],
+  industryType: {
+    type: String,
+    required: true
+  },
   registeredBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
     required: true
-  },
-  customerType: {
-    type: String,
-    enum: ['Individual', 'Company', 'Government'],
-    required: true
-  },
-  industry: {
-    type: String
-  },
-  annualTurnover: {
-    type: Number
-  },
-  taxRegistrationNumber: {
-    type: String
-  },
-  website: {
-    type: String
-  },
-  notes: {
-    type: String
   },
   isActive: {
     type: Boolean,
@@ -82,10 +79,7 @@ const gaapcustomerSchema = new Schema({
   },
   lastInteractionDate: {
     type: Date
-  },
-  tags: [{
-    type: String
-  }]
+  }
 }, {
   timestamps: true
 });
@@ -95,11 +89,6 @@ gaapcustomerSchema.virtual('fullAddress').get(function() {
   const { street, city, state, country, postalCode } = this.address;
   return `${street}, ${city}, ${state}, ${country} ${postalCode}`.trim();
 });
-
-// Method to get primary contact
-gaapcustomerSchema.methods.getPrimaryContact = function() {
-  return this.contacts.length > 0 ? this.contacts[0] : null;
-};
 
 // Static method to find customers by sales person
 gaapcustomerSchema.statics.findBySalesPerson = function(salesPersonId) {
