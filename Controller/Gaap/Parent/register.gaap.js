@@ -26,9 +26,9 @@ const registerUser = async (req, res) => {
       department,
     } = req.body;
 
-    if (req.role !== 'Parent User') {
-      return res.status(403).json({ message: 'You do not have permission to add users' });
-    }
+    // if (req.role !== 'Parent User') {
+    //   return res.status(403).json({ message: 'You do not have permission to add users' });
+    // }
 
     // Check if user already exists
     const existingUser = await GaapUser.findOne({ $or: [{ username }, { email }] });
@@ -47,6 +47,7 @@ const registerUser = async (req, res) => {
       fullName,
       role,
       department,
+      createdBy:req.adminId
     });
 
     // Save user
