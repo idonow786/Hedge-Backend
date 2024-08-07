@@ -13,6 +13,13 @@ const { deleteCustomer } = require('../../Controller/Gaap/SalesExecutive/Custome
 const { createProject,getProjects,updateProject,deleteProject,getAllProjectsWithComments } = require('../../Controller/Gaap/SalesExecutive/Project/project.gaap');
 
 
+
+//==============DSR
+const dsrController = require('../../Controller/Gaap/SalesExecutive/Dsr/dsr.gaap');
+
+//==============Dashboard
+const {generateDashboard} = require('../../Controller/Gaap/SalesExecutive/gaap_dashboard');
+
 const upload = multer({ storage: multer.memoryStorage() });
 const { verifyToken } = require('../../Middleware/jwt');
 
@@ -75,7 +82,18 @@ router.get('/ongoing-project',
 );
 
 
+//===========DSR
+router.post('/add-dsr',verifyToken, dsrController.addDsr);
+router.put('/update-dsr',verifyToken, dsrController.updateDsr);
+router.delete('/delete-dsr',verifyToken, dsrController.deleteDsr);
+router.get('/dsr',verifyToken, dsrController.getDsr);
+router.get('/dsr/user',verifyToken, dsrController.getAllDsrForUser);
 
 
+
+
+
+//===========Dashboard
+router.get('/dashboard',verifyToken, generateDashboard);
 
 module.exports = router;
