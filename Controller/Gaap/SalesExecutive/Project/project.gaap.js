@@ -20,9 +20,9 @@ const createProject = async (req, res) => {
             pricingType,
             totalAmount,
             appliedDiscount,
-            discountApprovedById,
             products,
-            vatDetails
+            vatDetails,
+            approvalComments,
         } = req.body;
 
         if (!projectName || !customerId || !projectType || !department || !assignedToId || !salesPersonId || !startDate || !pricingType || !totalAmount || !products || !Array.isArray(products)) {
@@ -73,8 +73,6 @@ const createProject = async (req, res) => {
             status,
             pricingType,
             totalAmount,
-            appliedDiscount,
-            discountApprovedBy: discountApprovedById,
             vatDetails: {
                 ...vatDetails,
                 vatCertificate: vatCertificateUrl
@@ -82,6 +80,21 @@ const createProject = async (req, res) => {
             documents: documents,
             createdBy: req.adminId
         });
+
+        // If the user is a Sales Manager, add approval and handle discount
+        if (req.role === 'Sales Manager') {
+            newProject.approvals.push({
+                stage: 'Initial Approval',
+                approvedBy: req.adminId,
+                approvedDate: new Date(),
+                comments: approvalComments
+            });
+
+            if (appliedDiscount > 0) {
+                newProject.appliedDiscount = appliedDiscount;
+                newProject.discountApprovedBy = req.adminId;
+            }
+        }
 
         await newProject.save();
 
@@ -244,8 +257,7 @@ const updateProject = async (req, res) => {
             status,
             pricingType,
             totalAmount,
-            appliedDiscount,
-            discountApprovedBy: discountApprovedById,
+
             vatDetails: {
                 ...vatDetails,
                 vatCertificate: vatCertificateUrl
@@ -253,7 +265,25 @@ const updateProject = async (req, res) => {
             documents: updatedDocuments,
             lastUpdatedBy: req.adminId
         };
-
+        if (req.role === 'Sales Manager') {
+            if (approvalComments) {
+                updateData.approvals = [
+                    ...existingProject.approvals,
+                    {
+                        stage: 'Update Approval',
+                        approvedBy: req.adminId,
+                        approvedDate: new Date(),
+                        comments: approvalComments
+                    }
+                ];
+            }
+        
+            if (appliedDiscount > 0) {
+                updateData.appliedDiscount = appliedDiscount;
+                updateData.discountApprovedBy = req.adminId;
+            }
+        }
+        
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
         const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
