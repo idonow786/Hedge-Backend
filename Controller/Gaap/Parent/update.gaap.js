@@ -20,7 +20,7 @@ const updateUser = async (req, res) => {
         // Check if the requester is a Parent User or the creator of the user
         const requester = await GaapUser.findById(adminId);
 
-        if (requester.role !== 'Parent User' && !userToUpdate.createdBy.equals(adminId)) {
+        if (req.role !== 'Parent User' && (!userToUpdate.createdBy || !userToUpdate.createdBy.equals(adminId))) {
             return res.status(403).json({ 
                 message: 'You do not have permission to update this user. Only Parent Users or the user who created this account can update it.' 
             });
