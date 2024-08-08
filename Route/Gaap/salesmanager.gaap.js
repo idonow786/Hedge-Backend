@@ -18,6 +18,20 @@ const { addSalesTarget,
 //==============Staff
 const { getUsersCreatedByAdmin } = require('../../Controller/Gaap/SalesManager/Staff/staff.gaap');
 
+
+
+
+//==============Dashboard
+const { getDashboardData } = require('../../Controller/Gaap/SalesManager/gaap_dashboard');
+
+
+//==============Profile
+const { updateUserProfile } = require('../../Controller/Gaap/SalesManager/Profile/update.profile');
+const { getUserProfile } = require('../../Controller/Gaap/SalesManager/Profile/get.profile');
+
+
+
+
 const upload = multer({ storage: multer.memoryStorage() });
 const { verifyToken } = require('../../Middleware/jwt');
 
@@ -41,5 +55,20 @@ router.delete('/delete-target', verifyToken, deleteSalesTarget);
 
 
 router.get('/staff', verifyToken, getUsersCreatedByAdmin);
+
+
+
+
+router.get('/dashboard', verifyToken, getDashboardData);
+
+
+
+
+router.put('/update-profile', verifyToken, updateUserProfile);
+router.get('/profile', verifyToken, getUserProfile);
+
+
+
+
 
 module.exports = router;
