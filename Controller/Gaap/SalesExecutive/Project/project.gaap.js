@@ -4,6 +4,7 @@ const GaapCustomer = require('../../../../Model/Gaap/gaap_customer');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const { uploadFileToFirebase } = require('../../../../Firebase/uploadFileToFirebase');
+const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 
 const createProject = async (req, res) => {
     try {
@@ -120,12 +121,30 @@ const createProject = async (req, res) => {
         newProject.products = projectProducts;
         await newProject.save();
 
-        res.status(201).json(newProject);
+        // Create ProjectPayment document
+        const newProjectPayment = new ProjectPayment({
+            project: newProject._id,
+            customer: customerId,
+            totalAmount: totalAmount,
+            paidAmount: 0,
+            unpaidAmount: totalAmount,
+            paymentSchedule: [],
+            paymentStatus: 'Not Started',
+            createdBy: req.adminId
+        });
+
+        await newProjectPayment.save();
+
+        res.status(201).json({
+            project: newProject,
+            projectPayment: newProjectPayment
+        });
     } catch (error) {
         console.error('Error creating project:', error);
         res.status(500).json({ message: 'Error creating project', error: error.message });
     }
 };
+
 
 
 

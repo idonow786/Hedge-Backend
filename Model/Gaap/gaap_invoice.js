@@ -138,24 +138,24 @@ const gaapinvoiceSchema = new Schema({
 });
 
 // Virtual for amount due
-invoiceSchema.virtual('amountDue').get(function() {
+gaapinvoiceSchema.virtual('amountDue').get(function() {
   return this.total - this.payments.reduce((sum, payment) => sum + payment.amount, 0);
 });
 
 // Virtual for payment status
-invoiceSchema.virtual('paymentStatus').get(function() {
+gaapinvoiceSchema.virtual('paymentStatus').get(function() {
   if (this.amountDue === 0) return 'Fully Paid';
   if (this.amountDue < this.total) return 'Partially Paid';
   return 'Unpaid';
 });
 
-invoiceSchema.methods.send = async function() {
+gaapinvoiceSchema.methods.send = async function() {
   this.status = 'Sent';
   await this.save();
 };
 
 // Static method to find overdue invoices
-invoiceSchema.statics.findOverdue = function() {
+gaapinvoiceSchema.statics.findOverdue = function() {
   return this.find({
     status: { $nin: ['Paid', 'Cancelled'] },
     dueDate: { $lt: new Date() }
@@ -163,8 +163,8 @@ invoiceSchema.statics.findOverdue = function() {
 };
 
 // Middleware to update project when invoice is created
-invoiceSchema.post('save', async function(doc) {
-  const Project = mongoose.model('Project');
+gaapinvoiceSchema.post('save', async function(doc) {
+  const Project = mongoose.model('GaapProject');
   await Project.findByIdAndUpdate(doc.project, {
     $push: { invoices: doc._id }
   });
