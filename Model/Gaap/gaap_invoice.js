@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const gaapinvoiceItemSchema = new Schema({
+const gaapInvoiceItemSchema = new Schema({
   description: {
     type: String,
     required: true
@@ -34,7 +34,7 @@ const gaapinvoiceItemSchema = new Schema({
   }
 });
 
-const gaapinvoiceSchema = new Schema({
+const gaapInvoiceSchema = new Schema({
   invoiceNumber: {
     type: String,
     required: true,
@@ -50,7 +50,7 @@ const gaapinvoiceSchema = new Schema({
     ref: 'GaapProject',
     required: true
   },
-  invoiceDate: {
+  issueDate: {
     type: Date,
     required: true,
     default: Date.now
@@ -59,7 +59,7 @@ const gaapinvoiceSchema = new Schema({
     type: Date,
     required: true
   },
-  items: [gaapinvoiceItemSchema],
+  items: [gaapInvoiceItemSchema],
   subtotal: {
     type: Number,
     required: true,
@@ -78,11 +78,8 @@ const gaapinvoiceSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['Draft', 'Sent', 'Partially Paid', 'Paid', 'Overdue', 'Cancelled'],
+    enum: ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'],
     default: 'Draft'
-  },
-  paymentTerms: {
-    type: String
   },
   notes: {
     type: String
@@ -92,84 +89,16 @@ const gaapinvoiceSchema = new Schema({
     ref: 'GaapUser',
     required: true
   },
-  approvedBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'GaapUser'
-  },
-  approvalDate: {
-    type: Date
-  },
   currency: {
     type: String,
     required: true,
     default: 'AED'  
-  },
-  exchangeRate: {
-    type: Number,
-    default: 1
-  },
-  attachments: [{
-    name: String,
-    url: String,
-    uploadedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'GaapUser'
-    },
-    uploadDate: Date
-  }],
-  reminders: [{
-    sentDate: Date,
-    sentBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'GaapUser'
-    },
-    method: {
-      type: String,
-      enum: ['Email', 'SMS', 'Phone']
-    },
-    notes: String
-  }],
-  payments: [{
-    type: Schema.Types.ObjectId,
-    ref: 'GaapPayment'
-  }]
+  }
 }, {
   timestamps: true
 });
 
-// Virtual for amount due
-gaapinvoiceSchema.virtual('amountDue').get(function() {
-  return this.total - this.payments.reduce((sum, payment) => sum + payment.amount, 0);
-});
 
-// Virtual for payment status
-gaapinvoiceSchema.virtual('paymentStatus').get(function() {
-  if (this.amountDue === 0) return 'Fully Paid';
-  if (this.amountDue < this.total) return 'Partially Paid';
-  return 'Unpaid';
-});
-
-gaapinvoiceSchema.methods.send = async function() {
-  this.status = 'Sent';
-  await this.save();
-};
-
-// Static method to find overdue invoices
-gaapinvoiceSchema.statics.findOverdue = function() {
-  return this.find({
-    status: { $nin: ['Paid', 'Cancelled'] },
-    dueDate: { $lt: new Date() }
-  });
-};
-
-// Middleware to update project when invoice is created
-gaapinvoiceSchema.post('save', async function(doc) {
-  const Project = mongoose.model('GaapProject');
-  await Project.findByIdAndUpdate(doc.project, {
-    $push: { invoices: doc._id }
-  });
-});
-
-const GaapInvoice = mongoose.model('GaapInvoice', gaapinvoiceSchema);
+const GaapInvoice = mongoose.model('GaapInvoice', gaapInvoiceSchema);
 
 module.exports = GaapInvoice;

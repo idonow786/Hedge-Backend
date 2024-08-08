@@ -12,11 +12,6 @@ const projectPaymentSchema = new Schema({
     ref: 'GaapCustomer',
     required: true
   },
-  project: {
-    type: Schema.Types.ObjectId,
-    ref: 'GaapProject',
-    required: true
-  },
   totalAmount: {
     type: Number,
     required: true
