@@ -55,10 +55,19 @@ const updatePayment = async (req, res) => {
       });
     }
 
-    const paidAmount = paymentType === 'fully' ? payment.totalAmount : amount;
-    payment.addPayment(paidAmount, new Date(), 'Bank Transfer', req.adminId, 'Payment update by finance manager');
+    let paidAmount;
+    if (paymentType === 'fully') {
+      paidAmount = payment.totalAmount - payment.paidAmount;
+    } else if (paymentType === 'partially') {
+      paidAmount = parseFloat(amount);
+      if (isNaN(paidAmount) || paidAmount <= 0 || paidAmount > payment.unpaidAmount) {
+        return res.status(400).json({ message: 'Invalid payment amount' });
+      }
+    } else {
+      return res.status(400).json({ message: 'Invalid payment type' });
+    }
 
-    await payment.save();
+    payment.addPayment(paidAmount, new Date(), 'Bank Transfer', req.adminId, 'Payment update by finance manager');
 
     // Generate new invoice
     const newInvoice = new GaapInvoice({
@@ -84,10 +93,27 @@ const updatePayment = async (req, res) => {
     payment.invoices.push(newInvoice._id);
     await payment.save();
 
+    // Update project status if fully paid
+    if (payment.paymentStatus === 'Fully Paid') {
+      project.status = 'Completed';
+      await project.save();
+    }
+
     res.status(200).json({
       message: 'Payment updated successfully',
-      payment: payment,
-      newInvoice: newInvoice
+      payment: {
+        totalAmount: payment.totalAmount,
+        paidAmount: payment.paidAmount,
+        unpaidAmount: payment.unpaidAmount,
+        paymentStatus: payment.paymentStatus,
+        lastPaymentDate: payment.lastPaymentDate,
+        nextPaymentDue: payment.nextPaymentDue
+      },
+      newInvoice: {
+        invoiceNumber: newInvoice.invoiceNumber,
+        amount: newInvoice.total,
+        status: newInvoice.status
+      }
     });
   } catch (error) {
     console.error('Error updating payment:', error);
@@ -95,4 +121,48 @@ const updatePayment = async (req, res) => {
   }
 };
 
-module.exports={getUnpaidProjects,updatePayment}
+const getProjectsWithPaymentStatus = async (req, res) => {
+  try {
+    const projects = await GaapProject.find({
+      status: { $in: ['Approved', 'In Progress'] }
+    }).populate('customer', 'name')
+      .populate('assignedTo', 'name')
+      .populate('salesPerson', 'name');
+
+    const projectsWithPayments = await Promise.all(projects.map(async (project) => {
+      const payment = await ProjectPayment.findOne({ project: project._id })
+        .populate('invoices');
+
+      if (!payment || payment.paymentStatus !== 'Fully Paid') {
+        return {
+          projectId: project._id,
+          projectName: project.projectName,
+          customerName: project.customer.name,
+          assignedTo: project.assignedTo.name,
+          salesPerson: project.salesPerson.name,
+          totalAmount: payment ? payment.totalAmount : project.totalAmount,
+          paidAmount: payment ? payment.paidAmount : 0,
+          unpaidAmount: payment ? payment.unpaidAmount : project.totalAmount,
+          paymentStatus: payment ? payment.paymentStatus : 'Not Started',
+          lastPaymentDate: payment ? payment.lastPaymentDate : null,
+          nextPaymentDue: payment ? payment.nextPaymentDue : null,
+          invoices: payment ? payment.invoices.map(inv => ({
+            invoiceNumber: inv.invoiceNumber,
+            amount: inv.total,
+            status: inv.status
+          })) : []
+        };
+      }
+      return null;
+    }));
+
+    const filteredProjects = projectsWithPayments.filter(Boolean);
+
+    res.status(200).json(filteredProjects);
+  } catch (error) {
+    console.error('Error fetching projects with payment status:', error);
+    res.status(500).json({ message: 'Error fetching projects', error: error.message });
+  }
+};
+
+module.exports={getUnpaidProjects,updatePayment,getProjectsWithPaymentStatus}
