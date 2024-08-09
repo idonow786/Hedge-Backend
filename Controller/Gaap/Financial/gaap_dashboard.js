@@ -86,10 +86,17 @@ const getDashboardData = async (req, res) => {
     // 6. Sales targets summary
     const salesTargetsSummary = await GaapSalesTarget.aggregate([
       {
+        $match: {
+          'targetPeriod.endDate': { $gte: currentDate }
+        }
+      },
+      {
         $group: {
           _id: '$targetType',
-          totalTargetValue: { $sum: '$targetValue' },
-          totalAchievedValue: { $sum: '$achievedValue' }
+          totalOfficeVisitsTarget: { $sum: '$targetDetails.officeVisits' },
+          totalClosingsTarget: { $sum: '$targetDetails.closings' },
+          totalOfficeVisitsAchieved: { $sum: '$achievedValue.officeVisits' },
+          totalClosingsAchieved: { $sum: '$achievedValue.closings' }
         }
       }
     ]);
@@ -113,9 +120,20 @@ const getDashboardData = async (req, res) => {
       },
       salesTargetsSummary: salesTargetsSummary.reduce((acc, item) => {
         acc[item._id] = {
-          totalTargetValue: item.totalTargetValue,
-          totalAchievedValue: item.totalAchievedValue,
-          progressPercentage: (item.totalAchievedValue / item.totalTargetValue) * 100
+          officeVisits: {
+            target: item.totalOfficeVisitsTarget,
+            achieved: item.totalOfficeVisitsAchieved,
+            progressPercentage: item.totalOfficeVisitsTarget > 0 
+              ? (item.totalOfficeVisitsAchieved / item.totalOfficeVisitsTarget) * 100 
+              : 0
+          },
+          closings: {
+            target: item.totalClosingsTarget,
+            achieved: item.totalClosingsAchieved,
+            progressPercentage: item.totalClosingsTarget > 0 
+              ? (item.totalClosingsAchieved / item.totalClosingsTarget) * 100 
+              : 0
+          }
         };
         return acc;
       }, {})

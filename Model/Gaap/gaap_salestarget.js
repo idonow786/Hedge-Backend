@@ -1,24 +1,32 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const gaapsalesTargetSchema = new Schema({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'GaapUser',  
-    required: true
-  },
+const gaapSalesTargetSchema = new Schema({
   targetType: {
     type: String,
     enum: ['Daily', 'Monthly', 'Quarterly', 'Yearly'],
     required: true
   },
-  targetValue: {
-    type: Number,
+  targetPeriod: {
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true }
+  },
+  targetDetails: {
+    officeVisits: { type: Number },
+    closings: { type: Number }
+  },
+  // assignedTo: [{
+  //   type: Schema.Types.ObjectId,
+  //   ref: 'GaapUser'
+  // }],
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapUser',
     required: true
   },
   achievedValue: {
-    type: Number,
-    default: 0
+    officeVisits: { type: Number, default: 0 },
+    closings: { type: Number, default: 0 }
   },
   createdAt: {
     type: Date,
@@ -31,6 +39,6 @@ const gaapsalesTargetSchema = new Schema({
   timestamps: true
 });
 
-const GaapSalesTarget = mongoose.model('GaapSalesTarget', gaapsalesTargetSchema);
+const GaapSalesTarget = mongoose.model('GaapSalesTarget', gaapSalesTargetSchema);
 
 module.exports = GaapSalesTarget;

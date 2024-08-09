@@ -12,17 +12,32 @@ const generateDashboard = async (req, res) => {
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
         // 1. Sales Targets
-        const salesTargets = await GaapSalesTarget.find({ user: userId });
+        const salesTargets = await GaapSalesTarget.find({
+            createdBy: userId,
+            'targetPeriod.endDate': { $gte: today }
+        });
+
         const targetData = {
-            daily: salesTargets.find(t => t.targetType === 'Daily') || { targetValue: 0, achievedValue: 0 },
-            monthly: salesTargets.find(t => t.targetType === 'Monthly') || { targetValue: 0, achievedValue: 0 },
-            quarterly: salesTargets.find(t => t.targetType === 'Quarterly') || { targetValue: 0, achievedValue: 0 },
-            yearly: salesTargets.find(t => t.targetType === 'Yearly') || { targetValue: 0, achievedValue: 0 }
+            daily: salesTargets.find(t => t.targetType === 'Daily') || { targetDetails: {}, achievedValue: {} },
+            monthly: salesTargets.find(t => t.targetType === 'Monthly') || { targetDetails: {}, achievedValue: {} },
+            quarterly: salesTargets.find(t => t.targetType === 'Quarterly') || { targetDetails: {}, achievedValue: {} },
+            yearly: salesTargets.find(t => t.targetType === 'Yearly') || { targetDetails: {}, achievedValue: {} }
         };
 
         // Calculate percentages
         for (let period in targetData) {
-            targetData[period].percentage = (targetData[period].achievedValue / targetData[period].targetValue) * 100 || 0;
+            targetData[period] = {
+                officeVisits: {
+                    target: targetData[period].targetDetails.officeVisits || 0,
+                    achieved: targetData[period].achievedValue.officeVisits || 0,
+                    percentage: ((targetData[period].achievedValue.officeVisits || 0) / (targetData[period].targetDetails.officeVisits || 1)) * 100
+                },
+                closings: {
+                    target: targetData[period].targetDetails.closings || 0,
+                    achieved: targetData[period].achievedValue.closings || 0,
+                    percentage: ((targetData[period].achievedValue.closings || 0) / (targetData[period].targetDetails.closings || 1)) * 100
+                }
+            };
         }
 
         // 2. Projects Overview

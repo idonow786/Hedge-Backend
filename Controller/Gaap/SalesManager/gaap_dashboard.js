@@ -6,6 +6,7 @@ const GaapSalesTarget = require('../../../Model/Gaap/gaap_salestarget');
 const getDashboardData = async (req, res) => {
     try {
         const adminId = req.adminId;
+        const currentDate = new Date();
 
         // 1. Get users created by this admin
         const users = await GaapUser.find({ createdBy: adminId });
@@ -27,7 +28,6 @@ const getDashboardData = async (req, res) => {
         }));
 
         // 4. Get DSR data
-        const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const dsrData = await GaapDsr.find({
             user: { $in: userIds },
@@ -35,14 +35,18 @@ const getDashboardData = async (req, res) => {
         });
 
         // 5. Get targets
-        const targets = await GaapSalesTarget.find({ user: adminId });
+        const targets = await GaapSalesTarget.find({
+            createdBy: adminId,
+            // 'targetPeriod.endDate': { $gte: currentDate }
+        });
 
         // 6. Process DSR and target data
         const dsrSummary = {
             officeVisits: 0,
             cardsCollected: 0,
             meetings: 0,
-            proposals: 0
+            proposals: 0,
+            closings: 0
         };
 
         dsrData.forEach(dsr => {
@@ -50,24 +54,31 @@ const getDashboardData = async (req, res) => {
             dsrSummary.cardsCollected += dsr.cardsCollected || 0;
             dsrSummary.meetings += dsr.meetings || 0;
             dsrSummary.proposals += dsr.proposals || 0;
+            dsrSummary.closings += dsr.closings || 0;
         });
 
         const targetComparison = targets.map(target => {
-            let achievedPercentage = 0;
-            if (target.targetType === 'Daily') {
-                achievedPercentage = (dsrSummary[target.targetName] / (target.targetValue * dsrData.length)) * 100;
-            } else if (target.targetType === 'Monthly') {
-                achievedPercentage = (dsrSummary[target.targetName] / target.targetValue) * 100;
-            }
+            const targetDetails = target.targetDetails;
+            const achievedValue = target.achievedValue;
+
+            const calculatePercentage = (achieved, targetValue) => {
+                return targetValue > 0 ? Math.min((achieved / targetValue) * 100, 100).toFixed(2) : 0;
+            };
+
             return {
                 targetType: target.targetType,
-                targetName: target.targetName,
-                targetValue: target.targetValue,
-                achievedValue: dsrSummary[target.targetName],
-                achievedPercentage: isNaN(achievedPercentage) ? 0 : Math.min(achievedPercentage, 100).toFixed(2)
+                officeVisits: {
+                    target: targetDetails.officeVisits || 0,
+                    achieved: achievedValue.officeVisits || 0,
+                    percentage: calculatePercentage(achievedValue.officeVisits || 0, targetDetails.officeVisits || 0)
+                },
+                closings: {
+                    target: targetDetails.closings || 0,
+                    achieved: achievedValue.closings || 0,
+                    percentage: calculatePercentage(achievedValue.closings || 0, targetDetails.closings || 0)
+                }
             };
         });
-
 
         // 7. Prepare response
         const dashboardData = {

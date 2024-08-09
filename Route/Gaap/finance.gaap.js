@@ -5,6 +5,7 @@ const { getAllProjectsWithPayments} = require('../../Controller/Gaap/Financial/p
 const { addInvoice} = require('../../Controller/Gaap/Financial/invoice/addInvoice.gaap')
 const { getUnpaidProjects,updatePayment,getProjectsWithPaymentStatus} = require('../../Controller/Gaap/Financial/invoice/unpaid.gaap')
 const { getDashboardData} = require('../../Controller/Gaap/Financial/gaap_dashboard')
+const { createReport,getAllReports,updateReport,deleteReport,getReportByDate} = require('../../Controller/Gaap/Financial/dcr/dcr.gaap')
 
 const { verifyToken } = require('../../Middleware/jwt');
 const multer = require('multer');
@@ -29,7 +30,15 @@ router.post('/add-invoice',verifyToken, addInvoice);
 router.put('/update-unpaidInvoice',verifyToken, updatePayment);                                         //
 router.get('/get-unPaidinvoice',verifyToken, getUnpaidProjects);                                        //
 router.get('/get-payment-status',verifyToken, getProjectsWithPaymentStatus);                            //
-router.get('/get-dashboard',verifyToken, getDashboardData);                            //
+router.get('/get-dashboard',verifyToken, getDashboardData);                                             //
+
+
+
+router.post('/created-dcr',verifyToken, createReport);                                             //
+router.get('/get-dcr',verifyToken, getAllReports);                                            //
+router.put('/update-dcr',verifyToken, updateReport);                                             //
+router.delete('/delete-dcr',verifyToken, deleteReport);                                             //
+router.get('/dcr-date',verifyToken, getReportByDate);                                          //
 
 
 

@@ -1,19 +1,30 @@
 const GaapSalesTarget = require('../../../../Model/Gaap/gaap_salestarget');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapDsr = require('../../../../Model/Gaap/gaap_dsr');
 
 // Add Sales Target
 const addSalesTarget = async (req, res) => {
     try {
-        const {  targetType, targetValue } = req.body;
+        const { targetType, startDate, endDate, targetDetails } = req.body;
 
-        if (!targetType || !targetValue) {
-            return res.status(400).json({ message: ' target type, and target value are required' });
+        if (!targetType || !startDate || !endDate || !targetDetails) {
+            return res.status(400).json({ message: 'Target type, start date, end date, and target details are required' });
+        }
+
+        if (targetType === 'Daily' && !targetDetails.officeVisits) {
+            return res.status(400).json({ message: 'Office visits target is required for daily targets' });
+        }
+
+        if (['Monthly', 'Quarterly', 'Yearly'].includes(targetType) && !targetDetails.closings) {
+            return res.status(400).json({ message: 'Closings target is required for monthly, quarterly, and yearly targets' });
         }
 
         const newTarget = new GaapSalesTarget({
-            user:req.adminId,
             targetType,
-            targetValue
+            targetPeriod: { startDate, endDate },
+            targetDetails,
+            
+            createdBy: req.adminId
         });
 
         await newTarget.save();
@@ -24,22 +35,24 @@ const addSalesTarget = async (req, res) => {
     }
 };
 
-// Get Sales Targets
+// Get Sales Targets and DSRs
 const getManagedUsersData = async (req, res) => {
     try {
         const adminId = req.adminId; 
-        let dsrs=null
+        let dsrs = null;
         const managedUsers = await GaapUser.find({ createdBy: adminId });
 
         if (managedUsers.length) {
-            // return res.status(404).json({ message: 'No managed users found' });
-            
             const userIds = managedUsers.map(user => user._id);
-            
-             dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
+            dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
         }
 
-        const salesTargets = await GaapSalesTarget.find({ user: req.adminId}).populate('user', 'fullName');
+        const salesTargets = await GaapSalesTarget.find({ 
+            $or: [
+                { createdBy: adminId },
+                { assignedTo: { $in: [adminId, ...managedUsers.map(user => user._id)] } }
+            ]
+        }).populate('assignedTo', 'fullName');
 
         const response = {
             dsrs,
@@ -53,20 +66,25 @@ const getManagedUsersData = async (req, res) => {
     }
 };
 
-
 // Update Sales Target
 const updateSalesTarget = async (req, res) => {
     try {
-        const { targetId, ...updateData } = req.body; 
+        const { targetId, targetType, startDate, endDate, targetDetails } = req.body;
 
         if (!targetId) {
             return res.status(400).json({ message: 'Target ID is required' });
         }
 
-        // Update the target using the provided data
+        const updateData = {
+            targetType,
+            targetPeriod: { startDate, endDate },
+            targetDetails,
+            updatedAt: Date.now()
+        };
+
         const updatedTarget = await GaapSalesTarget.findByIdAndUpdate(
             targetId,
-            { ...updateData, updatedAt: Date.now() },
+            updateData,
             { new: true, runValidators: true }
         );
 
@@ -83,7 +101,6 @@ const updateSalesTarget = async (req, res) => {
         res.status(500).json({ message: 'Server error while updating sales target' });
     }
 };
-
 
 // Delete Sales Target
 const deleteSalesTarget = async (req, res) => {
