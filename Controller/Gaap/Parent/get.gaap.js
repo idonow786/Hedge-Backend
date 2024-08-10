@@ -6,7 +6,7 @@ const fetchGaapUsers = async (req, res) => {
     try {
         const adminId = req.adminId;
 
-        const requester = await GaapUser.find();
+        const requester = await GaapUser.find({createdBy:adminId});
 
         if (!requester) {
             return res.status(404).json({ message: 'Requester not found' });
