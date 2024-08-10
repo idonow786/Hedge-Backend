@@ -74,6 +74,7 @@ const createProject = async (req, res) => {
             status,
             pricingType,
             totalAmount,
+            appliedDiscount,
             vatDetails: {
                 ...vatDetails,
                 vatCertificate: vatCertificateUrl
