@@ -73,10 +73,8 @@ const gaapprojectSchema = new Schema({
     turnoverRange: String,
     timeDeadline: Number
   }],
-  tasks: [{
-    type: Schema.Types.ObjectId,
-    ref: 'GaapTask'
-  }],
+  tasks: [{ type: Schema.Types.ObjectId, ref: 'GaapTask' }],
+
   documents: [{
     name: String,
     url: String,

@@ -4,7 +4,6 @@ const Schema = mongoose.Schema;
 const gaaptaskSchema = new Schema({
   title: {
     type: String,
-    required: true
   },
   description: {
     type: String
@@ -16,7 +15,6 @@ const gaaptaskSchema = new Schema({
   project: {
     type: Schema.Types.ObjectId,
     ref: 'GaapProject',
-    required: true
   },
   status: {
     type: String,
@@ -37,7 +35,6 @@ const gaaptaskSchema = new Schema({
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
-    required: true
   },
   createdAt: {
     type: Date,

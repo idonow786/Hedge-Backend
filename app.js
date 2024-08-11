@@ -40,6 +40,7 @@ const parentGaapRoute=require('./Route/Gaap/parent.gaap')
 const salesExecutiveGaapRoute=require('./Route/Gaap/salesexecutive.gaap') 
 const salesManagerGaapRoute=require('./Route/Gaap/salesmanager.gaap') 
 const FinanceGaapRoute=require('./Route/Gaap/finance.gaap') 
+const departmentGaapRoute=require('./Route/Gaap/department.gaap') 
 
 
 
@@ -97,6 +98,7 @@ app.use('/api/gaap/parent',parentGaapRoute)
 app.use('/api/gaap/sales/executive',salesExecutiveGaapRoute)
 app.use('/api/gaap/sales/manager',salesManagerGaapRoute)
 app.use('/api/gaap/sales/finance',FinanceGaapRoute)
+app.use('/api/gaap/sales/department',departmentGaapRoute)
 
 
 // Error handling middleware
