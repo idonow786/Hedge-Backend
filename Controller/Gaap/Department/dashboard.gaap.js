@@ -11,6 +11,7 @@ const getDashboardData = async (req, res) => {
         if (
             req.role !== 'Department Manager' && 
             req.role !== 'Operational Executive' && 
+            req.role !== 'Parent User' && 
             req.role !== 'General Manager'
         ) {
             return res.status(403).json({ message: 'Not Authorized' });

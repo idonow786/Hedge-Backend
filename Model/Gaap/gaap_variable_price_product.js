@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const variablePriceProductSchema = new Schema({
+  adminId: {
+    type: String,
+  },
   category: {
     type: String,
     required: true

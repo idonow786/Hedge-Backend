@@ -1,10 +1,14 @@
+// fixedPriceProductModel.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const fixedPriceProductSchema = new Schema({
-  category: {
+  adminId: {
     type: String,
-    enum: ['External Audit', 'ICV', 'ICV+external Audit'],
+  },
+  auditType: {
+    type: String,
+    enum: ['External Audit', 'R.Y', 'R.Y+external Audit'],
     required: true
   },
   turnover: {
@@ -16,7 +20,7 @@ const fixedPriceProductSchema = new Schema({
     required: true
   },
   timeDeadline: {
-    type: Number,
+    type: String,
     required: true
   }
 }, {
