@@ -2,11 +2,18 @@ const GaapCustomer = require('../../../../Model/Gaap/gaap_customer');
 
 const getAllCustomersByAdmin = async (req, res) => {
   try {
-    const adminId = req.adminId; 
+    const adminId = req.adminId;
+    let customers;
+    if (req.role !== 'Parent User') {
+      customers = await GaapCustomer.find({ registeredBy: adminId })
+        .sort({ createdAt: -1 })
+        .lean();
+    } else {
+      customers = await GaapCustomer.find()
+        .sort({ createdAt: -1 })
+        .lean();
+    }
 
-    const customers = await GaapCustomer.find({ registeredBy: adminId })
-      .sort({ createdAt: -1 })
-      .lean();
 
     res.status(200).json({
       message: 'Customers fetched successfully',
@@ -24,4 +31,4 @@ const getAllCustomersByAdmin = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while fetching customers' });
   }
 };
-module.exports={getAllCustomersByAdmin}
+module.exports = { getAllCustomersByAdmin }
