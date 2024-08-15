@@ -153,21 +153,26 @@ const createProject = async (req, res) => {
 
 const getProjects = async (req, res) => {
     try {
-        if (req.role !== 'Sales Executive') {
-            return res.status(403).json({ message: 'Access denied. Only sales executives can view projects.' });
+        let projects;
+        if (req.role === 'Parent User') {
+            projects = await GaapProject.find()
+                .populate('customer', 'name')
+                .populate('assignedTo', 'name')
+                .populate('salesPerson', 'name')
+                .select('projectName customer projectType status startDate endDate totalAmount products Progress');
+        } else {
+
+            projects = await GaapProject.find({ createdBy: req.adminId })
+                .populate('customer', 'name')
+                .populate('assignedTo', 'name')
+                .populate('salesPerson', 'name')
+                .select('projectName customer projectType status startDate endDate totalAmount products Progress');
         }
-
-        const projects = await GaapProject.find({ createdBy: req.adminId })
-            .populate('customer', 'name')
-            .populate('assignedTo', 'name')
-            .populate('salesPerson', 'name')
-            .select('projectName customer projectType status startDate endDate totalAmount products Progress');
-
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id })
                 .select('name description quantity price turnoverRange timeDeadline');
 
-            const { _id, projectName, customer, projectType, status, startDate, endDate, totalAmount,Progress } = project;
+            const { _id, projectName, customer, projectType, status, startDate, endDate, totalAmount, Progress } = project;
             return {
                 _id,
                 projectName,
@@ -297,13 +302,13 @@ const updateProject = async (req, res) => {
                     }
                 ];
             }
-        
+
             if (appliedDiscount > 0) {
                 updateData.appliedDiscount = appliedDiscount;
                 updateData.discountApprovedBy = req.adminId;
             }
         }
-        
+
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
         const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
@@ -378,14 +383,21 @@ const deleteProject = async (req, res) => {
 
 const getAllProjectsWithComments = async (req, res) => {
     try {
-        if (req.role !== 'Sales Executive') {
-            return res.status(403).json({ message: 'Access denied. Only sales executives can view projects.' });
+        let projects;
+        if (req.role === 'Parent User') {
+            projects = await GaapProject.find()
+                .populate('customer', 'name')
+                .populate('assignedTo', 'name')
+                .populate('salesPerson', 'name')
+                .lean();
+        } else {
+            projects = await GaapProject.find({ createdBy: req.adminId })
+                .populate('customer', 'name')
+                .populate('assignedTo', 'name')
+                .populate('salesPerson', 'name')
+                .lean();
         }
-        const projects = await GaapProject.find({ createdBy: req.adminId })
-            .populate('customer', 'name')
-            .populate('assignedTo', 'name')
-            .populate('salesPerson', 'name')
-            .lean();
+
 
         const projectIds = projects.map(project => project._id);
         const allComments = await GaapComment.find({ project: { $in: projectIds } })

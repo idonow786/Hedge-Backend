@@ -84,10 +84,11 @@ const dsrController = {
     getAllDsrForUser: async (req, res) => {
         try {
             const userId = req.adminId;
+            let query={}
             const { startDate, endDate } = req.query;
-    
-            let query = { user: userId };
-    
+            if (req.role !== 'Parent User') {
+                 query = { user: userId };
+            }    
             if (startDate && endDate) {
                 query.date = {
                     $gte: new Date(startDate),
