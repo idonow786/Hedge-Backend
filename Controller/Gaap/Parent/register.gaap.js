@@ -21,6 +21,8 @@ const registerUser = async (req, res) => {
       username,
       password,
       email,
+      manager,
+      managerType,
       fullName,
       role,
       department,
@@ -46,6 +48,8 @@ const registerUser = async (req, res) => {
       email,
       fullName,
       role,
+      manager,
+      managerType,
       department,
       createdBy:req.adminId
     });

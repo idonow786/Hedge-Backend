@@ -21,6 +21,12 @@ const gappuserSchema = new Schema({
     type: String,
     required: true
   },
+  manager: {
+    type: String,
+  },
+  managerType: {
+    type: String,
+  },
   role: {
     type: String,
     enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'General Manager', 'Parent User'],
@@ -29,7 +35,6 @@ const gappuserSchema = new Schema({
   department: {
     type: String,
     enum: ['Sales', 'Finance', 'Audit', 'Tax', 'ICV', 'Operations'],
-    required: function() { return this.role !== 'Parent User'; }
   },
   profilePhoto: {
     type: String
