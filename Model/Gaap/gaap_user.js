@@ -29,7 +29,7 @@ const gappuserSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'General Manager', 'Parent User'],
+    enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'General Manager', 'Parent User','Audit Manager','Accounting Manager','Tax Supervisor','ICV Manager','Accounting Executive','Audit Executive','Tax Executive','ICV Executive'],
     required: true
   },
   department: {
