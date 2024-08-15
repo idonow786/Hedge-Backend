@@ -34,7 +34,7 @@ const gappuserSchema = new Schema({
   },
   department: {
     type: String,
-    enum: ['Sales', 'Finance', 'Audit', 'Tax', 'ICV', 'Operations'],
+    enum: ['Sales', 'Finance', 'Audit', 'Tax', 'ICV', 'Operations','Accounting'],
   },
   profilePhoto: {
     type: String
