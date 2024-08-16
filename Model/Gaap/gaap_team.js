@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const gaapTeamSchema = new mongoose.Schema({
   teamName: { type: String, required: true },
+  BusinessId: { type: String,},
   parentUser: {
+    userId: { type: String},
     name: { type: String, required: true },
     role: { 
       type: String, 
@@ -10,18 +12,17 @@ const gaapTeamSchema = new mongoose.Schema({
       immutable: true 
     }
   },
+
   members: [{
-    name: { type: String, required: true },
+    memberId:{type:String},
+    name: { type: String },
     role: {
       type: String,
-      enum: ['General Manager', 'Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive'],
-      required: true
     },
     department: {
       type: String,
-      enum: ['Sales', 'Finance', 'Audit', 'Tax', 'ICV', 'Operations'],
     },
-    managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapTeam.members' }
+    managerId: { type:String }
   }]
 });
 

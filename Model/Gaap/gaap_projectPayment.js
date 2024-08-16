@@ -20,6 +20,9 @@ const projectPaymentSchema = new Schema({
     type: Number,
     default: 0
   },
+  teamId: {
+    type: String,
+  },
   unpaidAmount: {
     type: Number,
     default: function() {

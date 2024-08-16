@@ -36,6 +36,9 @@ const gaapprojectSchema = new Schema({
     type: Date,
     required: true
   },
+  teamId: {
+    type: String,
+  },
   endDate: Date,
   status: {
     type: String,

@@ -16,6 +16,9 @@ const gaapInvoiceItemSchema = new Schema({
     required: true,
     min: 0
   },
+  teamId: {
+    type: String,
+  },
   amount: {
     type: Number,
     required: true,

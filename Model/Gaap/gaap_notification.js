@@ -19,6 +19,9 @@ const gaapnotificationSchema = new Schema({
     type: Date,
     default: Date.now
   },
+  teamId: {
+    type: String,
+  },
   updatedAt: {
     type: Date
   }

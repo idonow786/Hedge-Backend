@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../Model/Gaap/gaap_team');
 
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
@@ -54,8 +55,26 @@ const registerUser = async (req, res) => {
       createdBy:req.adminId
     });
 
+
+
+    // Find the GAAP team and update it
+    const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
+    if (gaapTeam) {
+      const newMember = {
+        memberId: newUser._id,
+        name: fullName,
+        role: role,
+        department: department,
+        managerId: manager ? manager : ''
+      };
+      gaapTeam.members.push(newMember);
+      await gaapTeam.save();
+    }
+    newUser.teamId=gaapTeam._id
     // Save user
     await newUser.save();
+    console.log(gaapTeam)
+
     const mailOptions = {
       from: process.env.Email_Sender,
       to: email,

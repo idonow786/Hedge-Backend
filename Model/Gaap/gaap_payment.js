@@ -22,6 +22,9 @@ const gaappaymentSchema = new Schema({
     ref: 'GaapProject',
     required: true
   },
+  teamId: {
+    type: String,
+  },
   amount: {
     type: Number,
     required: true,

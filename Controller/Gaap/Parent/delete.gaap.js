@@ -15,14 +15,13 @@ const deleteUser = async (req, res) => {
         if (!userToDelete) {
             return res.status(404).json({ message: 'User not found' });
         }
-
-
+        console.log(req.role)
         if (req.role !== 'Parent User' ) {
             return res.status(403).json({ 
                 message: 'You do not have permission to delete this user. Only Parent Users or the user who created this account can delete it.' 
             });
         }
-
+    
         // Proceed with deletion
         const deletedUser = await GaapUser.findByIdAndDelete(userId);
 

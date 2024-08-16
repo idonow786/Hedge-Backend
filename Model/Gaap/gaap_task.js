@@ -16,6 +16,9 @@ const gaaptaskSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'GaapProject',
   },
+  teamId: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ['Pending', 'In Progress', 'Completed', 'On Hold'],

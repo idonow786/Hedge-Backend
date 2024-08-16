@@ -12,6 +12,9 @@ const gaapreportSchema = new Schema({
     enum: ['Daily', 'Monthly', 'Quarterly', 'Yearly'],
     required: true
   },
+  teamId: {
+    type: String,
+  },
   content: {
     type: String,
     required: true

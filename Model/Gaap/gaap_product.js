@@ -26,6 +26,9 @@ const gaapProjectProductSchema = new Schema({
     type: String,
     required: true
   },
+  teamId: {
+    type: String,
+  },
   priceType: {
     type: String,
     enum: ['Fixed Price', 'Variable Price'],

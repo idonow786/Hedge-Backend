@@ -16,6 +16,9 @@ const dailyPerformanceReportSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  teamId: {
+    type: String,
+  },
   invoicesCreated: {
     type: Number,
     required: true,

@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const Payment = require('../../Model/Payment');
-
+const GaapTeam = require('../../Model/Gaap/gaap_team');
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 
@@ -48,7 +48,9 @@ const signup = async (req, res) => {
       });
 
       savedUser = await newUser.save();
-    } else if (CompanyType === 'Gaap') {
+    }
+
+    else if (CompanyType === 'Gaap') {
       existingUser = await GaapUser.findOne({ email: email });
       if (existingUser) {
         return res.status(400).json({ message: 'GAAP User already exists' });
@@ -79,7 +81,22 @@ const signup = async (req, res) => {
         CompanyActivity: CompanyActivity
       });
 
-      await newBusiness.save();
+      const savedBusiness = await newBusiness.save();
+
+      const newTeam = new GaapTeam({
+        teamName: `${businessName} Team`,
+        businessId: savedBusiness._id,
+        parentUser: {
+          userId: savedUser._id,
+          name: username,
+          role: 'Parent User'
+        },
+        members: []
+      });
+
+      await newTeam.save();
+
+      console.log(newTeam)
     } else {
       existingUser = await Admin.findOne({ Email: email });
       if (existingUser) {

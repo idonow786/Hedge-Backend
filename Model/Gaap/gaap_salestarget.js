@@ -11,6 +11,9 @@ const gaapSalesTargetSchema = new Schema({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true }
   },
+  teamId: {
+    type: String,
+  },
   targetDetails: {
     officeVisits: { type: Number },
     closings: { type: Number }

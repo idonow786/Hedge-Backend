@@ -15,6 +15,9 @@ const gaapCommentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    teamId: {
+        type: String,
+      },
     type: {
         type: String,
         enum: ['comment', 'instruction', 'progress_update'],
