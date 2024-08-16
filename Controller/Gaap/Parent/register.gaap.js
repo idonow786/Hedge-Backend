@@ -27,6 +27,7 @@ const registerUser = async (req, res) => {
       fullName,
       role,
       department,
+      companyActivity
     } = req.body;
 
     // if (req.role !== 'admin') {
@@ -51,6 +52,7 @@ const registerUser = async (req, res) => {
       role,
       manager,
       managerType,
+      companyActivity,
       department,
       createdBy:req.adminId
     });

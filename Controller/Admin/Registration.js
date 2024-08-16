@@ -633,7 +633,8 @@ const signin = async (req, res) => {
         email: user.email || user.Email || user.contactInformation.email,
         role: user.role,
         fullName: user.fullName,
-        department: user.department || ''
+        department: user.department || '',
+        companyActivity: user.companyActivity || ''
       }
     };
 

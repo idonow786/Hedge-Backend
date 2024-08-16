@@ -42,6 +42,9 @@ const gappuserSchema = new Schema({
   profilePhoto: {
     type: String
   },
+  companyActivity: {
+    type: String
+  },
   address: {
     type: String
   },
