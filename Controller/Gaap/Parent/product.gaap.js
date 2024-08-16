@@ -37,7 +37,7 @@ const productController = {
           ]
         },
         { 
-          auditType: 'R.Y', 
+          auditType: 'ICV', 
           data: [
             { turnover: '0 - 3 million', amount: 3500, timeDeadline: '12 days' },
             { turnover: '3 - 5 million', amount: 4000, timeDeadline: '12 days' },
@@ -66,7 +66,7 @@ const productController = {
           ]
         },
         { 
-          auditType: 'R.Y+external Audit', 
+          auditType: 'ICV+external Audit', 
           data: [
             { turnover: '0 - 3 million', amount: 6000, timeDeadline: '20 days' },
             { turnover: '3 - 5 million', amount: 6500, timeDeadline: '20 days' },
