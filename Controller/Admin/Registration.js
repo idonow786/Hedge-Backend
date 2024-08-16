@@ -22,6 +22,7 @@ const transporter = nodemailer.createTransport(
 const signup = async (req, res) => {
   try {
     const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
+    console.log('company Type : ',CompanyType)
 
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
@@ -49,8 +50,8 @@ const signup = async (req, res) => {
 
       savedUser = await newUser.save();
     }
-
     else if (CompanyType === 'Gaap') {
+      console.log('working gaap')
       existingUser = await GaapUser.findOne({ email: email });
       if (existingUser) {
         return res.status(400).json({ message: 'GAAP User already exists' });
@@ -97,7 +98,7 @@ const signup = async (req, res) => {
 
       await newTeam.save();
 
-      console.log(newTeam)
+      console.log("team ",newTeam)
     } else {
       existingUser = await Admin.findOne({ Email: email });
       if (existingUser) {
