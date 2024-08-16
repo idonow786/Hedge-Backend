@@ -271,7 +271,7 @@ const updateUser = async (req, res) => {
       if (!user) {
         return res.status(404).json({ message: 'Super Admin not found' });
       }
-    } else if (CompanyType === 'Gaap') {
+    } else if (CompanyType === 'gaap') {
       user = await GaapUser.findById(id);
       if (!user) {
         return res.status(404).json({ message: 'GAAP User not found' });
@@ -424,7 +424,7 @@ const deleteUser = async (req, res) => {
       }
       userEmail = user.Email;
       userName = user.Name;
-    } else if (CompanyType === 'Gaap') {
+    } else if (CompanyType === 'gaap') {
       user = await GaapUser.findByIdAndDelete(id);
       if (!user) {
         return res.status(404).json({ message: 'GAAP User not found' });
