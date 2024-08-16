@@ -22,7 +22,6 @@ const transporter = nodemailer.createTransport(
 const signup = async (req, res) => {
   try {
     const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
-    console.log('company Type : ',CompanyType)
 
     if (role !== 'superadmin') {
       if (req.role !== 'superadmin') {
@@ -411,7 +410,7 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const { id, role, CompanyType } = req.body;
+    const { id, role, CompanyActivity } = req.body;
 
     let user;
     let userEmail;
