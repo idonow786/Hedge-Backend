@@ -27,6 +27,9 @@ const getProjectsAll = async (req, res) => {
                 Progress, 
                 appliedDiscount,
                 assignedTo,
+                salesManagerApproval,
+                customerApproval,
+                financialApproval, 
                 salesPerson
             } = project;
 
@@ -39,6 +42,9 @@ const getProjectsAll = async (req, res) => {
                 projectType,
                 status,
                 startDate,
+                salesManagerApproval,
+                customerApproval,
+                financialApproval, 
                 endDate,
                 totalAmount,
                 assignedTo,

@@ -161,7 +161,7 @@ const getProjects = async (req, res) => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id })
                 .select('name description quantity price turnoverRange timeDeadline');
 
-            const { _id, projectName, customer, projectType, status, startDate, endDate, totalAmount, Progress } = project;
+            const { _id, projectName, customer, projectType, status, startDate, endDate,salesManagerApproval,customerApproval,financialApproval, totalAmount, Progress } = project;
             return {
                 _id,
                 projectName,
@@ -171,6 +171,9 @@ const getProjects = async (req, res) => {
                 status,
                 startDate,
                 endDate,
+                salesManagerApproval,
+                financialApproval,
+                customerApproval,
                 totalAmount,
                 assignedTo: project.assignedTo.name,
                 salesPerson: project.salesPerson.name,

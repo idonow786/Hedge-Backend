@@ -25,12 +25,22 @@ const gaapprojectSchema = new Schema({
   assignedTo: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
-    required: true
   },
   salesPerson: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
-    required: true
+  },
+  financialApproval:{
+    type:Boolean,
+    default:false
+  },
+  customerApproval:{
+    type:Boolean,
+    default:false
+  },
+  salesManagerApproval:{
+    type:Boolean,
+    default:false
   },
   startDate: {
     type: Date,
