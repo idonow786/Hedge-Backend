@@ -154,7 +154,7 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
-        if (req.role === 'Parent User') {
+        if (req.role === 'admin') {
             projects = await GaapProject.find()
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
@@ -384,7 +384,7 @@ const deleteProject = async (req, res) => {
 const getAllProjectsWithComments = async (req, res) => {
     try {
         let projects;
-        if (req.role === 'Parent User') {
+        if (req.role === 'admin') {
             projects = await GaapProject.find()
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')

@@ -86,7 +86,7 @@ const dsrController = {
             const userId = req.adminId;
             let query={}
             const { startDate, endDate } = req.query;
-            if (req.role !== 'Parent User') {
+            if (req.role !== 'admin') {
                  query = { user: userId };
             }    
             if (startDate && endDate) {

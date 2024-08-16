@@ -8,7 +8,7 @@ const gaapTeamSchema = new mongoose.Schema({
     name: { type: String, required: true },
     role: { 
       type: String, 
-      default: 'Parent User',
+      default: 'admin',
       immutable: true 
     }
   },

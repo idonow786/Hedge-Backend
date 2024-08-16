@@ -14,7 +14,7 @@ const fetchGaapUsers = async (req, res) => {
 
         let users;
 
-        if (requester.role === 'Parent User') {
+        if (requester.role === 'admin') {
             users = await GaapUser.find({}).select('-password');
         } else {
             users = await GaapUser.find({ createdBy: adminId }).select('-password');

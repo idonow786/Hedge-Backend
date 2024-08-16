@@ -16,9 +16,9 @@ const deleteUser = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         console.log(req.role)
-        if (req.role !== 'Parent User' ) {
+        if (req.role !== 'admin' ) {
             return res.status(403).json({ 
-                message: 'You do not have permission to delete this user. Only Parent Users or the user who created this account can delete it.' 
+                message: 'You do not have permission to delete this user. Only admins or the user who created this account can delete it.' 
             });
         }
     

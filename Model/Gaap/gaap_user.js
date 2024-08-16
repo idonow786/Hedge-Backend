@@ -32,7 +32,7 @@ const gappuserSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'General Manager', 'Parent User','Audit Manager','Accounting Manager','Tax Supervisor','ICV Manager','Accounting Executive','Audit Executive','Tax Executive','ICV Executive'],
+    enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'General Manager', 'admin','Audit Manager','Accounting Manager','Tax Supervisor','ICV Manager','Accounting Executive','Audit Executive','Tax Executive','ICV Executive'],
     required: true
   },
   department: {
@@ -87,7 +87,7 @@ gappuserSchema.virtual('name').get(function() {
 });
 
 gappuserSchema.methods.isManager = function() {
-  return ['Sales Manager', 'Finance Manager', 'Department Manager', 'General Manager', 'Parent User'].includes(this.role);
+  return ['Sales Manager', 'Finance Manager', 'Department Manager', 'General Manager', 'admin'].includes(this.role);
 };
 
 gappuserSchema.statics.findActive = function() {

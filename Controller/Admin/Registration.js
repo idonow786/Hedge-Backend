@@ -63,7 +63,7 @@ const signup = async (req, res) => {
         email: email,
         password: hashedPassword,
         fullName: username,
-        role: 'Parent User',
+        role: 'admin',
       });
 
       savedUser = await newUser.save();
@@ -89,7 +89,7 @@ const signup = async (req, res) => {
         parentUser: {
           userId: savedUser._id,
           name: username,
-          role: 'Parent User'
+          role: 'admin'
         },
         members: []
       });
@@ -545,7 +545,7 @@ const signin = async (req, res) => {
     // Check GAAP User
     user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
     if (user) {
-      secretKey = user.role === 'Parent User' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
+      secretKey = user.role === 'admin' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
     } else {
       // Check SuperAdmin
       user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });

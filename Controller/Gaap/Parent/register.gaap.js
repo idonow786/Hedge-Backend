@@ -29,7 +29,7 @@ const registerUser = async (req, res) => {
       department,
     } = req.body;
 
-    // if (req.role !== 'Parent User') {
+    // if (req.role !== 'admin') {
     //   return res.status(403).json({ message: 'You do not have permission to add users' });
     // }
 
