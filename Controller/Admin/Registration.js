@@ -50,7 +50,7 @@ const signup = async (req, res) => {
 
       savedUser = await newUser.save();
     }
-    else if (CompanyType === 'gaap') {
+    else if (CompanyActivity === 'gaap') {
       console.log('working gaap')
       existingUser = await GaapUser.findOne({ email: email });
       if (existingUser) {
@@ -271,7 +271,7 @@ const updateUser = async (req, res) => {
       if (!user) {
         return res.status(404).json({ message: 'Super Admin not found' });
       }
-    } else if (CompanyType === 'gaap') {
+    } else if (CompanyActivity === 'gaap') {
       user = await GaapUser.findById(id);
       if (!user) {
         return res.status(404).json({ message: 'GAAP User not found' });
@@ -424,7 +424,7 @@ const deleteUser = async (req, res) => {
       }
       userEmail = user.Email;
       userName = user.Name;
-    } else if (CompanyType === 'gaap') {
+    } else if (CompanyActivity === 'gaap') {
       user = await GaapUser.findByIdAndDelete(id);
       if (!user) {
         return res.status(404).json({ message: 'GAAP User not found' });
