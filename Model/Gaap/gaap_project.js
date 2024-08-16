@@ -84,7 +84,7 @@ const gaapprojectSchema = new Schema({
     quantity: Number,
     price: Number,
     turnoverRange: String,
-    timeDeadline: Number
+    timeDeadline: String
   }],
   tasks: [{ type: Schema.Types.ObjectId, ref: 'GaapTask' }],
 
