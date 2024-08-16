@@ -210,6 +210,9 @@ const updateProject = async (req, res) => {
             assignedToId,
             salesPersonId,
             startDate,
+            financialApproval,
+            customerApproval,
+            salesManagerApproval,
             endDate,
             status,
             pricingType,
@@ -232,15 +235,7 @@ const updateProject = async (req, res) => {
             }
         }
 
-        if (assignedToId || salesPersonId) {
-            const [assignedTo, salesPerson] = await Promise.all([
-                assignedToId ? GaapUser.findById(assignedToId) : Promise.resolve(null),
-                salesPersonId ? GaapUser.findById(salesPersonId) : Promise.resolve(null)
-            ]);
-            if ((assignedToId && !assignedTo) || (salesPersonId && !salesPerson)) {
-                return res.status(404).json({ message: 'Assigned user or sales person not found' });
-            }
-        }
+
 
         let vatCertificateUrl = existingProject.vatDetails?.vatCertificate || '';
         if (req.files && req.files.vatCertificate) {
@@ -270,6 +265,9 @@ const updateProject = async (req, res) => {
             assignedTo: assignedToId,
             salesPerson: salesPersonId,
             startDate,
+            financialApproval,
+            customerApproval,
+            salesManagerApproval,
             endDate,
             status,
             pricingType,
