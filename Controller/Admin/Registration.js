@@ -410,37 +410,31 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const { id, role, CompanyActivity } = req.body;
+    const { id, role } = req.body;
 
     let user;
     let userEmail;
     let userName;
 
+    // Determine user type and delete accordingly
     if (role === 'superadmin') {
       user = await SuperAdmin.findByIdAndDelete(id);
       if (!user) {
         return res.status(404).json({ message: 'Super Admin not found' });
       }
-      userEmail = user.Email;
-      userName = user.Name;
-    } else if (CompanyActivity === 'gaap') {
-      user = await GaapUser.findByIdAndDelete(id);
-      if (!user) {
-        return res.status(404).json({ message: 'GAAP User not found' });
-      }
-      userEmail = user.email;
-      userName = user.username;
-      await Business.findOneAndDelete({ AdminID: id });
     } else {
-      user = await Admin.findByIdAndDelete(id);
+      user = await GaapUser.findByIdAndDelete(id) || await Admin.findByIdAndDelete(id);
       if (!user) {
-        return res.status(404).json({ message: 'Admin not found' });
+        return res.status(404).json({ message: 'User not found' });
       }
-      userEmail = user.Email;
-      userName = user.Name;
       await Business.findOneAndDelete({ AdminID: id });
     }
 
+    // Extract user details for email
+    userEmail = user.Email;
+    userName = user.Name;
+
+    // Prepare email options
     const mailOptions = {
       from: process.env.Email_Sender,
       to: userEmail,
@@ -513,6 +507,7 @@ const deleteUser = async (req, res) => {
       `
     };
 
+    // Send email notification
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log('Error sending email:', error);
@@ -521,12 +516,14 @@ const deleteUser = async (req, res) => {
       }
     });
 
+    // Respond with success message
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 
