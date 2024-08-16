@@ -3,9 +3,9 @@ const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
 
 const getProjectsAll = async (req, res) => {
     try {
-        if (req.role !== 'Sales Manager') {
-            return res.status(403).json({ message: 'Access denied. Only sales manager can view projects.' });
-        }
+        // if (req.role !== 'Sales Manager') {
+        //     return res.status(403).json({ message: 'Access denied. Only sales manager can view projects.' });
+        // }
 
         const projects = await GaapProject.find()
             .populate('customer')
