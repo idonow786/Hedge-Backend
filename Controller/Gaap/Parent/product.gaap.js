@@ -193,7 +193,7 @@ const productController = {
 
   getAllFixedPriceProducts: async (req, res) => {
     try {
-      const products = await FixedPriceProduct.find({adminId:req.adminId});
+      const products = await FixedPriceProduct.find();
       res.status(200).json(products);
     } catch (error) {
       res.status(500).json({ error: 'An error occurred while fetching fixed price products' });
@@ -202,7 +202,7 @@ const productController = {
 
   getAllVariablePriceProducts: async (req, res) => {
     try {
-      const products = await VariablePriceProduct.find({adminId:req.adminId});
+      const products = await VariablePriceProduct.find();
       res.status(200).json(products);
     } catch (error) {
       res.status(500).json({ error: 'An error occurred while fetching variable price products' });
