@@ -6,8 +6,7 @@ const businessSchema = new mongoose.Schema({
     default: () => Math.floor(Math.random() * 1000000),
   },
   AdminID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
+    type: String
   },
   BusinessName: {
     type: String,

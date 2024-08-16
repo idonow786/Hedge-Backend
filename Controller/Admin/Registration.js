@@ -82,6 +82,7 @@ const signup = async (req, res) => {
       });
 
       const savedBusiness = await newBusiness.save();
+      console.log(savedBusiness)
 
       const newTeam = new GaapTeam({
         teamName: `${businessName} Team`,
@@ -128,7 +129,6 @@ const signup = async (req, res) => {
 
       await newBusiness.save();
     }
-
     const mailOptions = {
       from: process.env.Email_Sender,
       to: email,
@@ -544,8 +544,10 @@ const signin = async (req, res) => {
 
     // Check GAAP User
     user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+    console.log(user)
     if (user) {
       secretKey = user.role === 'admin' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
+      business = await Business.findOne({ AdminID: user._id });
     } else {
       // Check SuperAdmin
       user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
@@ -558,6 +560,7 @@ const signin = async (req, res) => {
           secretKey = process.env.JWT_SECRET;
           // Find associated business for Admin
           business = await Business.findOne({ AdminID: user._id });
+          console.log("yes")
         } else {
           // Check Vendor
           user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
