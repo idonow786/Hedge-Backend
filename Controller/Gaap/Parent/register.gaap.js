@@ -58,6 +58,7 @@ const registerUser = async (req, res) => {
 
 
     // Find the GAAP team and update it
+    console.log('gaap team ', await GaapTeam.find())
     const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
     if (gaapTeam) {
       const newMember = {
@@ -69,11 +70,11 @@ const registerUser = async (req, res) => {
       };
       gaapTeam.members.push(newMember);
       await gaapTeam.save();
+      console.log(gaapTeam)
+      newUser.teamId=gaapTeam._id
+      await newUser.save();
     }
-    newUser.teamId=gaapTeam._id
     // Save user
-    await newUser.save();
-    console.log(gaapTeam)
 
     const mailOptions = {
       from: process.env.Email_Sender,
