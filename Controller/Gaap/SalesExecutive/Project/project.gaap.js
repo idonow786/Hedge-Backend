@@ -13,8 +13,6 @@ const createProject = async (req, res) => {
             customerId,
             projectType,
             department,
-            assignedToId,
-            salesPersonId,
             startDate,
             endDate,
             status,
@@ -26,21 +24,13 @@ const createProject = async (req, res) => {
             approvalComments,
         } = req.body;
 
-        if (!projectName || !customerId || !projectType || !department || !assignedToId || !salesPersonId || !startDate || !pricingType || !totalAmount || !products || !Array.isArray(products)) {
+        if (!projectName || !customerId || !projectType || !department|| !startDate || !pricingType || !totalAmount || !products || !Array.isArray(products)) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
         const customer = await GaapCustomer.findById(customerId);
         if (!customer) {
             return res.status(404).json({ message: 'Customer not found' });
-        }
-
-        const [assignedTo, salesPerson] = await Promise.all([
-            GaapUser.findById(assignedToId),
-            GaapUser.findById(salesPersonId)
-        ]);
-        if (!assignedTo || !salesPerson) {
-            return res.status(404).json({ message: 'Assigned user or sales person not found' });
         }
 
         let vatCertificateUrl = '';
@@ -67,8 +57,7 @@ const createProject = async (req, res) => {
             customer: customerId,
             projectType,
             department,
-            assignedTo: assignedToId,
-            salesPerson: salesPersonId,
+            assignedTo: req.adminId,
             startDate,
             endDate,
             status,
