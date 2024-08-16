@@ -72,9 +72,9 @@ const registerUser = async (req, res) => {
       await gaapTeam.save();
       console.log(gaapTeam)
       newUser.teamId=gaapTeam._id
-      await newUser.save();
     }
     // Save user
+    await newUser.save();
 
     const mailOptions = {
       from: process.env.Email_Sender,

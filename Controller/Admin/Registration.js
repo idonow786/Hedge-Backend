@@ -544,6 +544,7 @@ const signin = async (req, res) => {
     let business = null;
 
     // Check GAAP User
+    console.log(await GaapUser.find())
     user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
     console.log(user)
     if (user) {
