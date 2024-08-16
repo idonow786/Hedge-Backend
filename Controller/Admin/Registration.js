@@ -50,7 +50,7 @@ const signup = async (req, res) => {
 
       savedUser = await newUser.save();
     }
-    else if (CompanyType === 'Gaap') {
+    else if (CompanyType === 'gaap') {
       console.log('working gaap')
       existingUser = await GaapUser.findOne({ email: email });
       if (existingUser) {
