@@ -6,9 +6,9 @@ const getUnpaidProjects = async (req, res) => {
   try {
     const projects = await GaapProject.find({
       status: 'In Progress',
-    }).populate('customer', 'name')
-      .populate('assignedTo', 'name')
-      .populate('salesPerson', 'name')
+    }).populate('customer')
+      .populate('assignedTo')
+      .populate('salesPerson')
       .lean();
       console.log(projects)
       const projectsWithPayments = await Promise.all(projects.map(async (project) => {
@@ -125,9 +125,9 @@ const getProjectsWithPaymentStatus = async (req, res) => {
   try {
     const projects = await GaapProject.find({
       status: { $in: ['Approved', 'In Progress'] }
-    }).populate('customer', 'name')
-      .populate('assignedTo', 'name')
-      .populate('salesPerson', 'name');
+    }).populate('customer')
+      .populate('assignedTo')
+      .populate('salesPerson');
 
     const projectsWithPayments = await Promise.all(projects.map(async (project) => {
       const payment = await ProjectPayment.findOne({ project: project._id })
@@ -137,9 +137,9 @@ const getProjectsWithPaymentStatus = async (req, res) => {
         return {
           projectId: project._id,
           projectName: project.projectName,
-          customerName: project.customer.name,
-          assignedTo: project.assignedTo.name,
-          salesPerson: project.salesPerson.name,
+          customerName: project.customer,
+          assignedTo: project.assignedTo,
+          salesPerson: project.salesPerson,
           totalAmount: payment ? payment.totalAmount : project.totalAmount,
           paidAmount: payment ? payment.paidAmount : 0,
           unpaidAmount: payment ? payment.unpaidAmount : project.totalAmount,

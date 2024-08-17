@@ -99,7 +99,6 @@ const getAllProjectsWithPayments = async (req, res) => {
     }
 };
 
-// Helper function to determine invoice status
 const getInvoiceStatus = (invoices, totalAmount) => {
     if (!invoices || invoices.length === 0) return 'Not Invoiced';
     const totalInvoiced = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
@@ -108,7 +107,6 @@ const getInvoiceStatus = (invoices, totalAmount) => {
     return 'Not Invoiced';
 };
 
-// Helper function to assign priority to project statuses for sorting
 const getStatusPriority = (status) => {
     const priorities = {
         'In Progress': 1,
@@ -118,7 +116,7 @@ const getStatusPriority = (status) => {
         'Completed': 5,
         'Cancelled': 6
     };
-    return priorities[status] || 999; // Default high number for unknown statuses
+    return priorities[status] || 999; 
 };
 
 module.exports = { getAllProjectsWithPayments };
