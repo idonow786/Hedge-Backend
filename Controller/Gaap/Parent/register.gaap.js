@@ -72,8 +72,9 @@ const registerUser = async (req, res) => {
       };
       gaapTeam.members.push(newMember);
       await gaapTeam.save();
-      console.log(gaapTeam)
+      console.log('GaapTeam ',gaapTeam)
       newUser.teamId=gaapTeam._id
+      console.log("newUser ",newUser)
     }
     // Save user
     await newUser.save();

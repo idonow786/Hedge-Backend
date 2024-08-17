@@ -58,7 +58,7 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const admins = await Admin.find();
     const superAdmins = await SuperAdmin.find();
-    const gaapUsers = await GaapUser.find();
+    const gaapUsers = await GaapUser.find({role:'admin'});
 
     const users = [...admins, ...superAdmins, ...gaapUsers];
 
