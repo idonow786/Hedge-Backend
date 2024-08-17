@@ -58,7 +58,7 @@ const getAllUsersWithBusinesses = async (req, res) => {
 
     const admins = await Admin.find();
     const superAdmins = await SuperAdmin.find();
-    const gaapUsers = await GaapUser.find({role:'admin'});
+    const gaapUsers = await GaapUser.find({role: 'admin'});
 
     const users = [...admins, ...superAdmins, ...gaapUsers];
 
@@ -74,12 +74,38 @@ const getAllUsersWithBusinesses = async (req, res) => {
         businesses = await Business.find({ AdminID: user._id });
       }
 
-      const userObject = user.toObject();
+      let userObject;
 
-      // Add GAAP-specific fields if it's a GAAP user
       if (user.constructor.modelName === 'GaapUser') {
-        userObject.isActive = user.isActive;
-        userObject.lastLogin = user.lastLogin;
+        // Restructure GaapUser to match Admin structure
+        userObject = {
+          _id: user._id,
+          ID: Math.floor(Math.random() * 1000000), 
+          Name: user.fullName,
+          Email: user.email,
+          PicUrl: user.profilePhoto,
+          Password: user.password, 
+          Gender: 'Other',
+          Otp: '', 
+          role: user.role,
+          OtpVerified: false,
+          isActive: user.isActive,
+          lastLogin: user.lastLogin,
+          // // Additional GaapUser specific fields
+          // username: user.username,
+          // manager: user.manager,
+          // managerType: user.managerType,
+          // teamId: user.teamId,
+          // department: user.department,
+          // companyActivity: user.companyActivity,
+          // address: user.address,
+          // nationality: user.nationality,
+          // phoneNumber: user.phoneNumber,
+          // createdBy: user.createdBy,
+          // targets: user.targets
+        };
+      } else {
+        userObject = user.toObject();
       }
 
       return {
