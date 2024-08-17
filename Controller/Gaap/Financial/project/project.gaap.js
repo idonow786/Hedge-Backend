@@ -1,21 +1,16 @@
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
-const mongoose=require('mongoose')
-
+const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
+const mongoose = require('mongoose');
 
 const getAllProjectsWithPayments = async (req, res) => {
     try {
         // Fetch all projects and populate relevant fields
         const projectQuery = GaapProject.find()
             .populate('customer', 'name companyName')
-            .populate('assignedTo', 'name')
-            .populate('salesPerson', 'name')
-            .populate({
-                path: 'products.product',
-                model: 'GaapProjectProduct',
-                select: 'name'
-            });
+            .populate('assignedTo')
+            .populate('salesPerson');
 
         const projects = await projectQuery.lean();
 
@@ -35,10 +30,14 @@ const getAllProjectsWithPayments = async (req, res) => {
             invoiceMap.get(invoice.project.toString()).push(invoice);
         });
 
-        // Combine project data with payment and invoice data
-        const projectsWithPayments = projects.map(project => {
+        // Combine project data with payment, invoice, and product data
+        const projectsWithPayments = await Promise.all(projects.map(async (project) => {
             const payment = paymentMap.get(project._id.toString());
             const projectInvoices = invoiceMap.get(project._id.toString()) || [];
+            
+            // Fetch project products
+            const projectProducts = await GaapProjectProduct.find({ project: project._id }).lean();
+
             return {
                 ...project,
                 payment: payment ? {
@@ -59,9 +58,19 @@ const getAllProjectsWithPayments = async (req, res) => {
                     status: invoice.status,
                     amountDue: invoice.total - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + payment.amount, 0) : 0)
                 })),
-                invoiceStatus: getInvoiceStatus(projectInvoices, project.totalAmount)
+                invoiceStatus: getInvoiceStatus(projectInvoices, project.totalAmount),
+                products: projectProducts.map(product => ({
+                    name: product.name,
+                    category: product.category,
+                    subCategory: product.subCategory,
+                    priceType: product.priceType,
+                    price: product.price,
+                    quantity: product.quantity,
+                    timeDeadline: product.timeDeadline,
+                    turnoverRange: product.turnoverRange
+                }))
             };
-        });
+        }));
 
         // Sort projects based on status and start date
         projectsWithPayments.sort((a, b) => {
