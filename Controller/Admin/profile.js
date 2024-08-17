@@ -84,6 +84,7 @@ const getAllUsersWithBusinesses = async (req, res) => {
           Name: user.fullName,
           Email: user.email,
           PicUrl: user.profilePhoto,
+          companyActivity:'gaap',
           Password: user.password, 
           Gender: 'Other',
           Otp: '', 
