@@ -79,7 +79,7 @@ const gaapprojectSchema = new Schema({
   products: [{
     product: {
       type: Schema.Types.ObjectId,
-      ref: 'GaapProduct'
+      ref: 'GaapProjectProduct'
     },
     quantity: Number,
     price: Number,

@@ -2,7 +2,7 @@ const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 
-const getUnpaidProjects = async (req, res) => {
+const getProjectsWithInvoiceStatus = async (req, res) => {
   try {
     const projects = await GaapProject.find({
       status: 'In Progress',
@@ -10,31 +10,55 @@ const getUnpaidProjects = async (req, res) => {
       .populate('assignedTo')
       .populate('salesPerson')
       .lean();
-      console.log(projects)
-      const projectsWithPayments = await Promise.all(projects.map(async (project) => {
-        const payment = await ProjectPayment.findOne({ project: project._id })
+
+    const projectsWithInvoices = await Promise.all(projects.map(async (project) => {
+      const payment = await ProjectPayment.findOne({ project: project._id })
         .populate('invoices')
         .lean();
-        
-        if (!payment || payment.paymentStatus !== 'Fully Paid') {
-          return {
-            ...project,
-            payment: payment || { paymentStatus: 'Not Started', paidAmount: 0, unpaidAmount: project.totalAmount },
-            unpaidInvoices: payment ? payment.invoices.filter(inv => inv.status !== 'Paid') : []
-          };
+
+      const invoices = await GaapInvoice.find({ project: project._id }).lean();
+
+      const invoiceStatusSummary = {
+        Draft: 0,
+        Sent: 0,
+        Paid: 0,
+        Overdue: 0,
+        Cancelled: 0
+      };
+
+      let totalInvoiced = 0;
+      let totalPaid = 0;
+
+      invoices.forEach(invoice => {
+        invoiceStatusSummary[invoice.status]++;
+        totalInvoiced += invoice.total;
+        if (invoice.status === 'Paid') {
+          totalPaid += invoice.total;
         }
-        return null;
-      }));
-      console.log(projectsWithPayments)
+      });
 
-    const unpaidProjects = projectsWithPayments.filter(Boolean);
+      return {
+        ...project,
+        payment: payment || { 
+          paymentStatus: 'Not Started', 
+          paidAmount: totalPaid, 
+          unpaidAmount: project.totalAmount - totalPaid 
+        },
+        invoices: invoices,
+        invoiceStatusSummary: invoiceStatusSummary,
+        totalInvoiced: totalInvoiced,
+        totalPaid: totalPaid,
+        remainingAmount: project.totalAmount - totalPaid
+      };
+    }));
 
-    res.status(200).json(unpaidProjects);
+    res.status(200).json(projectsWithInvoices);
   } catch (error) {
-    console.error('Error fetching unpaid projects:', error);
-    res.status(500).json({ message: 'Error fetching unpaid projects', error: error.message });
+    console.error('Error fetching projects with invoice status:', error);
+    res.status(500).json({ message: 'Error fetching projects with invoice status', error: error.message });
   }
 };
+
 
 const updatePayment = async (req, res) => {
   try {
@@ -165,4 +189,4 @@ const getProjectsWithPaymentStatus = async (req, res) => {
   }
 };
 
-module.exports={getUnpaidProjects,updatePayment,getProjectsWithPaymentStatus}
+module.exports={getProjectsWithInvoiceStatus,updatePayment,getProjectsWithPaymentStatus}
