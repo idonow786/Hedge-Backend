@@ -618,7 +618,7 @@ const signin = async (req, res) => {
     // Update last login for GAAP users
     if (user.constructor.modelName === 'GaapUser') {
       user.lastLogin = new Date();
-      user.companyActivity='gaap'
+      user.companyActivity='Gaap'
       await user.save();
     }
 
@@ -635,7 +635,7 @@ const signin = async (req, res) => {
         role: user.role,
         fullName: user.fullName,
         department: user.department || '',
-        companyActivity: user.constructor.modelName === 'GaapUser' ? 'gaap' : (user.companyActivity || '')
+        CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : (user.companyActivity || '')
       }
     };
 
