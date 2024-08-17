@@ -175,8 +175,8 @@ const getProjects = async (req, res) => {
                 financialApproval,
                 customerApproval,
                 totalAmount,
-                assignedTo: project.assignedTo.name || '',
-                salesPerson: project.salesPerson.name || '',
+                assignedTo: project.assignedTo || '',
+                salesPerson: project.salesPerson || '',
                 products: projectProducts.map(prod => ({
                     name: prod.name,
                     description: prod.description,
