@@ -5,7 +5,6 @@ const gaapProjectProductSchema = new Schema({
   project: {
     type: Schema.Types.ObjectId,
     ref: 'GaapProject',
-    required: true
   },
   baseProduct: {
     type: Schema.Types.ObjectId,
@@ -13,30 +12,25 @@ const gaapProjectProductSchema = new Schema({
   },
   name: {
     type: String,
-    required: true
   },
   category: {
     type: String,
-    required: true
   },
   subCategory: {
     type: String
   },
   department: {
     type: String,
-    required: true
   },
   teamId: {
     type: String,
   },
   priceType: {
     type: String,
-    enum: ['Fixed Price', 'Variable Price'],
-    required: true
+    enum: ['Fixed', 'Variable'],
   },
   price: {
     type: Number,
-    required: true
   },
   quantity: {
     type: Number,
@@ -44,7 +38,7 @@ const gaapProjectProductSchema = new Schema({
     default: 1
   },
   timeDeadline: {
-    type: Date,
+    type: String,
     required: function() {
       return this.priceType === 'Fixed Price';
     }

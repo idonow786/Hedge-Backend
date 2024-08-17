@@ -124,7 +124,7 @@ projectPaymentSchema.methods.updatePaymentStatus = function() {
 projectPaymentSchema.pre('save', function(next) {
   this.lastUpdatedBy = this.modifiedBy;
   this.updatePaymentStatus();
-  next();
+  next();ProjectPayment
 });
 
 const ProjectPayment = mongoose.model('ProjectPayment', projectPaymentSchema);
