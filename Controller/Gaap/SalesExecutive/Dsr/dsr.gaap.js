@@ -86,7 +86,7 @@ const dsrController = {
             const userId = req.adminId;
             let query={}
             const { startDate, endDate } = req.query;
-            if (req.role !== 'admin') {
+            if (req.role !== 'admin'||req.role!=='General Manager') {
                  query = { user: userId };
             }    
             if (startDate && endDate) {

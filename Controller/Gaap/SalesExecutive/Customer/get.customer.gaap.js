@@ -4,7 +4,7 @@ const getAllCustomersByAdmin = async (req, res) => {
   try {
     const adminId = req.adminId;
     let customers;
-    if (req.role !== 'admin') {
+    if (req.role !== 'admin'||req.role!=='General Manager') {
       customers = await GaapCustomer.find({ registeredBy: adminId })
         .sort({ createdAt: -1 })
         .lean();

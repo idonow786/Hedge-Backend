@@ -27,7 +27,12 @@ const createReport = async (req, res) => {
 
 const getAllReports = async (req, res) => {
   try {
-    const reports = await DailyPerformanceReport.find({createdBy:req.adminId}).sort({ date: -1 });
+    let reports;
+    if(req.role !== 'admin'||req.role!=='General Manager'){
+       reports = await DailyPerformanceReport.find({createdBy:req.adminId}).sort({ date: -1 });
+    }else{
+       reports = await DailyPerformanceReport.find().sort({ date: -1 });
+    }
     res.status(200).json(reports);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reports', error: error.message });
