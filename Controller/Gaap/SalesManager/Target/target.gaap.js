@@ -38,39 +38,54 @@ const addSalesTarget = async (req, res) => {
 // Get Sales Targets and DSRs
 const getManagedUsersData = async (req, res) => {
     try {
-        const adminId = req.adminId; 
+        const adminId = req.adminId;
+        const userRole = req.role; 
         let dsrs = null;
-        const userRole = req.role;
-        let managedUsers;
-        if (userRole !== 'admin' && userRole !== 'General Manager') {
+        let managedUsers = [];
+        let userIds = [];
+  
+        if (userRole === 'admin' || userRole === 'General Manager') {
+            managedUsers = await GaapUser.find({});
+            userIds = managedUsers.map(user => user._id);
+        } else {
+            // For other roles, fetch only managed users
             managedUsers = await GaapUser.find({ createdBy: adminId });
+            userIds = managedUsers.map(user => user._id);
         }
-        else{
-           managedUsers = await GaapUser.find();
+  
+        // Fetch DSRs
+        if (userIds.length) {
+            if (userRole === 'admin' || userRole === 'General Manager') {
+                dsrs = await GaapDsr.find().populate('user', 'fullName');
+            } else {
+                dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
+            }
         }
-        if (managedUsers.length) {
-            const userIds = managedUsers.map(user => user._id);
-            dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
+  
+        // Fetch Sales Targets
+        let salesTargets;
+        if (userRole === 'admin' || userRole === 'General Manager') {
+            salesTargets = await GaapSalesTarget.find();
+        } else {
+            salesTargets = await GaapSalesTarget.find({ 
+                $or: [
+                    { createdBy: adminId },
+                    { assignedTo: { $in: [adminId, ...userIds] } }
+                ]
+            })
         }
-
-        const salesTargets = await GaapSalesTarget.find({ 
-            $or: [
-                { createdBy: adminId },
-                { assignedTo: { $in: [adminId, ...managedUsers.map(user => user._id)] } }
-            ]
-        }).populate('assignedTo', 'fullName');
-
+  
         const response = {
             dsrs,
             salesTargets
         };
-
+  
         res.status(200).json({ message: 'Data fetched successfully', data: response });
     } catch (error) {
         console.error('Error fetching managed users data:', error);
         res.status(500).json({ message: 'Server error while fetching data' });
     }
-};
+  };
 
 // Update Sales Target
 const updateSalesTarget = async (req, res) => {
