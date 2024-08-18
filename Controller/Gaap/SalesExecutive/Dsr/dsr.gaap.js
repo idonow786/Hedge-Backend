@@ -4,10 +4,10 @@ const dsrController = {
     // Add a new DSR
     addDsr: async (req, res) => {
         try {
-            const {  date, officeVisits, cardsCollected, meetings, proposals } = req.body;
+            const { date, officeVisits, cardsCollected, meetings, proposals } = req.body;
 
             const newDsr = new GaapDsr({
-                user:req.adminId,
+                user: req.adminId,
                 date: new Date(date),
                 officeVisits,
                 cardsCollected,
@@ -84,31 +84,34 @@ const dsrController = {
     getAllDsrForUser: async (req, res) => {
         try {
             const userId = req.adminId;
-            let query={}
+            const userRole = req.role;
+            let query = {};
             const { startDate, endDate } = req.query;
-            if (req.role !== 'admin'||req.role!=='General Manager') {
-                 query = { user: userId };
-            }    
+
+            if (userRole !== 'admin' && userRole !== 'General Manager') {
+                query.user = userId;
+            }
+    
             if (startDate && endDate) {
                 query.date = {
                     $gte: new Date(startDate),
                     $lte: new Date(endDate)
                 };
             }
-    
+
             const dsrs = await GaapDsr.find(query)
                 .sort({ date: -1 })
                 .populate('user', 'name');
-    
+
             if (dsrs.length === 0) {
-                return res.status(404).json({ message: 'No DSRs found for this user' });
+                return res.status(404).json({ message: 'No DSRs found' });
             }
-    
+
             res.json(dsrs);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching DSRs', error: error.message });
         }
-    }    
+    }
 };
 
 module.exports = dsrController;
