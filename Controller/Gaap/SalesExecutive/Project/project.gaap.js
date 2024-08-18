@@ -24,7 +24,7 @@ const createProject = async (req, res) => {
             approvalComments,
         } = req.body;
 
-        if (!projectName || !customerId || !projectType || !department|| !startDate || !pricingType || !totalAmount || !products) {
+        if (!projectName || !customerId || !projectType || !department || !startDate || !pricingType || !totalAmount || !products) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -143,7 +143,7 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
-        if (req.role === 'admin') {
+        if (req.role === 'admin' || req.role === 'General Manager') {
             projects = await GaapProject.find()
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
@@ -160,21 +160,21 @@ const getProjects = async (req, res) => {
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id });
 
-            const { 
-                _id, 
-                projectName, 
-                customer, 
-                projectType, 
-                status, 
-                startDate, 
-                endDate, 
-                totalAmount, 
-                Progress, 
+            const {
+                _id,
+                projectName,
+                customer,
+                projectType,
+                status,
+                startDate,
+                endDate,
+                totalAmount,
+                Progress,
                 appliedDiscount,
                 assignedTo,
                 salesManagerApproval,
                 customerApproval,
-                financialApproval, 
+                financialApproval,
                 salesPerson
             } = project;
 
@@ -189,7 +189,7 @@ const getProjects = async (req, res) => {
                 startDate,
                 salesManagerApproval,
                 customerApproval,
-                financialApproval, 
+                financialApproval,
                 endDate,
                 totalAmount,
                 assignedTo,
@@ -244,6 +244,7 @@ const updateProject = async (req, res) => {
             appliedDiscount,
             discountApprovedById,
             products,
+            approvalComments,
             vatDetails
         } = req.body;
 
@@ -258,8 +259,6 @@ const updateProject = async (req, res) => {
                 return res.status(404).json({ message: 'Customer not found' });
             }
         }
-
-
 
         let vatCertificateUrl = existingProject.vatDetails?.vatCertificate || '';
         if (req.files && req.files.vatCertificate) {
@@ -296,7 +295,6 @@ const updateProject = async (req, res) => {
             status,
             pricingType,
             totalAmount,
-
             vatDetails: {
                 ...vatDetails,
                 vatCertificate: vatCertificateUrl
@@ -304,6 +302,50 @@ const updateProject = async (req, res) => {
             documents: updatedDocuments,
             lastUpdatedBy: req.adminId
         };
+
+        const notificationsToCreate = [];
+
+        // Check for important changes and create notifications
+        if (financialApproval !== existingProject.financialApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
+                teamId: existingProject.teamId
+            });
+        }
+
+        if (customerApproval !== existingProject.customerApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+                teamId: existingProject.teamId
+            });
+        }
+
+        if (salesManagerApproval !== existingProject.salesManagerApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+                teamId: existingProject.teamId
+            });
+        }
+
+        if (Progress !== existingProject.Progress) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} progress updated to ${Progress}%.`,
+                teamId: existingProject.teamId
+            });
+        }
+
+        if (status !== existingProject.status) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} status changed to ${status}.`,
+                teamId: existingProject.teamId
+            });
+        }
+
         if (req.role === 'Sales Manager') {
             if (approvalComments) {
                 updateData.approvals = [
@@ -315,11 +357,21 @@ const updateProject = async (req, res) => {
                         comments: approvalComments
                     }
                 ];
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Sales Manager added approval comments for project ${projectName}.`,
+                    teamId: existingProject.teamId
+                });
             }
 
             if (appliedDiscount > 0) {
                 updateData.appliedDiscount = appliedDiscount;
                 updateData.discountApprovedBy = req.adminId;
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
+                    teamId: existingProject.teamId
+                });
             }
         }
 
@@ -351,7 +403,16 @@ const updateProject = async (req, res) => {
 
             updatedProject.products = projectProducts;
             await updatedProject.save();
+
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Products updated for project ${projectName}.`,
+                teamId: existingProject.teamId
+            });
         }
+
+        // Create all notifications
+        await GaapNotification.insertMany(notificationsToCreate);
 
         res.json(updatedProject);
     } catch (error) {
@@ -359,6 +420,7 @@ const updateProject = async (req, res) => {
         res.status(500).json({ message: 'Error updating project', error: error.message });
     }
 };
+
 
 
 
