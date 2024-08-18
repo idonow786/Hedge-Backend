@@ -256,6 +256,7 @@ const updateProject = async (req, res) => {
         }
 
         if (customerId) {
+            console.log(await GaapCustomer.find())
             const customer = await GaapCustomer.findById(customerId);
             if (!customer) {
                 return res.status(404).json({ message: 'Customer not found' });

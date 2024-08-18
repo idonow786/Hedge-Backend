@@ -43,6 +43,10 @@ const FinanceGaapRoute=require('./Route/Gaap/finance.gaap')
 const departmentGaapRoute=require('./Route/Gaap/department.gaap') 
 
 
+const CommentGaapRoute=require('./Route/Gaap/comment.gaap') 
+
+
+
 
 
 // Connect to MongoDB
@@ -99,6 +103,7 @@ app.use('/api/gaap/sales/executive',salesExecutiveGaapRoute)
 app.use('/api/gaap/sales/manager',salesManagerGaapRoute)
 app.use('/api/gaap/sales/finance',FinanceGaapRoute)
 app.use('/api/gaap/sales/department',departmentGaapRoute)
+app.use('/api/gaap/comment',CommentGaapRoute)
 
 
 // Error handling middleware

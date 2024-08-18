@@ -20,7 +20,6 @@ const gaapCommentSchema = new mongoose.Schema({
       },
     type: {
         type: String,
-        enum: ['comment', 'instruction', 'progress_update'],
         required: true
     },
     attachments: [{
