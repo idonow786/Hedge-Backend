@@ -5,6 +5,8 @@ const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const { uploadFileToFirebase } = require('../../../../Firebase/uploadFileToFirebase');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
+const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
+
 
 const createProject = async (req, res) => {
     try {
@@ -305,48 +307,44 @@ const updateProject = async (req, res) => {
 
         const notificationsToCreate = [];
 
-        // Check for important changes and create notifications
-        if (financialApproval !== existingProject.financialApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        if (customerApproval !== existingProject.customerApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        if (salesManagerApproval !== existingProject.salesManagerApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        if (Progress !== existingProject.Progress) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} progress updated to ${Progress}%.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        if (status !== existingProject.status) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} status changed to ${status}.`,
-                teamId: existingProject.teamId
-            });
-        }
-
         if (req.role === 'Sales Manager') {
+            // Check for important changes and create notifications
+            if (financialApproval !== existingProject.financialApproval) {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
+                    teamId: existingProject.teamId
+                });
+            }
+
+            if (customerApproval !== existingProject.customerApproval) {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+                });
+            }
+
+            if (salesManagerApproval !== existingProject.salesManagerApproval) {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+                });
+            }
+
+            if (Progress !== existingProject.Progress) {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Project ${projectName} progress updated to ${Progress}%.`,
+                });
+            }
+
+            if (status !== existingProject.status) {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Project ${projectName} status changed to ${status}.`,
+                });
+            }
+
             if (approvalComments) {
                 updateData.approvals = [
                     ...existingProject.approvals,
@@ -404,15 +402,19 @@ const updateProject = async (req, res) => {
             updatedProject.products = projectProducts;
             await updatedProject.save();
 
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Products updated for project ${projectName}.`,
-                teamId: existingProject.teamId
-            });
+            if (req.role === 'Sales Manager') {
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Products updated for project ${projectName}.`,
+                    teamId: existingProject.teamId
+                });
+            }
         }
 
-        // Create all notifications
-        await GaapNotification.insertMany(notificationsToCreate);
+        // Create all notifications if the role is Sales Manager
+        if (req.role === 'Sales Manager' && notificationsToCreate.length > 0) {
+            await GaapNotification.insertMany(notificationsToCreate);
+        }
 
         res.json(updatedProject);
     } catch (error) {
@@ -420,6 +422,8 @@ const updateProject = async (req, res) => {
         res.status(500).json({ message: 'Error updating project', error: error.message });
     }
 };
+
+
 
 
 
