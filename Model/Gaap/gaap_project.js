@@ -19,7 +19,6 @@ const gaapprojectSchema = new Schema({
   },
   department: {
     type: String,
-    enum: ['Audit', 'Accounts Manager', 'VAT Filing', 'Compliance Manager', 'Other'],
     required: true
   },
   assignedTo: {
