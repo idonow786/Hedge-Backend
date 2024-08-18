@@ -15,8 +15,6 @@ const getUsersCreatedByAdmin = async (req, res) => {
             return res.status(404).json({ message: 'Admin user not found' });
         }
         console.log(req.adminId)
-        console.log(adminUser.teamId)
-        console.log(await GaapTeam.find())
         // Find the team where the admin is the manager
         const team = await GaapTeam.findOne({ 
             $or: [
@@ -24,7 +22,8 @@ const getUsersCreatedByAdmin = async (req, res) => {
                 { 'members.managerId': adminId }
             ]
         });
-
+        
+        console.log(team)
         if (!team) {
             return res.status(404).json({ message: 'No team found for this admin' });
         }
