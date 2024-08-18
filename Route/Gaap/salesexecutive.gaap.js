@@ -99,7 +99,7 @@ router.post('/tasks-add',verifyToken, taskController.createTask);
 router.put('/tasks-update',verifyToken, taskController.updateTask);
 router.delete('/tasks-delete',verifyToken, taskController.deleteTask);
 router.get('/projects-get',verifyToken, taskController.getProjectTasks);
-router.get('/tasks/:taskId',verifyToken, taskController.getTask);
+router.get('/tasks-projects',verifyToken, taskController.getTask);
 
 router.get('/dsr/user',verifyToken, dsrController.getAllDsrForUser);
 
