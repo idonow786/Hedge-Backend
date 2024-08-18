@@ -26,7 +26,7 @@ const createProject = async (req, res) => {
             approvalComments,
         } = req.body;
 
-        if (!projectName || !customerId || !projectType || !department || !startDate || !pricingType || !totalAmount || !products) {
+        if (!projectName || !customerId || !projectType || !startDate || !pricingType || !totalAmount || !products) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
