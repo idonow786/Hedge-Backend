@@ -12,6 +12,14 @@ const gaapTeamSchema = new mongoose.Schema({
       immutable: true 
     }
   },
+  GeneralUser: {
+    userId: { type: String},
+    name: { type: String },
+    role: { 
+      type: String, 
+      default: 'General Manager',
+    }
+  },
 
   members: [{
     memberId:{type:String},

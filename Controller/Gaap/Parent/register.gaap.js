@@ -1,4 +1,3 @@
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
@@ -29,10 +28,7 @@ const registerUser = async (req, res) => {
       department,
       companyActivity
     } = req.body;
-    console.log("Body  ",req.body)
-    // if (req.role !== 'admin') {
-    //   return res.status(403).json({ message: 'You do not have permission to add users' });
-    // }
+    console.log("Body  ", req.body);
 
     // Check if user already exists
     const existingUser = await GaapUser.findOne({ $or: [{ username }, { email }] });
@@ -54,30 +50,41 @@ const registerUser = async (req, res) => {
       managerType,
       companyActivity,
       department,
-      createdBy:req.adminId
+      createdBy: req.adminId
     });
 
-
+    console.log(req.adminId);
+    console.log(await GaapTeam.find());
 
     // Find the GAAP team and update it
-    console.log('gaap team ', await GaapTeam.find())
     const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
+    console.log('GaapTeam ', gaapTeam);
     if (gaapTeam) {
-      const newMember = {
-        memberId: newUser._id,
-        name: fullName,
-        role: role,
-        department: department,
-        managerId: manager ? manager : ''
-      };
-      gaapTeam.members.push(newMember);
+      if (role === 'General Manager') {
+        // Update the GeneralUser section
+        gaapTeam.GeneralUser = {
+          userId: newUser._id,
+          name: fullName,
+          role: role
+        };
+      } else {
+        // Add to members array for other roles
+        const newMember = {
+          memberId: newUser._id,
+          name: fullName,
+          role: role,
+          department: department,
+          managerId: manager ? manager : ''
+        };
+        gaapTeam.members.push(newMember);
+      }
       await gaapTeam.save();
-      console.log('GaapTeam ',gaapTeam)
-      newUser.teamId=gaapTeam._id
+      newUser.teamId = gaapTeam._id;
     }
+
     // Save user
     await newUser.save();
-    console.log("newUser ",newUser)
+    console.log("newUser ", newUser);
 
     const mailOptions = {
       from: process.env.Email_Sender,
@@ -143,5 +150,4 @@ const registerUser = async (req, res) => {
   }
 };
 
-
-module.exports={registerUser}
+module.exports = { registerUser };

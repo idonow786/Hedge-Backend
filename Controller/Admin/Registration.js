@@ -531,7 +531,7 @@ const deleteUser = async (req, res) => {
 const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const lowercaseEmail = email.toLowerCase(); // Convert email to lowercase
+    const lowercaseEmail = email.toLowerCase(); 
 
     let user;
     let secretKey;

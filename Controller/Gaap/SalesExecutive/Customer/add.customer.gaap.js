@@ -1,4 +1,5 @@
 const GaapCustomer = require('../../../../Model/Gaap/gaap_customer');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const { uploadFileToFirebase } = require('../../../../Firebase/uploadFileToFirebase');
 
 const registerCustomer = async (req, res) => {
@@ -44,7 +45,7 @@ const registerCustomer = async (req, res) => {
         }
       }
     }
-    
+    const user=await GaapUser.findById(req.adminId)
     const newCustomer = new GaapCustomer({
       companyName,
       landline,
@@ -52,6 +53,7 @@ const registerCustomer = async (req, res) => {
       address,
       contactPerson1,
       contactPerson2,
+      teamId:user.teamId,
       trNumber,
       documents,
       industryType,
@@ -59,7 +61,7 @@ const registerCustomer = async (req, res) => {
     });
 
     const savedCustomer = await newCustomer.save();
-
+    console.log(savedCustomer)
     res.status(201).json({
       message: 'Customer registered successfully',
       customer: savedCustomer

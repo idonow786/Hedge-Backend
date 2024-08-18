@@ -1,16 +1,55 @@
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
-const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product'); 
+const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
+const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 
 const getProjectsAll = async (req, res) => {
     try {
-        // if (req.role !== 'Sales Manager') {
-        //     return res.status(403).json({ message: 'Access denied. Only sales manager can view projects.' });
-        // }
+        const { adminId } = req;
+        let projects = [];
 
-        const projects = await GaapProject.find()
+        // Check if the user is a team parent
+        const parentTeam = await GaapTeam.findOne({
+            $or: [
+              { 'parent.userId': req.adminId },
+              { 'generalManager.userId': req.adminId }
+            ]
+          });
+
+        if (parentTeam) {
+            console.log("1")
+            // If user is a team parent, get all projects with matching teamId
+            projects = await GaapProject.find({ teamId: parentTeam._id })
             .populate('customer')
             .populate('assignedTo')
             .populate('salesPerson');
+        } else {
+            console.log("2")
+            // Check if the user is a manager in any team
+            const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
+            
+            if (managerTeam) {
+                console.log("2.1")
+                // If user is a manager, get all projects created by team members and the manager
+                const teamMemberIds = managerTeam.members.map(member => member.memberId);
+                teamMemberIds.push(adminId);
+                projects = await GaapProject.find({ 
+                    $or: [
+                        { createdBy: { $in: teamMemberIds } },
+                        { createdBy: adminId }
+                    ]
+                })
+                .populate('customer')
+                .populate('assignedTo')
+                .populate('salesPerson');
+            } else {
+                console.log("2.2")
+                // If user is neither a parent nor a manager, get projects created by the user
+                projects = await GaapProject.find({ createdBy: adminId })
+                    .populate('customer')
+                    .populate('assignedTo')
+                    .populate('salesPerson');
+            }
+        }
 
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id });
@@ -30,7 +69,8 @@ const getProjectsAll = async (req, res) => {
                 salesManagerApproval,
                 customerApproval,
                 financialApproval, 
-                salesPerson
+                salesPerson,
+                teamId
             } = project;
 
             return {
@@ -49,6 +89,7 @@ const getProjectsAll = async (req, res) => {
                 totalAmount,
                 assignedTo,
                 salesPerson,
+                teamId,
                 products: projectProducts.map(prod => ({
                     _id: prod._id,
                     name: prod.name,

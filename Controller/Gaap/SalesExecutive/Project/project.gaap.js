@@ -29,6 +29,7 @@ const createProject = async (req, res) => {
         if (!projectName || !customerId || !projectType || !startDate || !pricingType || !totalAmount || !products) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
+        const user = await GaapUser.findById(req.adminId)
 
         const customer = await GaapCustomer.findById(customerId);
         if (!customer) {
@@ -63,6 +64,7 @@ const createProject = async (req, res) => {
             startDate,
             endDate,
             status,
+            teamId: user.teamId,
             pricingType,
             totalAmount,
             appliedDiscount,
@@ -145,11 +147,21 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
+        // Find the team where the user is a parent
+
         if (req.role === 'admin' || req.role === 'General Manager') {
-            projects = await GaapProject.find()
-                .populate('customer')
-                .populate('assignedTo')
-                .populate('salesPerson')
+            const team = await GaapTeam.findOne({
+                $or: [
+                    { 'parent.userId': req.adminId },
+                    { 'generalManager.userId': req.adminId }
+                ]
+            }); 
+            if (team) {
+                projects = await GaapProject.find({ teamId: team._id })
+                    .populate('customer')
+                    .populate('assignedTo')
+                    .populate('salesPerson');
+            }
         } else {
 
             projects = await GaapProject.find({ createdBy: req.adminId })
@@ -306,69 +318,69 @@ const updateProject = async (req, res) => {
 
         const notificationsToCreate = [];
 
-            // Check for important changes and create notifications
-            if (financialApproval !== existingProject.financialApproval) {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
-                });
-            }
+        // Check for important changes and create notifications
+        if (financialApproval !== existingProject.financialApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
+            });
+        }
 
-            if (customerApproval !== existingProject.customerApproval) {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-                });
-            }
+        if (customerApproval !== existingProject.customerApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+            });
+        }
 
-            if (salesManagerApproval !== existingProject.salesManagerApproval) {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-                });
-            }
+        if (salesManagerApproval !== existingProject.salesManagerApproval) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+            });
+        }
 
-            if (Progress !== existingProject.Progress) {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Project ${projectName} progress updated to ${Progress}%.`,
-                });
-            }
+        if (Progress !== existingProject.Progress) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} progress updated to ${Progress}%.`,
+            });
+        }
 
-            if (status !== existingProject.status) {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Project ${projectName} status changed to ${status}.`,
-                });
-            }
+        if (status !== existingProject.status) {
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Project ${projectName} status changed to ${status}.`,
+            });
+        }
 
-            if (approvalComments) {
-                updateData.approvals = [
-                    ...existingProject.approvals,
-                    {
-                        stage: 'Update Approval',
-                        approvedBy: req.adminId,
-                        approvedDate: new Date(),
-                        comments: approvalComments
-                    }
-                ];
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Sales Manager added approval comments for project ${projectName}.`,
-                    teamId: existingProject.teamId
-                });
-            }
+        if (approvalComments) {
+            updateData.approvals = [
+                ...existingProject.approvals,
+                {
+                    stage: 'Update Approval',
+                    approvedBy: req.adminId,
+                    approvedDate: new Date(),
+                    comments: approvalComments
+                }
+            ];
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Sales Manager added approval comments for project ${projectName}.`,
+                teamId: existingProject.teamId
+            });
+        }
 
-            if (appliedDiscount > 0) {
-                updateData.appliedDiscount = appliedDiscount;
-                updateData.discountApprovedBy = req.adminId;
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
-                    teamId: existingProject.teamId
-                });
-            }
-        
+        if (appliedDiscount > 0) {
+            updateData.appliedDiscount = appliedDiscount;
+            updateData.discountApprovedBy = req.adminId;
+            notificationsToCreate.push({
+                user: req.adminId,
+                message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
+                teamId: existingProject.teamId
+            });
+        }
+
 
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
