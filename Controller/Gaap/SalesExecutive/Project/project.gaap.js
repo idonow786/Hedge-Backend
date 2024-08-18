@@ -158,35 +158,59 @@ const getProjects = async (req, res) => {
                 .select('projectName customer projectType status startDate endDate totalAmount products Progress');
         }
         const formattedProjects = await Promise.all(projects.map(async project => {
-            const projectProducts = await GaapProjectProduct.find({ project: project._id })
-                .select('name description quantity price turnoverRange timeDeadline');
+            const projectProducts = await GaapProjectProduct.find({ project: project._id });
 
-            const { _id, projectName, customer, projectType, status, startDate, endDate,salesManagerApproval,customerApproval,financialApproval, totalAmount, Progress } = project;
+            const { 
+                _id, 
+                projectName, 
+                customer, 
+                projectType, 
+                status, 
+                startDate, 
+                endDate, 
+                totalAmount, 
+                Progress, 
+                appliedDiscount,
+                assignedTo,
+                salesManagerApproval,
+                customerApproval,
+                financialApproval, 
+                salesPerson
+            } = project;
+
             return {
                 _id,
                 projectName,
+                appliedDiscount,
                 Progress,
-                customer: customer.name,
+                customer,
                 projectType,
                 status,
                 startDate,
-                endDate,
                 salesManagerApproval,
-                financialApproval,
                 customerApproval,
+                financialApproval, 
+                endDate,
                 totalAmount,
-                assignedTo: project.assignedTo || '',
-                salesPerson: project.salesPerson || '',
+                assignedTo,
+                salesPerson,
                 products: projectProducts.map(prod => ({
+                    _id: prod._id,
                     name: prod.name,
                     description: prod.description,
                     quantity: prod.quantity,
                     price: prod.price,
                     turnoverRange: prod.turnoverRange,
-                    timeDeadline: prod.timeDeadline
+                    timeDeadline: prod.timeDeadline,
+                    category: prod.category,
+                    subCategory: prod.subCategory,
+                    department: prod.department,
+                    priceType: prod.priceType,
+                    isVatProduct: prod.isVatProduct
                 }))
             };
         }));
+
 
         res.json(formattedProjects);
     } catch (error) {
