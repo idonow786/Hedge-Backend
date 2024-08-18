@@ -81,8 +81,8 @@ const gaapInvoiceSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'],
-    default: 'Draft'
+    enum: [ 'Sent', 'Paid', 'Overdue', 'Cancelled'],
+    default: 'Sent'
   },
   notes: {
     type: String
