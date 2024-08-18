@@ -306,13 +306,11 @@ const updateProject = async (req, res) => {
 
         const notificationsToCreate = [];
 
-        if (req.role === 'Sales Manager') {
             // Check for important changes and create notifications
             if (financialApproval !== existingProject.financialApproval) {
                 notificationsToCreate.push({
                     user: req.adminId,
                     message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
-                    teamId: existingProject.teamId
                 });
             }
 
@@ -370,7 +368,7 @@ const updateProject = async (req, res) => {
                     teamId: existingProject.teamId
                 });
             }
-        }
+        
 
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
