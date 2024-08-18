@@ -6,8 +6,8 @@ const getUserNotifications = async (req, res) => {
     console.log(req.adminId)
     console.log(await GaapNotification.find())
 
-    // const notifications = await GaapNotification.find({ user: userId })
-    const notifications = await GaapNotification.find()
+    const notifications = await GaapNotification.find({ user: userId })
+    // const notifications = await GaapNotification.find()
       .sort({ createdAt: -1 }) 
       .lean(); 
 
@@ -28,7 +28,7 @@ const markNotificationAsRead = async (req, res) => {
     const { notificationId } = req.query;
 
     const updatedNotification = await GaapNotification.findOneAndUpdate(
-      // { _id: notificationId, user: userId },
+      { _id: notificationId, user: userId },
       { isRead: true },
       { new: true, runValidators: true }
     );
