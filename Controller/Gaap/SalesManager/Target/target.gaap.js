@@ -38,52 +38,50 @@ const addSalesTarget = async (req, res) => {
 // Get Sales Targets and DSRs
 const getManagedUsersData = async (req, res) => {
     try {
-        const adminId = req.adminId;
-        const userRole = req.role; 
-        let dsrs = null;
-        let managedUsers = [];
-        let userIds = [];
+      const adminId = req.adminId;
+      const userRole = req.role;
+      let dsrs = [];
+      let managedUsers = [];
+      let userIds = [];
+      let salesTargets = [];
   
-        if (userRole === 'admin' || userRole === 'General Manager') {
-            managedUsers = await GaapUser.find({});
-            userIds = managedUsers.map(user => user._id);
-        } else {
-            // For other roles, fetch only managed users
-            managedUsers = await GaapUser.find({ createdBy: adminId });
-            userIds = managedUsers.map(user => user._id);
-        }
+      if (userRole === 'admin' || userRole === 'General Manager') {
+        managedUsers = await GaapUser.find({}).lean();
+      } else {
+        managedUsers = await GaapUser.find({ createdBy: adminId }).lean();
+      }
   
-        // Fetch DSRs
-        if (userIds.length) {
-            if (userRole === 'admin' || userRole === 'General Manager') {
-                dsrs = await GaapDsr.find().populate('user', 'fullName');
-            } else {
-                dsrs = await GaapDsr.find({ user: { $in: userIds } }).populate('user', 'fullName');
-            }
-        }
+      userIds = managedUsers.map(user => user._id);
   
-        // Fetch Sales Targets
-        let salesTargets;
-        if (userRole === 'admin' || userRole === 'General Manager') {
-            salesTargets = await GaapSalesTarget.find();
-        } else {
-            salesTargets = await GaapSalesTarget.find({ 
-                $or: [
-                    { createdBy: adminId },
-                    { assignedTo: { $in: [adminId, ...userIds] } }
-                ]
-            })
-        }
+      // Fetch DSRs
+      if (userIds.length) {
+        dsrs = await GaapDsr.find({ user: { $in: userIds } })
+          .populate('user', 'fullName email role')
+          .lean();
+      }
   
-        const response = {
-            dsrs,
-            salesTargets
-        };
+      // Fetch Sales Targets
+      if (userRole === 'admin' || userRole === 'General Manager') {
+        salesTargets = await GaapSalesTarget.find().lean();
+      } else {
+        salesTargets = await GaapSalesTarget.find({ 
+          $or: [
+            { createdBy: adminId },
+            { assignedTo: { $in: [adminId, ...userIds] } }
+          ]
+        }).lean();
+      }
   
-        res.status(200).json({ message: 'Data fetched successfully', data: response });
+      const response = {
+        users: managedUsers,
+        dsrs,
+        salesTargets
+      };
+  
+      res.status(200).json({ message: 'Data fetched successfully', data: response });
     } catch (error) {
-        console.error('Error fetching managed users data:', error);
-        res.status(500).json({ message: 'Server error while fetching data' });
+      console.error('Error fetching managed users data:', error);
+      res.status(500).json({ message: 'Server error while fetching data' });
     }
   };
 
