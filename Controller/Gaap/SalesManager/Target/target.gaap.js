@@ -40,11 +40,13 @@ const getManagedUsersData = async (req, res) => {
     try {
         const adminId = req.adminId; 
         let dsrs = null;
+        const userRole = req.role;
+        let managedUsers;
         if (userRole !== 'admin' && userRole !== 'General Manager') {
-            const managedUsers = await GaapUser.find({ createdBy: adminId });
+            managedUsers = await GaapUser.find({ createdBy: adminId });
         }
         else{
-            const managedUsers = await GaapUser.find();
+           managedUsers = await GaapUser.find();
         }
         if (managedUsers.length) {
             const userIds = managedUsers.map(user => user._id);
