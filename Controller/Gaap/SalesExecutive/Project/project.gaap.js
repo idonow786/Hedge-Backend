@@ -147,17 +147,15 @@ const getProjects = async (req, res) => {
         let projects;
         if (req.role === 'admin' || req.role === 'General Manager') {
             projects = await GaapProject.find()
-                .populate('customer', 'name')
-                .populate('assignedTo', 'name')
-                .populate('salesPerson', 'name')
-                .select('projectName customer projectType status startDate endDate totalAmount products Progress');
+                .populate('customer')
+                .populate('assignedTo')
+                .populate('salesPerson')
         } else {
 
             projects = await GaapProject.find({ createdBy: req.adminId })
-                .populate('customer', 'name')
-                .populate('assignedTo', 'name')
-                .populate('salesPerson', 'name')
-                .select('projectName customer projectType status startDate endDate totalAmount products Progress');
+                .populate('customer')
+                .populate('assignedTo')
+                .populate('salesPerson')
         }
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id });
