@@ -29,7 +29,7 @@ const registerUser = async (req, res) => {
       department,
       companyActivity
     } = req.body;
-
+    console.log("Body  ",req.body)
     // if (req.role !== 'admin') {
     //   return res.status(403).json({ message: 'You do not have permission to add users' });
     // }
@@ -74,10 +74,10 @@ const registerUser = async (req, res) => {
       await gaapTeam.save();
       console.log('GaapTeam ',gaapTeam)
       newUser.teamId=gaapTeam._id
-      console.log("newUser ",newUser)
     }
     // Save user
     await newUser.save();
+    console.log("newUser ",newUser)
 
     const mailOptions = {
       from: process.env.Email_Sender,

@@ -7,7 +7,7 @@ const facebookAuth = async (req, res) => {
     const facebook = new Facebook({
       appId: process.env.FACEBOOK_APP_ID,
       appSecret: process.env.FACEBOOK_APP_SECRET,
-      redirectUrl: 'https://ai-crem-backend.onrender.com/api/social/auth/facebook/callback',
+      redirectUrl: '/api/social/auth/facebook/callback',
       graphVersion: 'v19.0',
     });
 
