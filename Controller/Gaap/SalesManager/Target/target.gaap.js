@@ -12,6 +12,7 @@ const addSalesTarget = async (req, res) => {
         if (!targetType || !startDate || !endDate || !targetDetails) {
             return res.status(400).json({ message: 'Target type, start date, end date, and target details are required' });
         }
+        const user=await GaapUser.findById(req.adminId)
 
         if (targetType === 'Daily' && !targetDetails.officeVisits) {
             return res.status(400).json({ message: 'Office visits target is required for daily targets' });
@@ -25,7 +26,7 @@ const addSalesTarget = async (req, res) => {
             targetType,
             targetPeriod: { startDate, endDate },
             targetDetails,
-            
+            teamId:user.teamId,
             createdBy: req.adminId
         });
 

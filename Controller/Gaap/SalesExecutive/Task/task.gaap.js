@@ -1,5 +1,6 @@
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const mongoose = require('mongoose');
 
 const taskController = {
@@ -13,6 +14,7 @@ const taskController = {
       if (!projectId || !title) {
         return res.status(400).json({ message: 'Project ID and task title are required' });
       }
+      const user=await GaapUser.findById(req.adminId)
 
       const project = await GaapProject.findById(projectId);
       if (!project) {
@@ -27,6 +29,7 @@ const taskController = {
         teamId: project.teamId,
         status,
         priority,
+        teamId:user.teamId,
         dueDate,
         createdBy: req.adminId 
       });

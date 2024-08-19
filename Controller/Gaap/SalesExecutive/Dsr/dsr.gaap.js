@@ -1,16 +1,19 @@
 const GaapDsr = require('../../../../Model/Gaap/gaap_dsr');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
 const dsrController = {
     // Add a new DSR
     addDsr: async (req, res) => {
         try {
             const { date, officeVisits, cardsCollected, meetings, proposals } = req.body;
+            const user=await GaapUser.findById(req.adminId)
 
             const newDsr = new GaapDsr({
                 user: req.adminId,
                 date: new Date(date),
                 officeVisits,
                 cardsCollected,
+                teamId:user.teamId,
                 meetings,
                 proposals
             });

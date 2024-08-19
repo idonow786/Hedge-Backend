@@ -2,6 +2,7 @@ const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const mongoose = require('mongoose');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
 
 const addInvoice = async (req, res) => {
@@ -13,13 +14,15 @@ const addInvoice = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
+    const user=await GaapUser.findById(req.adminId)
 
     // Create a new invoice object
     const newInvoice = new GaapInvoice({
       ...invoiceDetails,
       customer: project.customer,
       project: projectId,
-      createdBy: req.adminId
+      createdBy: req.adminId,
+      teamId:user.teamId
     });
 
     // Validate the invoice

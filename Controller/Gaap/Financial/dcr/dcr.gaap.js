@@ -1,4 +1,5 @@
 const DailyPerformanceReport = require('../../../../Model/Gaap/gaap_financeDcr');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
 // Create a new daily performance report
 const createReport = async (req, res) => {
@@ -9,11 +10,13 @@ const createReport = async (req, res) => {
     if (existingReport) {
       return res.status(400).json({ message: 'A report for this date already exists' });
     }
+    const user=await GaapUser.findById(req.adminId)
 
     const newReport = new DailyPerformanceReport({
       date,
       cashInflow,
       cashOutflow,
+      teamId:user.teamId,
       invoicesCreated,
       createdBy: req.adminId
     });

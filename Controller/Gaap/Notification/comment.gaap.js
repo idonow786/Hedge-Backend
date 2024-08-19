@@ -1,6 +1,7 @@
 const GaapComment = require('../../../Model/Gaap/gaap_comment');
 const GaapProject = require('../../../Model/Gaap/gaap_project');
 const GaapNotification = require('../../../Model/Gaap/gaap_notification');
+const GaapUser = require('../../../Model/Gaap/gaap_user');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const { uploadFileToFirebase } = require('../../../Firebase/uploadFileToFirebase');
@@ -20,6 +21,7 @@ exports.addComment = [
     try {
       const { projectId, content, type } = req.body;
       const userId = req.adminId;
+      const user=await GaapUser.findById(req.adminId)
 
       if (!projectId || !content || !type) {
         return res.status(400).json({ message: 'Missing required fields' });
