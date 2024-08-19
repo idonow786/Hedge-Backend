@@ -2,24 +2,35 @@ const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
 const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
+const GaapTeam = require('../../../../Model/Gaap/gaap_team')
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
+
 const mongoose = require('mongoose');
 
 const getAllProjectsWithPayments = async (req, res) => {
     try {
         // Fetch all projects and populate relevant fields
-        const projectQuery = GaapProject.find()
+        let projects;
+        let projectPayments;
+        let invoices;
+        const team = await GaapUser.findById(req.adminId)
+          if (team) {
+            const projectQuery = GaapProject.find({teamId:team.teamId})
             .populate('customer', 'name companyName')
             .populate('assignedTo')
             .populate('salesPerson');
 
-        const projects = await projectQuery.lean();
-
+         projects = await projectQuery.lean();
+         console.log(await GaapPr)
         // Fetch all project payments
-        const projectPayments = await ProjectPayment.find().lean();
+         projectPayments = await ProjectPayment.find().lean();
 
         // Fetch all invoices
-        const invoices = await GaapInvoice.find().lean();
-
+         invoices = await GaapInvoice.find().lean();
+        }
+        else{
+            res.status(400).json({ message: 'No fetching projects'});
+        }
         // Create maps for quick lookup
         const paymentMap = new Map(projectPayments.map(payment => [payment.project.toString(), payment]));
         const invoiceMap = new Map();
