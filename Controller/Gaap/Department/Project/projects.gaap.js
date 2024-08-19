@@ -1,15 +1,21 @@
-// controllers/projectController.js
-
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapProjectProduct = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
 const getProjects = async (req, res) => {
     try {
-
         const { department } = req.query;
+        const adminId = req.adminId;
 
-        let query = {};
+        // Fetch the user's team ID
+        const user = await GaapUser.findById(adminId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const teamId = user.teamId;
+
+        let query = { teamId };
         if (department) {
             query.department = department;
         }
