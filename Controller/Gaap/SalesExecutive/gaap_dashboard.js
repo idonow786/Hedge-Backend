@@ -30,12 +30,14 @@ const generateDashboard = async (req, res) => {
                 officeVisits: {
                     target: targetData[period].targetDetails.officeVisits || 0,
                     achieved: targetData[period].achievedValue.officeVisits || 0,
-                    percentage: ((targetData[period].achievedValue.officeVisits || 0) / (targetData[period].targetDetails.officeVisits || 1)) * 100
+                    percentage: targetData[period].targetDetails.officeVisits ? 
+                        ((targetData[period].achievedValue.officeVisits || 0) / targetData[period].targetDetails.officeVisits) * 100 : 0
                 },
                 closings: {
                     target: targetData[period].targetDetails.closings || 0,
                     achieved: targetData[period].achievedValue.closings || 0,
-                    percentage: ((targetData[period].achievedValue.closings || 0) / (targetData[period].targetDetails.closings || 1)) * 100
+                    percentage: targetData[period].targetDetails.closings ? 
+                        ((targetData[period].achievedValue.closings || 0) / targetData[period].targetDetails.closings) * 100 : 0
                 }
             };
         }
@@ -52,7 +54,7 @@ const generateDashboard = async (req, res) => {
         const ongoingProjects = projects.filter(p => p.status === 'In Progress').map(p => ({
             id: p._id,
             name: p.projectName,
-            progress: p.Progress
+            progress: p.Progress || 0
         }));
 
         // 3. Recent DSRs
@@ -81,9 +83,9 @@ const generateDashboard = async (req, res) => {
             .limit(5);
 
         // 6. Quotations (Proposals)
-        const quotations = await GaapProjectProduct.find({ 
+        const quotations = await GaapProjectProduct.countDocuments({ 
             project: { $in: projects.map(p => p._id) } 
-        }).countDocuments();
+        });
 
         // 7. Closings (Approved projects with 50% payment)
         const closings = await GaapProject.countDocuments({

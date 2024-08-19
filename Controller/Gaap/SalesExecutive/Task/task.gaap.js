@@ -1,6 +1,7 @@
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
 const mongoose = require('mongoose');
 
 const taskController = {
@@ -14,7 +15,7 @@ const taskController = {
       if (!projectId || !title) {
         return res.status(400).json({ message: 'Project ID and task title are required' });
       }
-      const user=await GaapUser.findById(req.adminId)
+      const user = await GaapUser.findById(req.adminId);
 
       const project = await GaapProject.findById(projectId);
       if (!project) {
@@ -29,16 +30,22 @@ const taskController = {
         teamId: project.teamId,
         status,
         priority,
-        teamId:user.teamId,
+        teamId: user.teamId,
         dueDate,
         createdBy: req.adminId 
       });
 
       const savedTask = await newTask.save({ session });
-      project.status='In Progress'
-      await project.save()
+      project.status = 'In Progress';
       project.tasks.push(savedTask._id);
       await project.save({ session });
+
+      // Create a notification for the project creator
+      const notification = new GaapNotification({
+        user: project.createdBy,
+        message: `A new task "${title}" has been added to project "${project.projectName}"`,
+      });
+      await notification.save({ session });
 
       await session.commitTransaction();
       session.endSession();
