@@ -24,20 +24,20 @@ const addInvoice = async (req, res) => {
       createdBy: req.adminId,
       teamId:user.teamId
     });
-
     // Validate the invoice
     const validationError = newInvoice.validateSync();
     if (validationError) {
       return res.status(400).json({ message: 'Invalid invoice data', errors: validationError.errors });
     }
-
+    
     // Save the invoice
     await newInvoice.save();
+    console.log(newInvoice)
 
     // Update the project with the new invoice
     project.invoices.push(newInvoice._id);
     await project.save();
-
+    console.log(project)
     // Update or create ProjectPayment
     let projectPayment = await ProjectPayment.findOne({ project: projectId });
     

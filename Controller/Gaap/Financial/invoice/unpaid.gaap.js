@@ -27,16 +27,17 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
       teamId = user.teamId;
+      console.log("teamID : ",teamId)
     }
 
     const projects = await GaapProject.find({
-      status: 'In Progress',
+      // status: 'In Progress',
       teamId: teamId
     }).populate('customer')
       .populate('assignedTo')
       .populate('salesPerson')
       .lean();
-
+      console.log(projects)
     const projectsWithInvoices = await Promise.all(projects.map(async (project) => {
       const payment = await ProjectPayment.findOne({ project: project._id })
         .populate('invoices')
