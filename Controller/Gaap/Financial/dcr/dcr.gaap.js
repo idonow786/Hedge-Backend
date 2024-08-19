@@ -1,5 +1,6 @@
 const DailyPerformanceReport = require('../../../../Model/Gaap/gaap_financeDcr');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapTeam=require('../../../../Model/Gaap/gaap_team')
 
 // Create a new daily performance report
 const createReport = async (req, res) => {
@@ -32,17 +33,18 @@ const getAllReports = async (req, res) => {
   try {
     let reports;
     console.log(req.role)
-    console.log( await DailyPerformanceReport.find() )
     if(req.role !== 'admin'&& req.role!=='General Manager'){
+       reports = await DailyPerformanceReport.find({createdBy:req.adminId}).sort({ date: -1 });
+    }else{
       const team = await GaapTeam.findOne({
         $or: [
             { 'parent.userId': req.adminId },
             { 'generalManager.userId': req.adminId }
         ]
     }); 
-       reports = await DailyPerformanceReport.find({createdBy:req.adminId}).sort({ date: -1 });
-    }else{
-       reports = await DailyPerformanceReport.find().sort({ date: -1 });
+    if(team){
+      reports = await DailyPerformanceReport.find({ teamId: team._id }).sort({ date: -1 });
+    }
     }
     res.status(200).json(reports);
   } catch (error) {
