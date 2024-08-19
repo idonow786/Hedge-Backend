@@ -6,9 +6,7 @@ const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 
 const getProjects = async (req, res) => {
     try {
-        if(req.role != 'Department Manager'){
-            return res.status(400).json({ message: 'Unauthorized'});
-        }
+
         const { department } = req.query;
 
         let query = {};
