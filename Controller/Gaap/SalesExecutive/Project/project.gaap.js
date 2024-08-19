@@ -25,7 +25,8 @@ const createProject = async (req, res) => {
             vatDetails,
             approvalComments,
         } = req.body;
-
+        console.log(req.body)
+        console.log(req.files)
         if (!projectName || !customerId || !projectType || !startDate || !pricingType || !totalAmount || !products) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
@@ -147,35 +148,35 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
-        // Find the team where the user is a parent
-        console.log(await GaapProject.find())
-        console.log(req.role)
         if (req.role === 'admin' || req.role === 'General Manager') {
-            console.log('admin 1')
-            console.log(req.adminId)
-            console.log(await GaapTeam.find)
             const team = await GaapTeam.findOne({
                 $or: [
                     { 'parentUser.userId': req.adminId },
                     { 'GeneralUser.userId': req.adminId }
                 ]
-            }); 
-            console.log(team)
+            });
             if (team) {
                 projects = await GaapProject.find({ teamId: team._id })
                     .populate('customer')
                     .populate('assignedTo')
-                    .populate('salesPerson');
+                    .populate('salesPerson')
+                    .populate('tasks');
             }
         } else {
-
             projects = await GaapProject.find({ createdBy: req.adminId })
                 .populate('customer')
                 .populate('assignedTo')
                 .populate('salesPerson')
+                .populate('tasks');
         }
+
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id });
+
+            // Calculate progress based on completed tasks
+            const totalTasks = project.tasks.length;
+            const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
             const {
                 _id,
@@ -186,7 +187,6 @@ const getProjects = async (req, res) => {
                 startDate,
                 endDate,
                 totalAmount,
-                Progress,
                 appliedDiscount,
                 assignedTo,
                 salesManagerApproval,
@@ -199,7 +199,7 @@ const getProjects = async (req, res) => {
                 _id,
                 projectName,
                 appliedDiscount,
-                Progress,
+                progress,
                 customer,
                 projectType,
                 status,
@@ -228,14 +228,12 @@ const getProjects = async (req, res) => {
             };
         }));
 
-
         res.json(formattedProjects);
     } catch (error) {
         console.error('Error fetching projects:', error);
         res.status(500).json({ message: 'Error fetching projects', error: error.message });
     }
 };
-
 
 
 
@@ -297,7 +295,7 @@ const updateProject = async (req, res) => {
             }
         }
         if(financialApproval==true){
-            existingProject.status=Approved
+            existingProject.status='Approved'
         }
         await existingProject.save()
         const updateData = {

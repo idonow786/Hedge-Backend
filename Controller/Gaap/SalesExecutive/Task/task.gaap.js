@@ -35,7 +35,8 @@ const taskController = {
       });
 
       const savedTask = await newTask.save({ session });
-
+      project.status='In Progress'
+      await project.save()
       project.tasks.push(savedTask._id);
       await project.save({ session });
 

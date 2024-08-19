@@ -16,19 +16,17 @@ const getProjectsAll = async (req, res) => {
           });
 
         if (parentTeam) {
-            console.log("1")
             // If user is a team parent, get all projects with matching teamId
             projects = await GaapProject.find({ teamId: parentTeam._id })
             .populate('customer')
             .populate('assignedTo')
-            .populate('salesPerson');
+            .populate('salesPerson')
+            .populate('tasks');
         } else {
-            console.log("2")
             // Check if the user is a manager in any team
             const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
             
             if (managerTeam) {
-                console.log("2.1")
                 // If user is a manager, get all projects created by team members and the manager
                 const teamMemberIds = managerTeam.members.map(member => member.memberId);
                 teamMemberIds.push(adminId);
@@ -40,19 +38,25 @@ const getProjectsAll = async (req, res) => {
                 })
                 .populate('customer')
                 .populate('assignedTo')
-                .populate('salesPerson');
+                .populate('salesPerson')
+                .populate('tasks');
             } else {
-                console.log("2.2")
                 // If user is neither a parent nor a manager, get projects created by the user
                 projects = await GaapProject.find({ createdBy: adminId })
                     .populate('customer')
                     .populate('assignedTo')
-                    .populate('salesPerson');
+                    .populate('salesPerson')
+                    .populate('tasks');
             }
         }
 
         const formattedProjects = await Promise.all(projects.map(async project => {
             const projectProducts = await GaapProjectProduct.find({ project: project._id });
+
+            // Calculate progress based on completed tasks
+            const totalTasks = project.tasks.length;
+            const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
             const { 
                 _id, 
@@ -63,7 +67,6 @@ const getProjectsAll = async (req, res) => {
                 startDate, 
                 endDate, 
                 totalAmount, 
-                Progress, 
                 appliedDiscount,
                 assignedTo,
                 salesManagerApproval,
@@ -77,7 +80,7 @@ const getProjectsAll = async (req, res) => {
                 _id,
                 projectName,
                 appliedDiscount,
-                Progress,
+                progress,
                 customer,
                 projectType,
                 status,
