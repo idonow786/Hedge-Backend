@@ -296,7 +296,10 @@ const updateProject = async (req, res) => {
                 });
             }
         }
-
+        if(financialApproval==true){
+            existingProject.status=Approved
+        }
+        await existingProject.save()
         const updateData = {
             projectName,
             Progress,
