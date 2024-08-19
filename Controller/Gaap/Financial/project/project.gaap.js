@@ -21,7 +21,6 @@ const getAllProjectsWithPayments = async (req, res) => {
             .populate('salesPerson');
 
          projects = await projectQuery.lean();
-         console.log(await GaapPr)
         // Fetch all project payments
          projectPayments = await ProjectPayment.find().lean();
 
