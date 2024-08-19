@@ -1,11 +1,37 @@
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 
 const getProjectsWithInvoiceStatus = async (req, res) => {
   try {
+    let teamId;
+
+    if (req.role === 'admin' || req.role === 'General Manager') {
+      const team = await GaapTeam.findOne({
+        $or: [
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser.userId': req.adminId }
+        ]
+      });
+
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found for the user' });
+      }
+
+      teamId = team._id;
+    } else {
+      const user = await GaapUser.findById(req.adminId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      teamId = user.teamId;
+    }
+
     const projects = await GaapProject.find({
       status: 'In Progress',
+      teamId: teamId
     }).populate('customer')
       .populate('assignedTo')
       .populate('salesPerson')
@@ -39,10 +65,10 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
 
       return {
         ...project,
-        payment: payment || { 
-          paymentStatus: 'Not Started', 
-          paidAmount: totalPaid, 
-          unpaidAmount: project.totalAmount - totalPaid 
+        payment: payment || {
+          paymentStatus: 'Not Started',
+          paidAmount: totalPaid,
+          unpaidAmount: project.totalAmount - totalPaid
         },
         invoices: invoices,
         invoiceStatusSummary: invoiceStatusSummary,
@@ -58,7 +84,6 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
     res.status(500).json({ message: 'Error fetching projects with invoice status', error: error.message });
   }
 };
-
 
 const updatePayment = async (req, res) => {
   try {
@@ -147,8 +172,32 @@ const updatePayment = async (req, res) => {
 
 const getProjectsWithPaymentStatus = async (req, res) => {
   try {
+    let teamId;
+
+    if (req.role === 'admin' || req.role === 'General Manager') {
+      const team = await GaapTeam.findOne({
+        $or: [
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser.userId': req.adminId }
+        ]
+      });
+
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found for the user' });
+      }
+
+      teamId = team._id;
+    } else {
+      const user = await GaapUser.findById(req.adminId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      teamId = user.teamId;
+    }
+
     const projects = await GaapProject.find({
-      status: { $in: ['Approved', 'In Progress'] }
+      status: { $in: ['Approved', 'In Progress'] },
+      teamId: teamId
     }).populate('customer')
       .populate('assignedTo')
       .populate('salesPerson');
@@ -189,4 +238,4 @@ const getProjectsWithPaymentStatus = async (req, res) => {
   }
 };
 
-module.exports={getProjectsWithInvoiceStatus,updatePayment,getProjectsWithPaymentStatus}
+module.exports = { getProjectsWithInvoiceStatus, updatePayment, getProjectsWithPaymentStatus }

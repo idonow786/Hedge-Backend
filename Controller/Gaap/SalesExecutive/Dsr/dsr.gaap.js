@@ -90,8 +90,18 @@ const dsrController = {
             const userRole = req.role;
             let query = {};
             const { startDate, endDate } = req.query;
-
-            if (userRole !== 'admin' && userRole !== 'General Manager') {
+    
+            // Find the user and get their teamId
+            const user = await GaapUser.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+    
+            if (userRole === 'admin' || userRole === 'General Manager') {
+                // For admin and General Manager, filter by teamId
+                query['user.teamId'] = user.teamId;
+            } else {
+                // For other roles, filter by userId
                 query.user = userId;
             }
     
@@ -101,16 +111,23 @@ const dsrController = {
                     $lte: new Date(endDate)
                 };
             }
-
+    
             const dsrs = await GaapDsr.find(query)
                 .sort({ date: -1 })
-                .populate('user', 'name');
-
+                .populate({
+                    path: 'user',
+                    select: 'name teamId',
+                    match: { teamId: user.teamId }
+                });
+    
             if (dsrs.length === 0) {
                 return res.status(404).json({ message: 'No DSRs found' });
             }
-
-            res.json(dsrs);
+    
+            // Filter out any DSRs where the populated user is null (due to teamId mismatch)
+            const filteredDsrs = dsrs.filter(dsr => dsr.user !== null);
+    
+            res.json(filteredDsrs);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching DSRs', error: error.message });
         }

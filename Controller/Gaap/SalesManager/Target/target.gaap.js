@@ -48,7 +48,8 @@ const getManagedUsersData = async (req, res) => {
     let salesTargets = [];
 
     if (userRole === 'admin' || userRole === 'General Manager') {
-      managedUsers = await GaapUser.find({}).lean();
+      const user=await GaapUser.findById(req.adminId)
+      managedUsers = await GaapUser.find({teamId:user.teamId}).lean();
     } else {
       // Find teams where the current user is a manager
       const teams = await GaapTeam.find({ 'members.managerId': adminId }).lean();

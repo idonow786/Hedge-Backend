@@ -19,6 +19,7 @@ const getUsersCreatedByAdmin = async (req, res) => {
         const team = await GaapTeam.findOne({ 
             $or: [
                 { 'parentUser.userId': adminId },
+                { 'GeneralUser.userId': adminId },
                 { 'members.managerId': adminId }
             ]
         });

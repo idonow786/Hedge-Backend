@@ -1,6 +1,6 @@
 const DailyPerformanceReport = require('../../../../Model/Gaap/gaap_financeDcr');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
-const GaapTeam=require('../../../../Model/Gaap/gaap_team')
+const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 
 // Create a new daily performance report
 const createReport = async (req, res) => {
@@ -11,13 +11,13 @@ const createReport = async (req, res) => {
     if (existingReport) {
       return res.status(400).json({ message: 'A report for this date already exists' });
     }
-    const user=await GaapUser.findById(req.adminId)
+    const user = await GaapUser.findById(req.adminId)
 
     const newReport = new DailyPerformanceReport({
       date,
       cashInflow,
       cashOutflow,
-      teamId:user.teamId,
+      teamId: user.teamId,
       invoicesCreated,
       createdBy: req.adminId
     });
@@ -33,18 +33,18 @@ const getAllReports = async (req, res) => {
   try {
     let reports;
     console.log(req.role)
-    if(req.role !== 'admin'&& req.role!=='General Manager'){
-       reports = await DailyPerformanceReport.find({createdBy:req.adminId}).sort({ date: -1 });
-    }else{
+    if (req.role !== 'admin' && req.role !== 'General Manager') {
+      reports = await DailyPerformanceReport.find({ createdBy: req.adminId }).sort({ date: -1 });
+    } else {
       const team = await GaapTeam.findOne({
         $or: [
-            { 'parent.userId': req.adminId },
-            { 'generalManager.userId': req.adminId }
+          { 'parent.userId': req.adminId },
+          { 'generalManager.userId': req.adminId }
         ]
-    }); 
-    if(team){
-      reports = await DailyPerformanceReport.find({ teamId: team._id }).sort({ date: -1 });
-    }
+      });
+      if (team) {
+        reports = await DailyPerformanceReport.find({ teamId: team._id }).sort({ date: -1 });
+      }
     }
     res.status(200).json(reports);
   } catch (error) {
@@ -67,13 +67,13 @@ const getReportById = async (req, res) => {
 // Update a daily performance report
 const updateReport = async (req, res) => {
   try {
-    const { cashInflow, cashOutflow, invoicesCreated,date } = req.body;
+    const { cashInflow, cashOutflow, invoicesCreated, date } = req.body;
     const updatedReport = await DailyPerformanceReport.findByIdAndUpdate(
       req.body.dcrId,
-      { 
+      {
         date,
-        cashInflow, 
-        cashOutflow, 
+        cashInflow,
+        cashOutflow,
         invoicesCreated,
         updatedBy: req.adminId
       },
@@ -118,4 +118,4 @@ const getReportByDate = async (req, res) => {
 };
 
 
-module.exports={createReport,getAllReports,updateReport,deleteReport,getReportByDate}
+module.exports = { createReport, getAllReports, updateReport, deleteReport, getReportByDate }

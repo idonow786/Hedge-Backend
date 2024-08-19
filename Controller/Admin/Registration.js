@@ -94,7 +94,8 @@ const signup = async (req, res) => {
         },
         members: []
       });
-
+      newUser.teamId=newTeam._id
+      await newUser.save()
       await newTeam.save();
 
       console.log("team ",newTeam)
