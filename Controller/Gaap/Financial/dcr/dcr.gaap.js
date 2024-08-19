@@ -38,8 +38,8 @@ const getAllReports = async (req, res) => {
     } else {
       const team = await GaapTeam.findOne({
         $or: [
-          { 'parent.userId': req.adminId },
-          { 'generalManager.userId': req.adminId }
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser.userId': req.adminId }
         ]
       });
       if (team) {

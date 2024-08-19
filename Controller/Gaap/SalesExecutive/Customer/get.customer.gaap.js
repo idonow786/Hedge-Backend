@@ -10,8 +10,8 @@ const getAllCustomersByAdmin = async (req, res) => {
       // Find the team where the user is a parent
       const parentTeam = await GaapTeam.findOne({
         $or: [
-          { 'parent.userId': req.adminId },
-          { 'generalManager.userId': req.adminId }
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser.userId': req.adminId }
         ]
       });
 

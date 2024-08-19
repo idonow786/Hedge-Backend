@@ -149,13 +149,18 @@ const getProjects = async (req, res) => {
         let projects;
         // Find the team where the user is a parent
         console.log(await GaapProject.find())
+        console.log(req.role)
         if (req.role === 'admin' || req.role === 'General Manager') {
+            console.log('admin 1')
+            console.log(req.adminId)
+            console.log(await GaapTeam.find)
             const team = await GaapTeam.findOne({
                 $or: [
-                    { 'parent.userId': req.adminId },
-                    { 'generalManager.userId': req.adminId }
+                    { 'parentUser.userId': req.adminId },
+                    { 'GeneralUser.userId': req.adminId }
                 ]
             }); 
+            console.log(team)
             if (team) {
                 projects = await GaapProject.find({ teamId: team._id })
                     .populate('customer')

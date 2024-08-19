@@ -10,8 +10,8 @@ const getProjectsAll = async (req, res) => {
         // Check if the user is a team parent
         const parentTeam = await GaapTeam.findOne({
             $or: [
-              { 'parent.userId': req.adminId },
-              { 'generalManager.userId': req.adminId }
+              { 'parentUser.userId': req.adminId },
+              { 'GeneralUser.userId': req.adminId }
             ]
           });
 
