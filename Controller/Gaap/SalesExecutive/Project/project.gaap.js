@@ -92,7 +92,7 @@ const createProject = async (req, res) => {
         }
 
         await newProject.save();
-
+        console.log(newProject)
         const projectProducts = await Promise.all(products.map(async (product) => {
             const projectProduct = new GaapProjectProduct({
                 project: newProject._id,
@@ -148,7 +148,7 @@ const getProjects = async (req, res) => {
     try {
         let projects;
         // Find the team where the user is a parent
-
+        console.log(await GaapProject.find())
         if (req.role === 'admin' || req.role === 'General Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
