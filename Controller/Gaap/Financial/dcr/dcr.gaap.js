@@ -33,6 +33,7 @@ const getAllReports = async (req, res) => {
   try {
     let reports;
     console.log(req.role)
+    console.log(await DailyPerformanceReport.find() )
     if (req.role !== 'admin' && req.role !== 'General Manager') {
       reports = await DailyPerformanceReport.find({ createdBy: req.adminId }).sort({ date: -1 });
     } else {
