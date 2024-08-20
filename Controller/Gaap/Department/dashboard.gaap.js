@@ -46,10 +46,19 @@ const getProjectsOverview = async (teamId) => {
             totalProjects: allProjects.length,
             ongoingProjects: ongoingProjects.length,
             pendingProjects: pendingProjects.length,
-            projects: allProjects.map(project => ({
-                ...project,
-                viewProjectUrl: `/projects/${project._id}`
-            }))
+            recentProjects: allProjects
+                .sort((a, b) => b.createdAt - a.createdAt)
+                .slice(0, 5)
+                .map(project => ({
+                    _id: project._id,
+                    projectName: project.projectName,
+                    assignedTo: project.assignedTo ? project.assignedTo.fullName : 'N/A',
+                    status: project.status,
+                    startDate: project.startDate,
+                    endDate: project.endDate,
+                    progress: project.Progress || 0, // Using the Progress field from the schema, defaulting to 0 if not set
+                    viewProjectUrl: `/projects/${project._id}`
+                }))
         };
     } catch (error) {
         console.error('Error in getProjectsOverview:', error);
@@ -59,39 +68,53 @@ const getProjectsOverview = async (teamId) => {
 
 const getDepartmentPerformance = async (teamId) => {
     try {
-        const departments = await GaapUser.distinct('department', { teamId });
-
         const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-        const departmentPerformance = await Promise.all(departments.map(async (department) => {
-            const newProjects = await GaapProject.countDocuments({
-                department,
-                teamId,
-                createdAt: { $gte: startOfMonth, $lte: endOfMonth }
-            });
-
-            const completedProjects = await GaapProject.countDocuments({
-                department,
-                teamId,
-                status: 'Completed',
-                endDate: { $gte: startOfMonth, $lte: endOfMonth }
-            });
-
-            const ongoingProjects = await GaapProject.countDocuments({
-                department,
-                teamId,
-                status: { $in: ['Proposed', 'Approved', 'In Progress'] }
-            });
-
-            return {
-                department,
-                newProjects,
-                completedProjects,
-                ongoingProjects
-            };
-        }));
+        const departmentPerformance = await GaapProject.aggregate([
+            { $match: { teamId: teamId } },
+            {
+                $group: {
+                    _id: "$department",
+                    newProjects: {
+                        $sum: {
+                            $cond: [
+                                { $and: [
+                                    { $gte: ["$createdAt", startOfMonth] },
+                                    { $lte: ["$createdAt", endOfMonth] }
+                                ]},
+                                1, 0
+                            ]
+                        }
+                    },
+                    completedProjects: {
+                        $sum: {
+                            $cond: [
+                                { $and: [
+                                    { $eq: ["$status", "Completed"] },
+                                    { $gte: ["$endDate", startOfMonth] },
+                                    { $lte: ["$endDate", endOfMonth] }
+                                ]},
+                                1, 0
+                            ]
+                        }
+                    },
+                    ongoingProjects: {
+                        $sum: {
+                            $cond: [{ $in: ["$status", ["Proposed", "Approved", "In Progress"]] }, 1, 0]
+                        }
+                    }
+                }
+            },
+            { $project: {
+                department: "$_id",
+                newProjects: 1,
+                completedProjects: 1,
+                ongoingProjects: 1,
+                _id: 0
+            }}
+        ]);
 
         return departmentPerformance;
     } catch (error) {
