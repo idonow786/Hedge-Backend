@@ -325,12 +325,7 @@ const updateProject = async (req, res) => {
         const notificationsToCreate = [];
 
         // Check for important changes and create notifications
-        if (financialApproval !== existingProject.financialApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} has been ${financialApproval ? 'approved' : 'unapproved'} by finance.`,
-            });
-        }
+      
 
         if (customerApproval !== existingProject.customerApproval) {
             notificationsToCreate.push({

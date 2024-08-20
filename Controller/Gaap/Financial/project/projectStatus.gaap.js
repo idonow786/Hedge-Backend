@@ -1,6 +1,7 @@
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
+const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
 const mongoose = require('mongoose');
 
 const quotationController = {
@@ -41,14 +42,10 @@ const quotationController = {
 
         try {
             const { projectId, amount, comment } = req.body;
-            const userId = req.adminId
+            const userId = req.adminId;
 
-            if (!projectId) {
-                return res.status(400).json({ message: 'Project ID is required' });
-            }
-
-            if (!mongoose.Types.ObjectId.isValid(projectId)) {
-                return res.status(400).json({ message: 'Invalid Project ID format' });
+            if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+                return res.status(400).json({ message: 'Valid Project ID is required' });
             }
 
             const project = await GaapProject.findById(projectId).session(session);
@@ -67,7 +64,7 @@ const quotationController = {
 
             // Update project
             project.financialApproval = true;
-            project.status='Approved'
+            project.status = 'Approved';
             project.lastUpdatedBy = userId;
 
             if (amount) {
@@ -93,7 +90,7 @@ const quotationController = {
                 payment.paymentHistory.push({
                     amount: Number(amount),
                     date: new Date(),
-                    paymentMethod: 'Other', 
+                    paymentMethod: 'Other',
                     receivedBy: userId,
                     notes: 'Payment received during quotation approval'
                 });
@@ -117,13 +114,21 @@ const quotationController = {
 
             await project.save({ session });
 
+            // Create notification for project creator
+            const notification = new GaapNotification({
+                user: project.createdBy,
+                message: `Your project "${project.projectName}" has been approved.`,
+                isRead: false
+            });
+            await notification.save({ session });
+
             await session.commitTransaction();
             session.endSession();
 
-            res.status(200).json({ 
-                message: 'Quotation approved successfully', 
-                financialApproval: true, 
-                paymentReceived: amount ? true : false 
+            res.status(200).json({
+                message: 'Quotation approved successfully',
+                financialApproval: true,
+                paymentReceived: amount ? true : false
             });
 
         } catch (error) {
