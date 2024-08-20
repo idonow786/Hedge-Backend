@@ -1,5 +1,6 @@
 const GaapDsr = require('../../../../Model/Gaap/gaap_dsr');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 
 const dsrController = {
     // Add a new DSR
@@ -83,7 +84,6 @@ const dsrController = {
         }
     },
 
-    // Get all DSRs for a user
     getAllDsrForUser: async (req, res) => {
         try {
             const userId = req.adminId;
@@ -91,15 +91,27 @@ const dsrController = {
             let query = {};
             const { startDate, endDate } = req.query;
     
-            // Find the user and get their teamId
+            // Find the user
             const user = await GaapUser.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
     
             if (userRole === 'admin' || userRole === 'General Manager') {
-                // For admin and General Manager, filter by teamId
-                query['user.teamId'] = user.teamId;
+                // For admin and General Manager, find the team first
+                const team = await GaapTeam.findOne({
+                    $or: [
+                        { 'parentUser.userId': userId },
+                        { 'GeneralUser.userId': userId }
+                    ]
+                });
+    
+                if (!team) {
+                    return res.status(404).json({ message: 'Team not found for this admin/manager' });
+                }
+    
+                // Use the team's _id to filter DSRs
+                query.teamId = team._id;
             } else {
                 // For other roles, filter by userId
                 query.user = userId;
@@ -116,22 +128,20 @@ const dsrController = {
                 .sort({ date: -1 })
                 .populate({
                     path: 'user',
-                    select: 'name teamId',
-                    match: { teamId: user.teamId }
+                    select: 'fullName',
                 });
-                console.log(dsrs)
+    
             if (dsrs.length === 0) {
                 return res.status(404).json({ message: 'No DSRs found' });
             }
     
-            // Filter out any DSRs where the populated user is null (due to teamId mismatch)
-            const filteredDsrs = dsrs.filter(dsr => dsr.user !== null);
-    
-            res.json(filteredDsrs);
+            res.json(dsrs);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching DSRs', error: error.message });
         }
     }
+    
+    
 };
 
 module.exports = dsrController;
