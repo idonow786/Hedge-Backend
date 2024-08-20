@@ -7,19 +7,16 @@ const getDashboardData = async (req, res) => {
     try {
         const userId = req.adminId;
         const user = await GaapUser.findById(userId);
-        console.log(req.role)
-        if (
-            req.role !== 'Department Manager' && 
-            req.role !== 'Operational Executive' && 
-            req.role !== 'admin' && 
-            req.role !== 'General Manager'
-        ) {
-            return res.status(403).json({ message: 'Not Authorized' });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
+        const teamId = user.teamId;
+
         const dashboardData = {
-            projectsOverview: await getProjectsOverview(),
-            departmentPerformance: await getDepartmentPerformance(),
+            projectsOverview: await getProjectsOverview(teamId),
+            departmentPerformance: await getDepartmentPerformance(teamId),
         };
 
         res.json(dashboardData);
@@ -29,9 +26,9 @@ const getDashboardData = async (req, res) => {
     }
 };
 
-const getProjectsOverview = async () => {
+const getProjectsOverview = async (teamId) => {
     try {
-        const allProjects = await GaapProject.find()
+        const allProjects = await GaapProject.find({ teamId })
             .select('-totalAmount') // Exclude price information
             .populate('customer', 'name')
             .populate('assignedTo', 'fullName')
@@ -51,7 +48,7 @@ const getProjectsOverview = async () => {
             pendingProjects: pendingProjects.length,
             projects: allProjects.map(project => ({
                 ...project,
-                viewProjectUrl: `/projects/${project._id}` // Frontend URL for viewing project details
+                viewProjectUrl: `/projects/${project._id}`
             }))
         };
     } catch (error) {
@@ -60,9 +57,9 @@ const getProjectsOverview = async () => {
     }
 };
 
-const getDepartmentPerformance = async () => {
+const getDepartmentPerformance = async (teamId) => {
     try {
-        const departments = await GaapUser.distinct('department');
+        const departments = await GaapUser.distinct('department', { teamId });
 
         const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -71,17 +68,20 @@ const getDepartmentPerformance = async () => {
         const departmentPerformance = await Promise.all(departments.map(async (department) => {
             const newProjects = await GaapProject.countDocuments({
                 department,
+                teamId,
                 createdAt: { $gte: startOfMonth, $lte: endOfMonth }
             });
 
             const completedProjects = await GaapProject.countDocuments({
                 department,
+                teamId,
                 status: 'Completed',
                 endDate: { $gte: startOfMonth, $lte: endOfMonth }
             });
 
             const ongoingProjects = await GaapProject.countDocuments({
                 department,
+                teamId,
                 status: { $in: ['Proposed', 'Approved', 'In Progress'] }
             });
 
