@@ -17,7 +17,7 @@ const dsrController = {
                 meetings,
                 proposals
             });
-
+            console.log(newDsr)
             const savedDsr = await newDsr.save();
             res.status(201).json(savedDsr);
         } catch (error) {
@@ -119,7 +119,7 @@ const dsrController = {
                     select: 'name teamId',
                     match: { teamId: user.teamId }
                 });
-    
+                console.log(dsrs)
             if (dsrs.length === 0) {
                 return res.status(404).json({ message: 'No DSRs found' });
             }

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const gaapdsrSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapUser' },
+    user: { type: String },
     date: Date,
     officeVisits: Number,
     cardsCollected: Number,
