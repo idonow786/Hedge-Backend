@@ -2,20 +2,36 @@ const GaapUser = require('../../../Model/Gaap/gaap_user');
 const GaapProject = require('../../../Model/Gaap/gaap_project');
 const GaapDsr = require('../../../Model/Gaap/gaap_dsr');
 const GaapSalesTarget = require('../../../Model/Gaap/gaap_salestarget');
+const GaapTeam = require('../../../Model/Gaap/gaap_team');
 
 const getDashboardData = async (req, res) => {
     try {
         const adminId = req.adminId;
         const currentDate = new Date();
 
-        // 1. Get users created by this admin
-        const users = await GaapUser.find({ createdBy: adminId });
-        const userIds = users.map(user => user._id);
+        // 1. Get team information
+        const team = await GaapTeam.findOne({
+            $or: [
+                { 'parentUser.userId': adminId },
+                { 'GeneralUser.userId': adminId },
+                { 'members.managerId': adminId }
+            ]
+        });
 
-        // 2. Get projects for these users
-        const projects = await GaapProject.find({ assignedTo: { $in: userIds } });
+        if (!team) {
+            return res.status(404).json({
+                success: false,
+                message: 'Team not found for this admin'
+            });
+        }
 
-        // 3. Process project data
+        // 2. Get member IDs
+        const memberIds = team.members.map(member => member.memberId);
+
+        // 3. Get projects for these members
+        const projects = await GaapProject.find({ createdBy: { $in: memberIds } });
+
+        // 4. Process project data
         const projectStats = {
             total: projects.length,
             ongoing: projects.filter(p => p.status === 'In Progress').length,
@@ -27,20 +43,21 @@ const getDashboardData = async (req, res) => {
             progress: p.Progress
         }));
 
-        // 4. Get DSR data
+        // 5. Get DSR data
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const dsrData = await GaapDsr.find({
-            user: { $in: userIds },
-            date: { $gte: startOfMonth, $lte: currentDate }
+            user: { $in: memberIds },
+            date: { $gte: startOfMonth, $lte: currentDate },
+            teamId: team._id
         });
 
-        // 5. Get targets
+        // 6. Get targets
         const targets = await GaapSalesTarget.find({
-            createdBy: adminId,
-            // 'targetPeriod.endDate': { $gte: currentDate }
+            teamId: team._id,
+            'targetPeriod.endDate': { $gte: currentDate }
         });
 
-        // 6. Process DSR and target data
+        // 7. Process DSR and target data
         const dsrSummary = {
             officeVisits: 0,
             cardsCollected: 0,
@@ -54,7 +71,6 @@ const getDashboardData = async (req, res) => {
             dsrSummary.cardsCollected += dsr.cardsCollected || 0;
             dsrSummary.meetings += dsr.meetings || 0;
             dsrSummary.proposals += dsr.proposals || 0;
-            dsrSummary.closings += dsr.closings || 0;
         });
 
         const targetComparison = targets.map(target => {
@@ -80,7 +96,7 @@ const getDashboardData = async (req, res) => {
             };
         });
 
-        // 7. Prepare response
+        // 8. Prepare response
         const dashboardData = {
             projectStats,
             ongoingProjects,
