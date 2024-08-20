@@ -7,12 +7,21 @@ const GaapUser = require('../../../Model/Gaap/gaap_user');
 
 const getDashboardData = async (req, res) => {
   try {
+    const userId = req.adminId;
+    const user = await GaapUser.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const teamId = user.teamId;
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
     // 1. Overview of all projects
     const projectOverview = await GaapProject.aggregate([
+      { $match: { teamId: teamId } },
       {
         $group: {
           _id: '$status',
@@ -23,6 +32,7 @@ const getDashboardData = async (req, res) => {
 
     // 2. Overview of all invoices
     const invoiceOverview = await GaapInvoice.aggregate([
+      { $match: { teamId: teamId } },
       {
         $group: {
           _id: '$status',
@@ -32,11 +42,14 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    // 3. DSR (Daily Sales Report) summary for all users
+    // 3. DSR (Daily Sales Report) summary for team users
     const today = new Date().setHours(0, 0, 0, 0);
     const dsrSummary = await GaapDsr.aggregate([
       {
-        $match: { date: today }
+        $match: { 
+          date: today,
+          userId: { $in: await GaapUser.find({ teamId: teamId }).distinct('_id') }
+        }
       },
       {
         $group: {
@@ -51,6 +64,7 @@ const getDashboardData = async (req, res) => {
 
     // 4. Overall project progress
     const projectProgress = await GaapProject.aggregate([
+      { $match: { teamId: teamId } },
       {
         $group: {
           _id: null,
@@ -64,7 +78,8 @@ const getDashboardData = async (req, res) => {
     const financialOverview = await ProjectPayment.aggregate([
       {
         $match: {
-          'paymentHistory.date': { $gte: startOfMonth, $lte: endOfMonth }
+          'paymentHistory.date': { $gte: startOfMonth, $lte: endOfMonth },
+          teamId: teamId
         }
       },
       {
@@ -80,14 +95,16 @@ const getDashboardData = async (req, res) => {
     ]);
 
     const totalInvoicesCreated = await GaapInvoice.countDocuments({
-      createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+      teamId: teamId
     });
 
     // 6. Sales targets summary
     const salesTargetsSummary = await GaapSalesTarget.aggregate([
       {
         $match: {
-          'targetPeriod.endDate': { $gte: currentDate }
+          'targetPeriod.endDate': { $gte: currentDate },
+          teamId: teamId
         }
       },
       {
@@ -145,6 +162,8 @@ const getDashboardData = async (req, res) => {
     res.status(500).json({ message: 'Error fetching dashboard data', error: error.message });
   }
 };
+
+
 
 module.exports = {
   getDashboardData
