@@ -67,6 +67,7 @@ const quotationController = {
 
             // Update project
             project.financialApproval = true;
+            project.status='Approved'
             project.lastUpdatedBy = userId;
 
             if (amount) {
