@@ -1,5 +1,4 @@
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
-const GaapProjectProduct = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
@@ -21,18 +20,19 @@ const getProjects = async (req, res) => {
         }
 
         // Helper function to format projects
-        const formatProjects = async (projects, includeComments = false) => {
+        const formatProjects = async (projects) => {
             return Promise.all(projects.map(async (project) => {
                 let formattedProject = {
+                    _id: project._id,
                     projectName: project.projectName,
                     customerName: project.customer ? project.customer.name : 'N/A',
                     assignedStaff: project.assignedTo ? project.assignedTo.name : 'Unassigned',
                     startDate: project.startDate,
                     endDate: project.endDate,
-                    _id: project._id
+                    status: project.status
                 };
 
-                if (includeComments) {
+                if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {
                     const comments = await GaapComment.find({ project: project._id })
                         .sort({ createdAt: -1 })
                         .limit(5)
@@ -49,44 +49,18 @@ const getProjects = async (req, res) => {
             }));
         };
 
-        // Fetch projects for each status
-        const completedProjects = await GaapProject.find({ ...query, status: 'Completed' })
-            .select('projectName customer startDate endDate')
+        // Fetch all projects
+        const projects = await GaapProject.find(query)
+            .select('projectName customer assignedTo startDate endDate status')
             .populate('customer', 'name')
-            .sort({ endDate: -1 });
-
-        const pendingProjects = await GaapProject.find({ ...query, assignedTo: null })
-            .select('projectName customer')
-            .populate('customer', 'name');
-
-        const inProgressProjects = await GaapProject.find({ ...query, status: 'In Progress' })
-            .select('projectName assignedTo startDate endDate')
             .populate('assignedTo', 'name')
-            .populate('customer', 'name');
-
-        const approvedProjects = await GaapProject.find({ ...query, status: 'Approved' })
-            .select('projectName assignedTo startDate endDate')
-            .populate('assignedTo', 'name')
-            .populate('customer', 'name');
-
-        const proposedProjects = await GaapProject.find({ ...query, status: 'Proposed' })
-            .select('projectName assignedTo startDate endDate')
-            .populate('assignedTo', 'name')
-            .populate('customer', 'name');
+            .sort({ createdAt: -1 });
 
         // Format projects
-        const formattedCompletedProjects = await formatProjects(completedProjects);
-        const formattedPendingProjects = await formatProjects(pendingProjects);
-        const formattedInProgressProjects = await formatProjects(inProgressProjects, true);
-        const formattedApprovedProjects = await formatProjects(approvedProjects, true);
-        const formattedProposedProjects = await formatProjects(proposedProjects, true);
+        const formattedProjects = await formatProjects(projects);
 
         res.json({
-            completedProjects: formattedCompletedProjects,
-            pendingProjects: formattedPendingProjects,
-            inProgressProjects: formattedInProgressProjects,
-            approvedProjects: formattedApprovedProjects,
-            proposedProjects: formattedProposedProjects
+            projects: formattedProjects
         });
 
     } catch (error) {
