@@ -20,59 +20,73 @@ const getProjects = async (req, res) => {
             query.department = department;
         }
 
-        // Fetch done projects
-        const doneProjects = await GaapProject.find({ ...query, status: 'Completed' })
+        // Helper function to format projects
+        const formatProjects = async (projects, includeComments = false) => {
+            return Promise.all(projects.map(async (project) => {
+                let formattedProject = {
+                    projectName: project.projectName,
+                    customerName: project.customer ? project.customer.name : 'N/A',
+                    assignedStaff: project.assignedTo ? project.assignedTo.name : 'Unassigned',
+                    startDate: project.startDate,
+                    endDate: project.endDate,
+                    _id: project._id
+                };
+
+                if (includeComments) {
+                    const comments = await GaapComment.find({ project: project._id })
+                        .sort({ createdAt: -1 })
+                        .limit(5)
+                        .populate('user', 'name');
+
+                    formattedProject.recentComments = comments.map(comment => ({
+                        content: comment.content,
+                        user: comment.user.name,
+                        createdAt: comment.createdAt
+                    }));
+                }
+
+                return formattedProject;
+            }));
+        };
+
+        // Fetch projects for each status
+        const completedProjects = await GaapProject.find({ ...query, status: 'Completed' })
             .select('projectName customer startDate endDate')
             .populate('customer', 'name')
             .sort({ endDate: -1 });
 
-        const formattedDoneProjects = doneProjects.map(project => ({
-            projectName: project.projectName,
-            customerName: project.customer.name,
-            startDate: project.startDate,
-            endDate: project.endDate,
-            summary: `Completed project for ${project.customer.name}`
-        }));
-
-        // Fetch pending projects
         const pendingProjects = await GaapProject.find({ ...query, assignedTo: null })
             .select('projectName customer')
             .populate('customer', 'name');
 
-        const formattedPendingProjects = pendingProjects.map(project => ({
-            projectName: project.projectName,
-            customerName: project.customer.name,
-            _id: project._id
-        }));
-
-        // Fetch ongoing projects
-        const ongoingProjects = await GaapProject.find({ ...query, status: 'In Progress' })
+        const inProgressProjects = await GaapProject.find({ ...query, status: 'In Progress' })
             .select('projectName assignedTo startDate endDate')
-            .populate('assignedTo', 'name');
+            .populate('assignedTo', 'name')
+            .populate('customer', 'name');
 
-        const formattedOngoingProjects = await Promise.all(ongoingProjects.map(async (project) => {
-            const comments = await GaapComment.find({ project: project._id })
-                .sort({ createdAt: -1 })
-                .limit(5)
-                .populate('user', 'name');
+        const approvedProjects = await GaapProject.find({ ...query, status: 'Approved' })
+            .select('projectName assignedTo startDate endDate')
+            .populate('assignedTo', 'name')
+            .populate('customer', 'name');
 
-            return {
-                projectName: project.projectName,
-                assignedStaff: project.assignedTo ? project.assignedTo.name : 'Unassigned',
-                assignDate: project.startDate,
-                deadline: project.endDate,
-                recentComments: comments.map(comment => ({
-                    content: comment.content,
-                    user: comment.user.name,
-                    createdAt: comment.createdAt
-                }))
-            };
-        }));
+        const proposedProjects = await GaapProject.find({ ...query, status: 'Proposed' })
+            .select('projectName assignedTo startDate endDate')
+            .populate('assignedTo', 'name')
+            .populate('customer', 'name');
+
+        // Format projects
+        const formattedCompletedProjects = await formatProjects(completedProjects);
+        const formattedPendingProjects = await formatProjects(pendingProjects);
+        const formattedInProgressProjects = await formatProjects(inProgressProjects, true);
+        const formattedApprovedProjects = await formatProjects(approvedProjects, true);
+        const formattedProposedProjects = await formatProjects(proposedProjects, true);
 
         res.json({
-            doneProjects: formattedDoneProjects,
+            completedProjects: formattedCompletedProjects,
             pendingProjects: formattedPendingProjects,
-            ongoingProjects: formattedOngoingProjects
+            inProgressProjects: formattedInProgressProjects,
+            approvedProjects: formattedApprovedProjects,
+            proposedProjects: formattedProposedProjects
         });
 
     } catch (error) {
