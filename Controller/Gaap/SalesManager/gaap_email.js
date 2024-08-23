@@ -108,8 +108,8 @@ const generateAndSendProposal = async (req, res) => {
 
     const mailOptions = {
       from: process.env.Email_Sender,
-      // to: customer.contactPerson1.email,
-      to: 'ahmadkhan.cui@gmail.com',
+      to: customer.contactPerson1.email,
+      // to: 'ahmadkhan.cui@gmail.com',
       subject: 'Business Proposal',
       text: 'Please find attached our business proposal.',
       attachments: [{
