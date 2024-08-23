@@ -13,29 +13,37 @@ dotenv.config();
 
 const generateAndSendProposal = async (req, res) => {
   try {
+    console.log('Starting proposal generation process...');
     const { projectId } = req.body;
 
     // Find project
+    console.log('Finding project...');
     const project = await GaapProject.findById(projectId).populate('customer');
     if (!project) {
+      console.log('Project not found');
       return res.status(404).json({ message: 'Project not found' });
     }
 
     // Find customer
+    console.log('Finding customer...');
     const customer = await GaapCustomer.findById(project.customer);
     if (!customer) {
+      console.log('Customer not found');
       return res.status(404).json({ message: 'Customer not found' });
     }
 
     // Read template files
+    console.log('Reading template files...');
     const template1 = await fs.readFile(path.join(__dirname, '../Template/page1.html'), 'utf8');
     const template2 = await fs.readFile(path.join(__dirname, '../Template/page2.html'), 'utf8');
 
     // Compile templates
+    console.log('Compiling templates...');
     const compiledTemplate1 = handlebars.compile(template1);
     const compiledTemplate2 = handlebars.compile(template2);
 
     // Prepare data for templates
+    console.log('Preparing data for templates...');
     const data = {
       projectName: project.projectName,
       customerName: customer.companyName,
@@ -59,12 +67,20 @@ const generateAndSendProposal = async (req, res) => {
     };
 
     // Generate HTML content
+    console.log('Generating HTML content...');
     const html1 = compiledTemplate1(data);
     const html2 = compiledTemplate2(data);
 
     // Generate PDF
-    const browser = await puppeteer.launch();
+    console.log('Launching browser...');
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: 'new'  // Use new headless mode
+    });
+    console.log('Browser launched successfully');
+
     const page = await browser.newPage();
+    console.log('New page created');
 
     const pdfOptions = {
       format: 'A4',
@@ -73,16 +89,22 @@ const generateAndSendProposal = async (req, res) => {
     };
 
     // First page
+    console.log('Generating first page PDF...');
     await page.setContent(html1, { waitUntil: 'networkidle0' });
     const pdf1 = await page.pdf(pdfOptions);
+    console.log('First page PDF generated');
 
     // Second page
+    console.log('Generating second page PDF...');
     await page.setContent(html2, { waitUntil: 'networkidle0' });
     const pdf2 = await page.pdf(pdfOptions);
+    console.log('Second page PDF generated');
 
     await browser.close();
+    console.log('Browser closed');
 
     // Merge PDFs using pdf-lib
+    console.log('Merging PDFs...');
     const mergedPdf = await PDFDocument.create();
     const pdf1Doc = await PDFDocument.load(pdf1);
     const pdf2Doc = await PDFDocument.load(pdf2);
@@ -96,10 +118,12 @@ const generateAndSendProposal = async (req, res) => {
     const pdfBytes = await mergedPdf.save();
 
     // Write the merged PDF to a file
+    console.log('Writing merged PDF to file...');
     const pdfPath = path.join(__dirname, 'final_proposal.pdf');
     await fs.writeFile(pdfPath, pdfBytes);
 
     // Send email using SendinBlue
+    console.log('Sending email...');
     const transporter = nodemailer.createTransport(
       new sendinBlue({
         apiKey: process.env.SENDINBLUE_API_KEY,
@@ -108,8 +132,8 @@ const generateAndSendProposal = async (req, res) => {
 
     const mailOptions = {
       from: process.env.Email_Sender,
-      to: customer.contactPerson1.email,
-      // to: 'ahmadkhan.cui@gmail.com',
+      // to: customer.contactPerson1.email,
+      to: 'hashmiosama555@gmail.com',
       subject: 'Business Proposal',
       text: 'Please find attached our business proposal.',
       attachments: [{
@@ -119,14 +143,17 @@ const generateAndSendProposal = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
 
     // Clean up final PDF
+    console.log('Cleaning up temporary PDF file...');
     await fs.unlink(pdfPath);
 
+    console.log('Proposal generation process completed successfully');
     res.status(200).json({ message: 'Proposal generated and sent successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'An error occurred while processing your request' });
+    console.error('Error in generateAndSendProposal:', error);
+    res.status(500).json({ message: 'An error occurred while processing your request', error: error.message });
   }
 };
 
