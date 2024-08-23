@@ -66,13 +66,19 @@ const generateAndSendProposal = async (req, res) => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    const pdfOptions = {
+      format: 'A4',
+      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
+      printBackground: true
+    };
+
     // First page
-    await page.setContent(html1);
-    const pdf1 = await page.pdf({ format: 'A4' });
+    await page.setContent(html1, { waitUntil: 'networkidle0' });
+    const pdf1 = await page.pdf(pdfOptions);
 
     // Second page
-    await page.setContent(html2);
-    const pdf2 = await page.pdf({ format: 'A4' });
+    await page.setContent(html2, { waitUntil: 'networkidle0' });
+    const pdf2 = await page.pdf(pdfOptions);
 
     await browser.close();
 
@@ -103,7 +109,7 @@ const generateAndSendProposal = async (req, res) => {
     const mailOptions = {
       from: process.env.Email_Sender,
       // to: customer.contactPerson1.email,
-      to: 'hashmiosama555@gmail.com',
+      to: 'ahmadkhan.cui@gmail.com',
       subject: 'Business Proposal',
       text: 'Please find attached our business proposal.',
       attachments: [{

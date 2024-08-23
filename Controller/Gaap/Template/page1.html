@@ -4,80 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Business Proposal - GAAP Associates</title>
-  <!-- Font Awesome CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3zW5q2j3zD1V4T1xQ3sI1GkE4xk5x5Q5J5fJ5" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      line-height: 1.6;
+      line-height: 1.4;
       color: #333;
       max-width: 800px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 15px;
+      font-size: 14px;
     }
-    .header {
+    .header, .footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     .logo {
-      width: 150px;
+      width: 120px;
     }
     .proposal-title {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
       text-align: right;
     }
-    .reference, .recipient, .content, .footer {
-      margin-bottom: 20px;
+    .reference, .recipient, .content, .signature {
+      margin-bottom: 15px;
     }
     .service-title {
       text-align: center;
       font-weight: bold;
-      margin: 20px 0;
-      font-size: 18px;
+      margin: 15px 0;
+      font-size: 16px;
     }
     .scope h3 {
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      font-size: 14px;
     }
     .scope ul {
       list-style-type: disc;
-      padding-left: 20px;
-    }
-    .footer {
-      margin-top: 40px;
-    }
-    .signature {
-      margin-top: 20px;
+      padding-left: 18px;
     }
     .contact-info {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       background-color: #f0f0f0;
-      padding: 10px;
-      margin-top: 40px;
+      padding: 8px;
+      margin-top: 30px;
+      font-size: 12px;
     }
     .contact-info div {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       flex: 1 1 30%;
     }
     .contact-info i {
-      margin-right: 10px;
-      font-size: 20px;
+      margin-right: 8px;
+      font-size: 16px;
+    }
+    /* Page break styling */
+    .page-break {
+      page-break-before: always;
     }
     @media (max-width: 600px) {
-      .header {
+      .header, .footer {
         flex-direction: column;
         align-items: flex-start;
       }
       .proposal-title {
         text-align: left;
-        margin-top: 10px;
+        margin-top: 8px;
       }
       .contact-info {
         flex-direction: column;
