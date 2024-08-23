@@ -115,7 +115,8 @@ const generateAndSendProposal = async (req, res) => {
 
       const mailOptions = {
         from: process.env.Email_Sender,
-        to: 'hashmiosama555@gmail.com', // Replace with customer.contactPerson1.email in production
+        // to: 'hashmiosama555@gmail.com', // Replace with customer.contactPerson1.email in production
+        to: customer.contactPerson1.email,
         subject: 'Business Proposal',
         text: 'Please find attached our business proposal.',
         attachments: [{
