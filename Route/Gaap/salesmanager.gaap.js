@@ -31,6 +31,10 @@ const { getUserProfile } = require('../../Controller/Gaap/SalesManager/Profile/g
 
 
 
+const { generateAndSendProposal } = require('../../Controller/Gaap/SalesManager/gaap_email');
+
+
+
 
 const upload = multer({ storage: multer.memoryStorage() });
 const { verifyToken } = require('../../Middleware/jwt');
@@ -66,6 +70,11 @@ router.get('/dashboard', verifyToken, getDashboardData);
 
 router.put('/update-profile', verifyToken, updateUserProfile);
 router.get('/profile', verifyToken, getUserProfile);
+
+
+
+
+router.post('/send-email', verifyToken, generateAndSendProposal);
 
 
 

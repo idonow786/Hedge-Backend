@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Proposal - GAAP Associates</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3zW5q2j3zD1V4T1xQ3sI1GkE4xk5x5Q5J5fJ5" crossorigin="anonymous">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 150px;
+    }
+    .proposal-title {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: right;
+    }
+    .reference, .recipient, .content, .footer {
+      margin-bottom: 20px;
+    }
+    .service-title {
+      text-align: center;
+      font-weight: bold;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+    .scope h3 {
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .scope ul {
+      list-style-type: disc;
+      padding-left: 20px;
+    }
+    .footer {
+      margin-top: 40px;
+    }
+    .signature {
+      margin-top: 20px;
+    }
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      background-color: #f0f0f0;
+      padding: 10px;
+      margin-top: 40px;
+    }
+    .contact-info div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex: 1 1 30%;
+    }
+    .contact-info i {
+      margin-right: 10px;
+      font-size: 20px;
+    }
+    @media (max-width: 600px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .proposal-title {
+        text-align: left;
+        margin-top: 10px;
+      }
+      .contact-info {
+        flex-direction: column;
+      }
+      .contact-info div {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media" alt="GAAP Associates Logo" class="logo">
+    <div class="proposal-title">Business Proposal</div>
+  </div>
+  
+  <div class="reference">
+    <div>Ref: {{referenceNumber}}</div>
+    <div>Date: {{currentDate}}</div>
+  </div>
+  
+  <div class="service-title">
+    FOR {{projectType}}
+  </div>
+  
+  <div class="recipient">
+    <p>To,</p>
+    <p>{{contactPerson}}</p>
+    <p>{{customerName}}</p>
+    <p>{{customerAddress}}</p>
+  </div>
+  
+  <div class="content">
+    <p>Dear Sir,</p>
+    <p>We are delighted to present this proposal outlining for {{projectType}}. We aim to provide you with expert guidance and support in managing your {{projectType}} requirements efficiently while ensuring compliance with all relevant regulations for smooth business functioning.</p>
+  </div>
+  
+  <div class="scope">
+    <h3>SCOPE OF THE WORKS</h3>
+    <ul>
+      <li>{{projectType}}</li>
+    </ul>
+    <h4>Additional Services:</h4>
+    <p>In addition to the above, we offer a range of supplementary services, including internal audit, bookkeeping, tax audit support, tax dispute resolution, and representation before tax authorities. These services are designed to provide you with comprehensive supports for various corporate services in your success journey.</p>
+  </div>
+  
+  <div class="content">
+    <p>Our proposed engagement will be structured on a retainer basis, allowing for ongoing support and timely advice as and when required. We are confident that our expertise and dedication will add significant value to your business by ensuring compliance for competent austerities and internal MIS for a brighter future. We look forward to the opportunity to work with you and contribute to your success.</p>
+    <p>We are looking forward to hearing from you.</p>
+  </div>
+  
+  <div class="footer">
+    <p>Please refer below proposal No# {{referenceNumber}} Dated {{currentDate}}</p>
+    <p>For GAAP ASSOCIATES AUDITING LLC</p>
+    <div class="signature">
+      <p>Abdul Akbar</p>
+      <p>Audit Partner</p>
+    </div>
+  </div>
+  
+  <div class="contact-info">
+    <div><i class="fas fa-map-marker-alt"></i> P.O. Box 27544 Abu Dhabi - U.A.E</div>
+    <div><i class="fas fa-phone-alt"></i> +971 2 650 2924</div>
+    <div><i class="fas fa-envelope"></i> info@gaapaudit.com</div>
+  </div>
+</body>
+</html>
