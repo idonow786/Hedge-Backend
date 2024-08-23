@@ -2,12 +2,12 @@ const GaapProject = require('../../../Model/Gaap/gaap_project');
 const GaapCustomer = require('../../../Model/Gaap/gaap_customer');
 const fs = require('fs').promises;
 const path = require('path');
-const puppeteer = require('puppeteer');
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 const handlebars = require('handlebars');
 const { PDFDocument } = require('pdf-lib');
 const dotenv = require('dotenv');
+const htmlPdf = require('html-pdf-node');
 
 dotenv.config();
 
@@ -55,7 +55,7 @@ const generateAndSendProposal = async (req, res) => {
       currentDate: new Date().toLocaleDateString(),
       customerAddress: `${customer.address.street}, ${customer.address.city}, ${customer.address.country}`,
       quoteNumber: `QUOTE-${project._id.toString().slice(-4)}`,
-      validUntil: new Date(project.startDate.getTime() + 30*24*60*60*1000).toLocaleDateString(),
+      validUntil: new Date(project.startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
       itemName: project.projectType,
       rate: project.totalAmount.toFixed(2),
       quantity: 1,
@@ -71,86 +71,72 @@ const generateAndSendProposal = async (req, res) => {
     const html1 = compiledTemplate1(data);
     const html2 = compiledTemplate2(data);
 
-    // Generate PDF
-    console.log('Launching browser...');
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: 'new'  // Use new headless mode
-    });
-    console.log('Browser launched successfully');
-
-    const page = await browser.newPage();
-    console.log('New page created');
-
-    const pdfOptions = {
-      format: 'A4',
+    // Generate PDFs
+    console.log('Generating PDFs...');
+    const options = { 
+      format: 'A4', 
       margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
       printBackground: true
     };
 
-    // First page
-    console.log('Generating first page PDF...');
-    await page.setContent(html1, { waitUntil: 'networkidle0' });
-    const pdf1 = await page.pdf(pdfOptions);
-    console.log('First page PDF generated');
+    try {
+      const pdf1 = await htmlPdf.generatePdf({ content: html1 }, options);
+      console.log('First page PDF generated');
 
-    // Second page
-    console.log('Generating second page PDF...');
-    await page.setContent(html2, { waitUntil: 'networkidle0' });
-    const pdf2 = await page.pdf(pdfOptions);
-    console.log('Second page PDF generated');
+      const pdf2 = await htmlPdf.generatePdf({ content: html2 }, options);
+      console.log('Second page PDF generated');
 
-    await browser.close();
-    console.log('Browser closed');
+      // Merge PDFs using pdf-lib
+      console.log('Merging PDFs...');
+      const mergedPdf = await PDFDocument.create();
+      const pdf1Doc = await PDFDocument.load(pdf1);
+      const pdf2Doc = await PDFDocument.load(pdf2);
 
-    // Merge PDFs using pdf-lib
-    console.log('Merging PDFs...');
-    const mergedPdf = await PDFDocument.create();
-    const pdf1Doc = await PDFDocument.load(pdf1);
-    const pdf2Doc = await PDFDocument.load(pdf2);
+      const copiedPages1 = await mergedPdf.copyPages(pdf1Doc, pdf1Doc.getPageIndices());
+      copiedPages1.forEach((page) => mergedPdf.addPage(page));
 
-    const copiedPages1 = await mergedPdf.copyPages(pdf1Doc, pdf1Doc.getPageIndices());
-    copiedPages1.forEach((page) => mergedPdf.addPage(page));
+      const copiedPages2 = await mergedPdf.copyPages(pdf2Doc, pdf2Doc.getPageIndices());
+      copiedPages2.forEach((page) => mergedPdf.addPage(page));
 
-    const copiedPages2 = await mergedPdf.copyPages(pdf2Doc, pdf2Doc.getPageIndices());
-    copiedPages2.forEach((page) => mergedPdf.addPage(page));
+      const pdfBytes = await mergedPdf.save();
 
-    const pdfBytes = await mergedPdf.save();
+      // Write the merged PDF to a file
+      console.log('Writing merged PDF to file...');
+      const pdfPath = path.join(__dirname, 'final_proposal.pdf');
+      await fs.writeFile(pdfPath, pdfBytes);
 
-    // Write the merged PDF to a file
-    console.log('Writing merged PDF to file...');
-    const pdfPath = path.join(__dirname, 'final_proposal.pdf');
-    await fs.writeFile(pdfPath, pdfBytes);
+      // Send email using SendinBlue
+      console.log('Sending email...');
+      const transporter = nodemailer.createTransport(
+        new sendinBlue({
+          apiKey: process.env.SENDINBLUE_API_KEY,
+        })
+      );
 
-    // Send email using SendinBlue
-    console.log('Sending email...');
-    const transporter = nodemailer.createTransport(
-      new sendinBlue({
-        apiKey: process.env.SENDINBLUE_API_KEY,
-      })
-    );
+      const mailOptions = {
+        from: process.env.Email_Sender,
+        to: 'hashmiosama555@gmail.com', // Replace with customer.contactPerson1.email in production
+        subject: 'Business Proposal',
+        text: 'Please find attached our business proposal.',
+        attachments: [{
+          filename: 'business_proposal.pdf',
+          path: pdfPath
+        }]
+      };
 
-    const mailOptions = {
-      from: process.env.Email_Sender,
-      // to: customer.contactPerson1.email,
-      to: 'hashmiosama555@gmail.com',
-      subject: 'Business Proposal',
-      text: 'Please find attached our business proposal.',
-      attachments: [{
-        filename: 'business_proposal.pdf',
-        path: pdfPath
-      }]
-    };
+      await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully');
 
-    await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully');
+      // Clean up final PDF
+      console.log('Cleaning up temporary PDF file...');
+      await fs.unlink(pdfPath);
 
-    // Clean up final PDF
-    console.log('Cleaning up temporary PDF file...');
-    await fs.unlink(pdfPath);
-
-    console.log('Proposal generation process completed successfully');
-    res.status(200).json({ message: 'Proposal generated and sent successfully' });
+      console.log('Proposal generation process completed successfully');
+      res.status(200).json({ message: 'Proposal generated and sent successfully' });
+    } catch (error) {
+      console.error('Error in PDF generation or email sending:', error);
+      throw error; // Re-throw to be caught by the main try-catch block
+    }
   } catch (error) {
     console.error('Error in generateAndSendProposal:', error);
     res.status(500).json({ message: 'An error occurred while processing your request', error: error.message });
