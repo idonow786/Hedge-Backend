@@ -4,11 +4,9 @@ const Schema = mongoose.Schema;
 const gaapcustomerContactSchema = new Schema({
   name: {
     type: String,
-    required: true
   },
   designation: {
     type: String,
-    required: true
   },
   email: {
     type: String,
@@ -24,11 +22,9 @@ const gaapcustomerDocumentSchema = new Schema({
   documentType: {
     type: String,
     enum: ['tradeLicense', 'vatCertificate', 'otherDocuments'],
-    required: true
   },
   documentUrl: {
     type: String,
-    required: true
   },
   uploadDate: {
     type: Date,
@@ -39,7 +35,6 @@ const gaapcustomerDocumentSchema = new Schema({
 const gaapcustomerSchema = new Schema({
   companyName: {
     type: String,
-    required: true,
     trim: true
   },
   landline: {
@@ -47,7 +42,6 @@ const gaapcustomerSchema = new Schema({
   },
   mobile: {
     type: String,
-    required: true
   },
   teamId: {
     type: String,
@@ -64,17 +58,14 @@ const gaapcustomerSchema = new Schema({
   trNumber: {
     type: String,
     unique: true,
-    required: true
   },
   documents: [gaapcustomerDocumentSchema],
   industryType: {
     type: String,
-    required: true
   },
   registeredBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
-    required: true
   },
   isActive: {
     type: Boolean,
