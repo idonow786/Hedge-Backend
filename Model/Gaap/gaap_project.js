@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const gaapprojectSchema = new Schema({
-  projectName: {
+  projectName: { 
     type: String,
     required: true,
     trim: true

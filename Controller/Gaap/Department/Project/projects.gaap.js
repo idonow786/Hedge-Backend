@@ -16,7 +16,9 @@ const getProjects = async (req, res) => {
 
         let query = { teamId };
         if (department) {
-            query.department = department;
+            // Create a case-insensitive regular expression for partial matching
+            const departmentRegex = new RegExp(department, 'i');
+            query.projectType = { $regex: departmentRegex };
         }
 
         // Helper function to format projects
@@ -29,7 +31,8 @@ const getProjects = async (req, res) => {
                     assignedStaff: project.assignedTo ? project.assignedTo.name : 'Unassigned',
                     startDate: project.startDate,
                     endDate: project.endDate,
-                    status: project.status
+                    status: project.status,
+                    projectType: project.projectType
                 };
 
                 if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {
@@ -51,7 +54,7 @@ const getProjects = async (req, res) => {
 
         // Fetch all projects
         const projects = await GaapProject.find(query)
-            .select('projectName customer assignedTo startDate endDate status')
+            .select('projectName customer assignedTo startDate endDate status projectType')
             .populate('customer', 'name')
             .populate('assignedTo', 'name')
             .sort({ createdAt: -1 });
