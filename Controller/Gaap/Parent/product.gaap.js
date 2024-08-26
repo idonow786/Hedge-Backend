@@ -210,4 +210,62 @@ const productController = {
   }
 };
 
+
+
+
+
+
+
 module.exports = productController;
+
+
+  //   try {
+  //     // Find all documents
+  //     const products = await FixedPriceProduct.find({});
+
+  //     // Array to store update operations
+  //     const bulkOps = [];
+
+  //     for (const product of products) {
+  //         let updateNeeded = false;
+  //         const updateObj = {};
+
+  //         if (product.auditType === 'R.Y') {
+  //             updateObj.auditType = 'ICV';
+  //             updateNeeded = true;
+  //         } else if (product.auditType === 'R.Y+external Audit') {
+  //             updateObj.auditType = 'ICV+external Audit';
+  //             updateNeeded = true;
+  //         }
+
+  //         if (updateNeeded) {
+  //             bulkOps.push({
+  //                 updateOne: {
+  //                     filter: { _id: product._id },
+  //                     update: { $set: updateObj }
+  //                 }
+  //             });
+  //         }
+  //     }
+
+  //     // Perform bulk update if there are operations
+  //     if (bulkOps.length > 0) {
+  //         await FixedPriceProduct.bulkWrite(bulkOps);
+  //         res.status(200).json({
+  //             message: `Successfully updated ${bulkOps.length} documents`,
+  //             updatedCount: bulkOps.length
+  //         });
+  //     } else {
+  //         res.status(200).json({
+  //             message: "No documents needed updating",
+  //             updatedCount: 0
+  //         });
+  //     }
+
+  // } catch (error) {
+  //     console.error('Error updating audit types:', error);
+  //     res.status(500).json({
+  //         message: 'Error updating audit types',
+  //         error: error.message
+  //     });
+  // }

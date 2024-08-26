@@ -8,7 +8,7 @@ const fixedPriceProductSchema = new Schema({
   },
   auditType: {
     type: String,
-    enum: ['External Audit', 'R.Y', 'R.Y+external Audit'],
+    enum: ['External Audit', 'ICV', 'ICV+external Audit'],
     required: true
   },
   turnover: {
