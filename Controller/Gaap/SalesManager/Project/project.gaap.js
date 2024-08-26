@@ -10,36 +10,36 @@ const getProjectsAll = async (req, res) => {
         // Check if the user is a team parent
         const parentTeam = await GaapTeam.findOne({
             $or: [
-              { 'parentUser.userId': req.adminId },
-              { 'GeneralUser.userId': req.adminId }
+                { 'parentUser.userId': req.adminId },
+                { 'GeneralUser.userId': req.adminId }
             ]
-          });
+        });
 
         if (parentTeam) {
             // If user is a team parent, get all projects with matching teamId
             projects = await GaapProject.find({ teamId: parentTeam._id })
-            .populate('customer')
-            .populate('assignedTo')
-            .populate('salesPerson')
-            .populate('tasks');
+                .populate('customer')
+                .populate('assignedTo')
+                .populate('salesPerson')
+                .populate('tasks');
         } else {
             // Check if the user is a manager in any team
             const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
-            
+
             if (managerTeam) {
                 // If user is a manager, get all projects created by team members and the manager
                 const teamMemberIds = managerTeam.members.map(member => member.memberId);
                 teamMemberIds.push(adminId);
-                projects = await GaapProject.find({ 
+                projects = await GaapProject.find({
                     $or: [
                         { createdBy: { $in: teamMemberIds } },
                         { createdBy: adminId }
                     ]
                 })
-                .populate('customer')
-                .populate('assignedTo')
-                .populate('salesPerson')
-                .populate('tasks');
+                    .populate('customer')
+                    .populate('assignedTo')
+                    .populate('salesPerson')
+                    .populate('tasks');
             } else {
                 // If user is neither a parent nor a manager, get projects created by the user
                 projects = await GaapProject.find({ createdBy: adminId })
@@ -57,21 +57,24 @@ const getProjectsAll = async (req, res) => {
             const totalTasks = project.tasks.length;
             const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
             const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-            const { 
-                _id, 
-                projectName, 
-                customer, 
-                projectType, 
-                status, 
-                startDate, 
-                endDate, 
-                totalAmount, 
+            if (progress >= 100 && project.status !== 'Completed') {
+                project.status = 'Completed';
+                await project.save();
+            }
+            const {
+                _id,
+                projectName,
+                customer,
+                projectType,
+                status,
+                startDate,
+                endDate,
+                totalAmount,
                 appliedDiscount,
                 assignedTo,
                 salesManagerApproval,
                 customerApproval,
-                financialApproval, 
+                financialApproval,
                 salesPerson,
                 teamId
             } = project;
@@ -87,7 +90,7 @@ const getProjectsAll = async (req, res) => {
                 startDate,
                 salesManagerApproval,
                 customerApproval,
-                financialApproval, 
+                financialApproval,
                 endDate,
                 totalAmount,
                 assignedTo,

@@ -6,7 +6,7 @@ const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const { uploadFileToFirebase } = require('../../../../Firebase/uploadFileToFirebase');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
-const GaapTeam=require('../../../../Model/Gaap/gaap_team')
+const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 
 const createProject = async (req, res) => {
     try {
@@ -177,7 +177,10 @@ const getProjects = async (req, res) => {
             const totalTasks = project.tasks.length;
             const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
             const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
+            if (progress >= 100 && project.status !== 'Completed') {
+                project.status = 'Completed';
+                await project.save();
+            }
             const {
                 _id,
                 projectName,
@@ -294,8 +297,8 @@ const updateProject = async (req, res) => {
                 });
             }
         }
-        if(financialApproval==true){
-            existingProject.status='Approved'
+        if (financialApproval == true) {
+            existingProject.status = 'Approved'
         }
         await existingProject.save()
         const updateData = {
@@ -325,7 +328,7 @@ const updateProject = async (req, res) => {
         const notificationsToCreate = [];
 
         // Check for important changes and create notifications
-      
+
 
         if (customerApproval !== existingProject.customerApproval) {
             notificationsToCreate.push({
