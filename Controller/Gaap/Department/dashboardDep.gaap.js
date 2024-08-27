@@ -22,7 +22,7 @@ const getDashboardDataDepartment = async (req, res) => {
 
         const dashboardData = {
             projectsOverview: await getProjectsOverview(relevantProjects),
-            departmentPerformance: await getDepartmentPerformance(relevantProjects),
+            // departmentPerformance: await getDepartmentPerformance(relevantProjects),
         };
 
         res.json(dashboardData);
@@ -73,19 +73,19 @@ const getProjectsOverview = async (projects) => {
             totalProjects: projects.length,
             ongoingProjects: ongoingProjects.length,
             pendingProjects: pendingProjects.length,
-            recentProjects: projects
-                .sort((a, b) => b.createdAt - a.createdAt)
-                .slice(0, 5)
-                .map(project => ({
-                    _id: project._id,
-                    projectName: project.projectName,
-                    assignedTo: project.assignedTo ? project.assignedTo.fullName : 'N/A',
-                    status: project.status,
-                    startDate: project.startDate,
-                    endDate: project.endDate,
-                    progress: project.Progress || 0,
-                    viewProjectUrl: `/projects/${project._id}`
-                }))
+            // recentProjects: projects
+            //     .sort((a, b) => b.createdAt - a.createdAt)
+            //     .slice(0, 5)
+            //     .map(project => ({
+            //         _id: project._id,
+            //         projectName: project.projectName,
+            //         assignedTo: project.assignedTo ? project.assignedTo.fullName : 'N/A',
+            //         status: project.status,
+            //         startDate: project.startDate,
+            //         endDate: project.endDate,
+            //         progress: project.Progress || 0,
+            //         viewProjectUrl: `/projects/${project._id}`
+            //     }))
         };
     } catch (error) {
         console.error('Error in getProjectsOverview:', error);
