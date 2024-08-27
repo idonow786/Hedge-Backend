@@ -7,6 +7,7 @@ const { uploadFileToFirebase } = require('../../../../Firebase/uploadFileToFireb
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
 const GaapTeam = require('../../../../Model/Gaap/gaap_team')
+const FixedPriceProduct = require('../../../../Model/Gaap/gaap_fixed_price_product');
 
 const createProject = async (req, res) => {
     try {
@@ -25,16 +26,56 @@ const createProject = async (req, res) => {
             vatDetails,
             approvalComments,
         } = req.body;
-        console.log(req.body)
-        console.log(req.files)
-        if (!projectName || !customerId || !projectType || !startDate || !pricingType || !totalAmount || !products) {
+
+        console.log(req.body);
+        console.log(req.files);
+
+        if (!projectName || !customerId || !projectType || !pricingType || !totalAmount || !products) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
-        const user = await GaapUser.findById(req.adminId)
+
+        const user = await GaapUser.findById(req.adminId);
+        // if (!user) {
+        //     return res.status(404).json({ message: 'User not found' });
+        // }
 
         const customer = await GaapCustomer.findById(customerId);
         if (!customer) {
             return res.status(404).json({ message: 'Customer not found' });
+        }
+
+        let projectStartDate, projectEndDate;
+        if (pricingType === 'Fixed') {
+            const fixedPriceProduct = await FixedPriceProduct.findOne({
+                adminId: req.adminId,
+                auditType: projectType,
+                amount: totalAmount
+            });
+
+            if (!fixedPriceProduct) {
+                return res.status(404).json({ message: 'Fixed price product not found' });
+            }
+
+            const timeDeadlineMatch = fixedPriceProduct.timeDeadline.match(/(\d+)\s*days?/i);
+            if (!timeDeadlineMatch) {
+                return res.status(400).json({ message: 'Invalid time deadline format in fixed price product' });
+            }
+
+            const timeDeadlineDays = parseInt(timeDeadlineMatch[1]);
+            if (isNaN(timeDeadlineDays)) {
+                return res.status(400).json({ message: 'Invalid time deadline in fixed price product' });
+            }
+
+            projectStartDate = new Date();
+            projectEndDate = new Date(projectStartDate.getTime() + timeDeadlineDays * 24 * 60 * 60 * 1000);
+        } else if (pricingType === 'Variable') {
+            if (!startDate || !endDate) {
+                return res.status(400).json({ message: 'Start and end dates are required for variable pricing' });
+            }
+            projectStartDate = new Date(startDate);
+            projectEndDate = new Date(endDate);
+        } else {
+            return res.status(400).json({ message: 'Invalid pricing type' });
         }
 
         let vatCertificateUrl = '';
@@ -62,8 +103,8 @@ const createProject = async (req, res) => {
             projectType,
             department,
             assignedTo: req.adminId,
-            startDate,
-            endDate,
+            startDate: projectStartDate,
+            endDate: projectEndDate,
             status,
             teamId: user.teamId,
             pricingType,
@@ -93,7 +134,8 @@ const createProject = async (req, res) => {
         }
 
         await newProject.save();
-        console.log(newProject)
+        console.log(newProject);
+
         const projectProducts = await Promise.all(products.map(async (product) => {
             const projectProduct = new GaapProjectProduct({
                 project: newProject._id,
@@ -139,6 +181,7 @@ const createProject = async (req, res) => {
         res.status(500).json({ message: 'Error creating project', error: error.message });
     }
 };
+
 
 
 
