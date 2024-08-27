@@ -2,6 +2,7 @@
 
 const GaapProject = require('../../../Model/Gaap/gaap_project');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../Model/Gaap/gaap_team');
 
 const getDashboardData = async (req, res) => {
     try {
@@ -11,8 +12,20 @@ const getDashboardData = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        console.log(user)
-        const teamId = user.teamId;
+
+        // Find the team where the user is either parentUser or GeneralUser
+        const team = await GaapTeam.findOne({
+            $or: [
+                { 'parentUser.userId': userId },
+                { 'GeneralUser.userId': userId }
+            ]
+        });
+
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found for this user' });
+        }
+
+        const teamId = team._id;
 
         const dashboardData = {
             projectsOverview: await getProjectsOverview(teamId),
@@ -56,7 +69,7 @@ const getProjectsOverview = async (teamId) => {
                     status: project.status,
                     startDate: project.startDate,
                     endDate: project.endDate,
-                    progress: project.Progress || 0, // Using the Progress field from the schema, defaulting to 0 if not set
+                    progress: project.Progress || 0,
                     viewProjectUrl: `/projects/${project._id}`
                 }))
         };
@@ -73,7 +86,7 @@ const getDepartmentPerformance = async (teamId) => {
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
         const departmentPerformance = await GaapProject.aggregate([
-            { $match: { teamId: teamId } },
+            { $match: { teamId: teamId.toString() } }, // Convert ObjectId to string if necessary
             {
                 $group: {
                     _id: "$department",
