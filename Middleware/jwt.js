@@ -18,8 +18,6 @@ const verifyToken = (req, res, next) => {
     process.env.JWT_SECRET_GAAP,
     process.env.JWT_SECRET_GAAP_USER,
   ];
-
-
   let decoded;
   let lastError;
   for (let secretKey of secretKeys) {
