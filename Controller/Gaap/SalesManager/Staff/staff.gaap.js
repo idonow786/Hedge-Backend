@@ -14,8 +14,8 @@ const getUsersCreatedByAdmin = async (req, res) => {
         if (!adminUser) {
             return res.status(404).json({ message: 'Admin user not found' });
         }
-        console.log(req.adminId)
-        // Find the team where the admin is the manager
+
+        // Find the team where the admin is involved
         const team = await GaapTeam.findOne({ 
             $or: [
                 { 'parentUser.userId': adminId },
@@ -24,13 +24,21 @@ const getUsersCreatedByAdmin = async (req, res) => {
             ]
         });
         
-        console.log(team)
         if (!team) {
             return res.status(404).json({ message: 'No team found for this admin' });
         }
 
-        // Get all member IDs from the team
-        const memberIds = team.members.map(member => member.memberId);
+        let memberIds;
+
+        if (team.parentUser.userId === adminId || team.GeneralUser.userId === adminId) {
+            // If admin is parentUser or GeneralUser, get all member IDs
+            memberIds = team.members.map(member => member.memberId);
+        } else {
+            // If admin is a manager, get only the members they manage
+            memberIds = team.members
+                .filter(member => member.managerId === adminId)
+                .map(member => member.memberId);
+        }
 
         // Find all users who are members of this team
         const users = await GaapUser.find({ 
@@ -38,7 +46,7 @@ const getUsersCreatedByAdmin = async (req, res) => {
         }).select('-password');
 
         if (!users.length) {
-            return res.status(404).json({ message: 'No users found in this admin\'s team.' });
+            return res.status(404).json({ message: 'No users found for this admin.' });
         }
 
         // Prepare the response data
@@ -67,4 +75,3 @@ const getUsersCreatedByAdmin = async (req, res) => {
 };
 
 module.exports = { getUsersCreatedByAdmin };
-
