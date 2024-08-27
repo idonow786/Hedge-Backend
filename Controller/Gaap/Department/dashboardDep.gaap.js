@@ -14,9 +14,11 @@ const getDashboardDataDepartment = async (req, res) => {
         }
 
         const teamId = user.teamId;
+        const userDepartment = user.department;
+        const userRole = user.role;
 
-        // Get projects based on tasks created by or assigned to the user
-        const relevantProjects = await getRelevantProjects(userId);
+        // Get relevant projects
+        const relevantProjects = await getRelevantProjects(userId, teamId, userDepartment, userRole);
 
         const dashboardData = {
             projectsOverview: await getProjectsOverview(relevantProjects),
@@ -30,36 +32,48 @@ const getDashboardDataDepartment = async (req, res) => {
     }
 };
 
-const getRelevantProjects = async (userId) => {
-    // Find tasks created by or assigned to the user
-    const tasks = await GaapTask.find({
-        $or: [
-            { createdBy: userId },
-            { assignedTo: userId }
-        ]
-    }).distinct('project');
+const getRelevantProjects = async (userId, teamId, userDepartment, userRole) => {
+    let query = { teamId, financialApproval: true };
 
-    // Get the projects associated with these tasks
-    return await GaapProject.find({ _id: { $in: tasks } });
+    if (userDepartment) {
+        const departmentRegex = new RegExp(userDepartment, 'i');
+        query.projectType = { $regex: departmentRegex };
+    }
+
+    const executiveRoles = ['Accounting Executive', 'Audit Executive', 'Tax Executive', 'ICV Executive'];
+    if (executiveRoles.includes(userRole)) {
+        // For executive roles, only include projects where they are assigned to tasks
+        const tasksWithUser = await GaapTask.find({ assignedTo: userId }).distinct('project');
+        query._id = { $in: tasksWithUser };
+    }
+
+    // For assignedTo, we keep the original logic
+    const projectsAssignedTo = await GaapProject.find({ ...query, assignedTo: userId });
+    const otherProjects = await GaapProject.find(query);
+
+    // Combine and remove duplicates
+    const allProjects = [...projectsAssignedTo, ...otherProjects];
+    const uniqueProjects = Array.from(new Set(allProjects.map(p => p._id.toString())))
+        .map(_id => allProjects.find(p => p._id.toString() === _id));
+
+    return uniqueProjects;
 };
 
 const getProjectsOverview = async (projects) => {
     try {
-        const allProjects = projects;
-
-        const ongoingProjects = allProjects.filter(project => 
+        const ongoingProjects = projects.filter(project => 
             ['Proposed', 'Approved', 'In Progress'].includes(project.status)
         );
 
-        const pendingProjects = allProjects.filter(project => 
+        const pendingProjects = projects.filter(project => 
             project.status === 'On Hold'
         );
 
         return {
-            totalProjects: allProjects.length,
+            totalProjects: projects.length,
             ongoingProjects: ongoingProjects.length,
             pendingProjects: pendingProjects.length,
-            recentProjects: allProjects
+            recentProjects: projects
                 .sort((a, b) => b.createdAt - a.createdAt)
                 .slice(0, 5)
                 .map(project => ({

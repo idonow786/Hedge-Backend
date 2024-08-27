@@ -622,7 +622,7 @@ const signin = async (req, res) => {
       user.companyActivity='Gaap'
       await user.save();
     }
-
+    console.log(user)
     const response = {
       message: 'Login successful',
       token,
