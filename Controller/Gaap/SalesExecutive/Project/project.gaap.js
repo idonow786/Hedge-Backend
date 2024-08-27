@@ -47,7 +47,6 @@ const createProject = async (req, res) => {
         let projectStartDate, projectEndDate;
         if (pricingType === 'Fixed') {
             const fixedPriceProduct = await FixedPriceProduct.findOne({
-                adminId: req.adminId,
                 auditType: projectType,
                 amount: totalAmount
             });
