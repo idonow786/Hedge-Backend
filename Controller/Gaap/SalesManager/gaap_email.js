@@ -1,5 +1,6 @@
 const GaapProject = require('../../../Model/Gaap/gaap_project');
 const GaapCustomer = require('../../../Model/Gaap/gaap_customer');
+const GaapUser = require('../../../Model/Gaap/gaap_user');
 const fs = require('fs').promises;
 const path = require('path');
 const nodemailer = require('nodemailer');
@@ -15,6 +16,7 @@ const generateAndSendProposal = async (req, res) => {
   try {
     console.log('Starting proposal generation process...');
     const { projectId } = req.body;
+    const adminId = req.adminId;
 
     // Find project
     console.log('Finding project...');
@@ -30,6 +32,14 @@ const generateAndSendProposal = async (req, res) => {
     if (!customer) {
       console.log('Customer not found');
       return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Find sender (admin user)
+    console.log('Finding sender...');
+    const sender = await GaapUser.findById(adminId);
+    if (!sender) {
+      console.log('Sender not found');
+      return res.status(404).json({ message: 'Sender not found' });
     }
 
     // Read template files
@@ -73,8 +83,8 @@ const generateAndSendProposal = async (req, res) => {
 
     // Generate PDFs
     console.log('Generating PDFs...');
-    const options = { 
-      format: 'A4', 
+    const options = {
+      format: 'A4',
       margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
       printBackground: true
     };
@@ -114,11 +124,29 @@ const generateAndSendProposal = async (req, res) => {
       );
 
       const mailOptions = {
-        from: process.env.Email_Sender,
-        // to: 'hashmiosama555@gmail.com', // Replace with customer.contactPerson1.email in production
+        from: sender.email,
         to: customer.contactPerson1.email,
-        subject: 'Business Proposal',
-        text: 'Please find attached our business proposal.',
+        subject: 'Business Proposal from GAAP',
+        text: `Dear Sir,
+
+Greetings from GAAP
+
+Hope this message finds you well.
+
+Attached, please find the proposal for services you requested.
+
+To proceed, we kindly request your review and approval of the proposal. If you have any questions or need further adjustments, please do not hesitate to let us know. 
+
+We are happy to discuss any aspects of the proposal to ensure it meets your needs and expectations.
+
+Please confirm your approval, so we can move forward with the next steps.
+
+Thank you for your attention to this matter. We look forward to your feedback and to working together on this project.
+
+Best regards,
+${sender.fullName}
+${sender.role}
+GAAP`,
         attachments: [{
           filename: 'business_proposal.pdf',
           path: pdfPath
