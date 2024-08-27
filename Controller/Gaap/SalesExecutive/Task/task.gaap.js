@@ -32,7 +32,7 @@ const taskController = {
         priority,
         teamId: user.teamId,
         dueDate,
-        createdBy: req.adminId 
+        createdBy: req.adminId
       });
 
       const savedTask = await newTask.save({ session });
@@ -101,7 +101,7 @@ const taskController = {
 
       await GaapTask.findByIdAndDelete(taskId, { session });
 
-      await GaapProject.findByIdAndUpdate(task.project, 
+      await GaapProject.findByIdAndUpdate(task.project,
         { $pull: { tasks: taskId } },
         { session }
       );
@@ -124,39 +124,40 @@ const taskController = {
       const userRole = req.role;
 
       if (!mongoose.Types.ObjectId.isValid(projectId)) {
-          return res.status(400).json({ message: 'Invalid project ID' });
+        return res.status(400).json({ message: 'Invalid project ID' });
       }
 
       const project = await GaapProject.findById(projectId);
       if (!project) {
-          return res.status(404).json({ message: 'Project not found' });
+        return res.status(404).json({ message: 'Project not found' });
       }
 
       const user = await GaapUser.findById(adminId);
       if (!user) {
-          return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: 'User not found' });
       }
 
       let tasksQuery = { project: projectId };
 
-      if (['admin', 'General Manager'].includes(userRole)) {
-          tasksQuery.teamId = user.teamId;
-      } else {
-          tasksQuery.$or = [
-              { createdBy: adminId },
-              { assignedTo: adminId }
-          ];
+      if (['admin', 'General Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+        tasksQuery.teamId = user.teamId;
+      }
+      else {
+        tasksQuery.$or = [
+          { createdBy: adminId },
+          { assignedTo: adminId }
+        ];
       }
 
       const tasks = await GaapTask.find(tasksQuery)
-          .populate('assignedTo', 'fullName')
-          .populate('createdBy', 'fullName');
+        .populate('assignedTo', 'fullName')
+        .populate('createdBy', 'fullName');
 
       res.json(tasks);
-  } catch (error) {
+    } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
-  }
+    }
   },
 
   getTask: async (req, res) => {
@@ -164,7 +165,7 @@ const taskController = {
       const { projectId } = req.query;
 
 
-      const task = await GaapTask.find({project:projectId})
+      const task = await GaapTask.find({ project: projectId })
         .populate('assignedTo', 'name')
         .populate('createdBy', 'name')
         .populate('project', 'projectName');
