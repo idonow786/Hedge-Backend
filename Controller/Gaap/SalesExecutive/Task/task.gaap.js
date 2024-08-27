@@ -120,24 +120,43 @@ const taskController = {
   getProjectTasks: async (req, res) => {
     try {
       const { projectId } = req.query;
+      const adminId = req.adminId;
+      const userRole = req.role;
 
       if (!mongoose.Types.ObjectId.isValid(projectId)) {
-        return res.status(400).json({ message: 'Invalid project ID' });
+          return res.status(400).json({ message: 'Invalid project ID' });
       }
 
       const project = await GaapProject.findById(projectId);
       if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
+          return res.status(404).json({ message: 'Project not found' });
       }
 
-      const tasks = await GaapTask.find({ project: projectId })
-        .populate('assignedTo', 'name')
-        .populate('createdBy', 'name');
+      const user = await GaapUser.findById(adminId);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      let tasksQuery = { project: projectId };
+
+      if (['admin', 'General Manager'].includes(userRole)) {
+          tasksQuery.teamId = user.teamId;
+      } else {
+          tasksQuery.$or = [
+              { createdBy: adminId },
+              { assignedTo: adminId }
+          ];
+      }
+
+      const tasks = await GaapTask.find(tasksQuery)
+          .populate('assignedTo', 'fullName')
+          .populate('createdBy', 'fullName');
 
       res.json(tasks);
-    } catch (error) {
+  } catch (error) {
+      console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
-    }
+  }
   },
 
   getTask: async (req, res) => {
