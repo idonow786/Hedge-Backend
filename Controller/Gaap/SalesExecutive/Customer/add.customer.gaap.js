@@ -15,7 +15,7 @@ const registerCustomer = async (req, res) => {
       industryType
     } = req.body;
 
-    if (!companyName || !trNumber || !mobile || !industryType) {
+    if (!companyName  || !mobile || !industryType) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
