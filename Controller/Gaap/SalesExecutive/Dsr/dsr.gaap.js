@@ -112,8 +112,22 @@ const dsrController = {
     
                 // Use the team's _id to filter DSRs
                 query.teamId = team._id;
+            } else if (userRole === 'Sales Manager') {
+                // For managers, find all members they manage
+                const team = await GaapTeam.findOne({
+                    'members.managerId': userId
+                });
+    
+                if (!team) {
+                    return res.status(404).json({ message: 'Team not found for this manager' });
+                }
+    
+                const memberIds = team.members
+                    .filter(member => member.managerId === userId)
+                    .map(member => member.memberId);
+    
+                query.user = { $in: memberIds };
             } else {
-                // For other roles, filter by userId
                 query.user = userId;
             }
     
