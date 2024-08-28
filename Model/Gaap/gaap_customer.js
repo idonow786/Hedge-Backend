@@ -57,7 +57,6 @@ const gaapcustomerSchema = new Schema({
   contactPerson2: gaapcustomerContactSchema,
   trNumber: {
     type: String,
-    unique: true,
   },
   documents: [gaapcustomerDocumentSchema],
   industryType: {
