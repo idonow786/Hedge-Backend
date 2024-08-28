@@ -404,7 +404,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
 
   const mailOptions = {
     from: fromEmail,
-    to: 'hashmiosama555@gmail.com',
+    to: toEmail,
     subject: `Invoice ${invoice.invoiceNumber} for ${project.projectName}`,
     html: emailContent,
     attachments: [{
