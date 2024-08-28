@@ -75,7 +75,6 @@
 // module.exports = { getProjects };
 
 
-
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
@@ -103,6 +102,18 @@ const getProjects = async (req, res) => {
         // Helper function to format projects
         const formatProjects = async (projects) => {
             return Promise.all(projects.map(async (project) => {
+                // Calculate task progress
+                const tasks = await GaapTask.find({ project: project._id });
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+                const taskProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                // Update project status if all tasks are completed
+                if (taskProgress === 100 && project.status !== 'Completed') {
+                    project.status = 'Completed';
+                    await project.save();
+                }
+
                 let formattedProject = {
                     _id: project._id,
                     projectName: project.projectName,
@@ -111,7 +122,8 @@ const getProjects = async (req, res) => {
                     startDate: project.startDate,
                     endDate: project.endDate,
                     status: project.status,
-                    projectType: project.projectType
+                    projectType: project.projectType,
+                    taskProgress: taskProgress
                 };
 
                 if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {
@@ -163,4 +175,5 @@ const getProjects = async (req, res) => {
         res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
+
 module.exports = { getProjects };
