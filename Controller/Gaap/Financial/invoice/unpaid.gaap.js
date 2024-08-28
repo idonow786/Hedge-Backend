@@ -103,7 +103,6 @@ const transporter = nodemailer.createTransport(
     apiKey: process.env.SENDINBLUE_API_KEY,
   })
 );
-
 const updatePayment = async (req, res) => {
   try {
     const { projectId, paymentType, amount } = req.body;
@@ -186,17 +185,30 @@ const updatePayment = async (req, res) => {
     let emailSent = false;
     try {
       await sendInvoiceEmail(
-        adminUser.email, 
-        customer.contactPerson1.email, 
-        pdfBuffer, 
-        newInvoice, 
-        project, 
+        adminUser.email,
+        customer.contactPerson1.email,
+        pdfBuffer,
+        newInvoice,
+        project,
         customer,
         payment
       );
       emailSent = true;
+
+      // Check if ICV certificate should be sent
+      if (payment.paymentStatus === 'Fully Paid' &&
+        (project.projectType === 'ICV' || project.projectType === 'ICV+external Audit')) {
+        const icvCertificateBuffer = await generateICVCertificate(project, customer);
+        await sendICVCertificateEmail(
+          adminUser.email,
+          customer.contactPerson1.email,
+          icvCertificateBuffer,
+          project,
+          customer
+        );
+      }
     } catch (emailError) {
-      console.error('Error sending invoice email:', emailError);
+      console.error('Error sending email:', emailError);
       // Continue execution even if email sending fails
     }
 
@@ -222,6 +234,7 @@ const updatePayment = async (req, res) => {
     res.status(500).json({ message: 'Error updating payment', error: error.message });
   }
 };
+
 
 async function generateInvoicePDF(invoice, project, customer, payment) {
   const pdfDoc = await PDFDocument.create();
@@ -421,7 +434,125 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
   }
 }
 
+async function generateICVCertificate(project, customer) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
 
+  // Embed fonts
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Add logo
+  const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media';
+  const logoImageBytes = await fetch(logoUrl).then(res => res.arrayBuffer());
+  const logoImage = await pdfDoc.embedPng(logoImageBytes);
+  page.drawImage(logoImage, {
+    x: 50,
+    y: page.getHeight() - 100,
+    width: 100,
+    height: 50,
+  });
+
+  // Add certificate title
+  page.drawText('ICV Certificate', {
+    x: 200,
+    y: page.getHeight() - 150,
+    size: 28,
+    font: helveticaBold,
+    color: rgb(0.2, 0.4, 0.6)
+  });
+
+  // Add certificate content
+  const content = `
+This is to certify that
+
+${customer.companyName}
+
+has successfully completed the In-Country Value (ICV) assessment
+for the project "${project.projectName}"
+
+Project Type: ${project.projectType}
+Completion Date: ${new Date().toLocaleDateString()}
+
+This certificate is issued in recognition of the company's commitment
+to enhancing local content and contributing to the national economy.
+  `;
+
+  const contentLines = content.split('\n');
+  let yPosition = page.getHeight() - 200;
+
+  contentLines.forEach((line, index) => {
+    const fontSize = index === 2 ? 16 : 12;
+    const font = index === 2 ? helveticaBold : helvetica;
+    page.drawText(line.trim(), {
+      x: 100,
+      y: yPosition,
+      size: fontSize,
+      font: font,
+      color: rgb(0, 0, 0)
+    });
+    yPosition -= 20;
+  });
+
+  // Add signature line
+  page.drawLine({
+    start: { x: 100, y: 150 },
+    end: { x: 300, y: 150 },
+    thickness: 1,
+    color: rgb(0, 0, 0)
+  });
+  page.drawText('Authorized Signature', {
+    x: 150,
+    y: 130,
+    size: 10,
+    font: helvetica,
+    color: rgb(0, 0, 0)
+  });
+
+  return await pdfDoc.save();
+}
+
+async function sendICVCertificateEmail(fromEmail, toEmail, pdfBuffer, project, customer) {
+  const emailTemplate = handlebars.compile(`
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2>ICV Certificate for Project: {{projectName}}</h2>
+        <p>Dear {{customerName}},</p>
+        <p>Congratulations on completing your ICV assessment! Please find attached your ICV certificate for the project "{{projectName}}".</p>
+        <p>We appreciate your commitment to enhancing local content and contributing to the national economy.</p>
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        <p>Best regards,<br>Your ICV Team</p>
+      </body>
+    </html>
+  `);
+
+  const emailContent = emailTemplate({
+    customerName: customer.companyName,
+    projectName: project.projectName
+  });
+
+  // Save the PDF buffer to a temporary file
+  const tempPdfPath = path.join(__dirname, `temp_icv_certificate_${project._id}.pdf`);
+  await fs.writeFile(tempPdfPath, pdfBuffer);
+
+  const mailOptions = {
+    from: fromEmail,
+    to: toEmail,
+    subject: `ICV Certificate for ${project.projectName}`,
+    html: emailContent,
+    attachments: [{
+      filename: `ICV_Certificate_${project.projectName}.pdf`,
+      path: tempPdfPath
+    }]
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } finally {
+    // Clean up the temporary PDF file
+    await fs.unlink(tempPdfPath);
+  }
+}
 
 const getProjectsWithPaymentStatus = async (req, res) => {
   try {
