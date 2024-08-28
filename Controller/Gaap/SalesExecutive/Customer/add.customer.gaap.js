@@ -70,10 +70,6 @@ const registerCustomer = async (req, res) => {
   } catch (error) {
     console.error('Error in registerCustomer:', error);
 
-    if (error.code === 11000) {
-      return res.status(409).json({ message: 'A customer with this TR number already exists' });
-    }
-
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ message: 'Validation error', errors: validationErrors });
