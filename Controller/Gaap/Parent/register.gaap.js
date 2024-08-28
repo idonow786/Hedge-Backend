@@ -64,11 +64,10 @@ const registerUser = async (req, res) => {
     });
 
     console.log(req.adminId);
-    console.log(await GaapTeam.find());
+    console.log('User Model : ',newUser);
 
     // Find the GAAP team and update it
     const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
-    console.log('GaapTeam ', gaapTeam);
     if (gaapTeam) {
       if (role === 'General Manager') {
         // Update the GeneralUser section
@@ -95,6 +94,7 @@ const registerUser = async (req, res) => {
     // Save user
     await newUser.save();
     console.log("newUser ", newUser);
+    console.log('GaapTeam ', gaapTeam);
 
     const mailOptions = {
       from: process.env.Email_Sender,

@@ -21,7 +21,7 @@ const gaaptaskSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'In Progress', 'Completed', 'On Hold'],
+    enum: ['Pending', 'In Progress', 'Completed', 'On Hold','25 Percent','75 Percent','50 Percent'],
     default: 'Pending'
   },
   priority: {
