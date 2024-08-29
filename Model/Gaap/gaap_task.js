@@ -19,6 +19,9 @@ const gaaptaskSchema = new Schema({
   teamId: {
     type: String,
   },
+  department: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ['Pending', 'In Progress', 'Completed', 'On Hold','25 Percent','75 Percent','50 Percent'],
@@ -34,6 +37,9 @@ const gaaptaskSchema = new Schema({
   },
   completedDate: {
     type: Date
+  },
+  comments:{
+    type: String,
   },
   createdBy: {
     type: Schema.Types.ObjectId,

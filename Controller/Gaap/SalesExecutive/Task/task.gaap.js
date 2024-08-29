@@ -122,37 +122,56 @@ const taskController = {
       const { projectId } = req.query;
       const adminId = req.adminId;
       const userRole = req.role;
-
+  
       if (!mongoose.Types.ObjectId.isValid(projectId)) {
         return res.status(400).json({ message: 'Invalid project ID' });
       }
-
+  
       const project = await GaapProject.findById(projectId);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
-
+  
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-
+  
       let tasksQuery = { project: projectId };
-
-      if (['admin', 'General Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+  
+      if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
-      }
-      else {
+      } else if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
+        tasksQuery.teamId = user.teamId;
+        
+        // Function to check if user's department is included in task's department
+        const isDepartmentIncluded = (taskDepartment, userDepartment) => {
+          const taskDepts = taskDepartment.split('+').map(dept => dept.trim().toLowerCase());
+          return taskDepts.includes(userDepartment.toLowerCase());
+        };
+  
+        tasksQuery.$or = [
+          {
+            $expr: {
+              $function: {
+                body: isDepartmentIncluded.toString(),
+                args: ['$department', user.department],
+                lang: 'js'
+              }
+            }
+          }
+        ];
+      } else {
         tasksQuery.$or = [
           { createdBy: adminId },
           { assignedTo: adminId }
         ];
       }
-
+  
       const tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
-
+  
       res.json(tasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);

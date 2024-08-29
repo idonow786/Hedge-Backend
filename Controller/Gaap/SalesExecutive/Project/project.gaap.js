@@ -8,6 +8,7 @@ const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
 const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 const FixedPriceProduct = require('../../../../Model/Gaap/gaap_fixed_price_product');
+const GaapTask = require('../../../../Model/Gaap/gaap_task');
 
 const createProject = async (req, res) => {
     try {
@@ -194,7 +195,7 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
-        if (req.role === 'admin' || req.role === 'General Manager') {
+        if (req.role === 'admin' || req.role === 'Operations Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
                     { 'parentUser.userId': req.adminId },
@@ -303,6 +304,7 @@ const getProjects = async (req, res) => {
 
 
 
+
 const updateProject = async (req, res) => {
     try {
         const projectId = req.body.projectId;
@@ -338,7 +340,6 @@ const updateProject = async (req, res) => {
         }
 
         if (customerId) {
-            console.log(await GaapCustomer.find())
             const customer = await GaapCustomer.findById(customerId);
             if (!customer) {
                 return res.status(404).json({ message: 'Customer not found' });
@@ -363,10 +364,7 @@ const updateProject = async (req, res) => {
                 });
             }
         }
-        if (financialApproval == true) {
-            existingProject.status = 'Approved'
-        }
-        await existingProject.save()
+
         const updateData = {
             projectName,
             Progress,
@@ -397,8 +395,6 @@ const updateProject = async (req, res) => {
         const notificationsToCreate = [];
 
         // Check for important changes and create notifications
-
-
         if (customerApproval !== existingProject.customerApproval) {
             notificationsToCreate.push({
                 user: req.adminId,
@@ -454,10 +450,70 @@ const updateProject = async (req, res) => {
             });
         }
 
-
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
         const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
+
+        // Check the database for current approval statuses
+        const currentProject = await GaapProject.findById(projectId);
+        
+        // Create tasks if financial approval and operational manager approval are both true in the database
+        if (currentProject.financialApproval && currentProject.operationsManagerApproval) {
+            const tasksToCreate = [];
+
+            // Check if tasks already exist for this project
+            const existingTasks = await GaapTask.find({ project: projectId });
+            const existingTaskTitles = existingTasks.map(task => task.title);
+
+            if (currentProject.projectType === 'ICV' || currentProject.projectType === 'ICV+external Audit') {
+                const icvTasks = [
+                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'nafis registeration', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'ICV REGISTRATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'LEDGER RECONCILIATION /', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'ICV SUBMITTED', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                ];
+                tasksToCreate.push(...icvTasks.filter(task => !existingTaskTitles.includes(task.title)));
+            }
+
+            if (currentProject.projectType === 'External Audit' || currentProject.projectType === 'ICV+external Audit') {
+                const auditTasks = [
+                    { title: 'KYC', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'LEDGER RECONCILIATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'bank reconcilation', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'asset register', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'FS PREPARATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType }
+                ];
+                tasksToCreate.push(...auditTasks.filter(task => !existingTaskTitles.includes(task.title)));
+            }
+
+            if (currentProject.projectType === 'Audit & Assurance') {
+                if (!existingTaskTitles.includes('AUDIT TASK')) {
+                    tasksToCreate.push({ title: 'AUDIT TASK', project: projectId, department: currentProject.projectType });
+                }
+            }
+
+            if (tasksToCreate.length > 0) {
+                const createdTasks = await GaapTask.insertMany(tasksToCreate);
+                updatedProject.tasks = [...(updatedProject.tasks || []), ...createdTasks.map(task => task._id)];
+                await updatedProject.save();
+
+                notificationsToCreate.push({
+                    user: req.adminId,
+                    message: `Tasks created for project ${currentProject.projectName} based on project type.`,
+                    teamId: currentProject.teamId
+                });
+            }
+        }
 
         if (products && Array.isArray(products)) {
             await GaapProjectProduct.deleteMany({ project: projectId });
@@ -504,6 +560,7 @@ const updateProject = async (req, res) => {
         res.status(500).json({ message: 'Error updating project', error: error.message });
     }
 };
+
 
 
 

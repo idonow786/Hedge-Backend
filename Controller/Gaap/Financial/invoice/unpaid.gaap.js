@@ -19,7 +19,7 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
   try {
     let teamId;
 
-    if (req.role === 'admin' || req.role === 'General Manager') {
+    if (req.role === 'admin' || req.role === 'Operations Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },
@@ -106,7 +106,11 @@ const transporter = nodemailer.createTransport(
 
 const updatePayment = async (req, res) => {
   try {
-    const { projectId, paymentType, amount, invoiceId } = req.body;
+    const { invoiceId, projectId, status } = req.body;
+    const invoice = await GaapInvoice.findById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
 
     const project = await GaapProject.findById(projectId);
     if (!project) {
@@ -119,40 +123,25 @@ const updatePayment = async (req, res) => {
         project: projectId,
         customer: project.customer,
         totalAmount: project.totalAmount,
-        createdBy: req.adminId
+        createdBy: req.adminId,
+        teamId: project.teamId
       });
     }
 
-    let paidAmount;
-    if (paymentType === 'fully') {
-      paidAmount = payment.totalAmount - payment.paidAmount;
-    } else if (paymentType === 'partially') {
-      paidAmount = parseFloat(amount);
-      if (isNaN(paidAmount) || paidAmount <= 0 || paidAmount > payment.unpaidAmount) {
-        return res.status(400).json({ message: 'Invalid payment amount' });
+    // Update invoice status
+    invoice.status = status;
+    await invoice.save();
+
+    // Update payment based on invoice status
+    if (status === 'Paid') {
+      const paidAmount = invoice.total;
+      payment.addPayment(paidAmount, new Date(), 'Bank Transfer', req.adminId, `Payment received for invoice ${invoice.invoiceNumber}`);
+
+      if (!payment.invoices.includes(invoice._id)) {
+        payment.invoices.push(invoice._id);
       }
-    } else {
-      return res.status(400).json({ message: 'Invalid payment type' });
     }
 
-    payment.addPayment(paidAmount, new Date(), 'Bank Transfer', req.adminId, 'Payment update by finance manager');
-
-    // Find and update existing invoice
-    const existingInvoice = await GaapInvoice.findById(invoiceId);
-    if (!existingInvoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
-    }
-
-    existingInvoice.status = 'Paid';
-    existingInvoice.items[0].amount = paidAmount;
-    existingInvoice.subtotal = paidAmount;
-    existingInvoice.total = paidAmount;
-
-    await existingInvoice.save();
-
-    if (!payment.invoices.includes(existingInvoice._id)) {
-      payment.invoices.push(existingInvoice._id);
-    }
     await payment.save();
 
     // Update project status if fully paid
@@ -173,42 +162,45 @@ const updatePayment = async (req, res) => {
       throw new Error('Customer not found');
     }
 
-    // Generate PDF
-    const pdfBuffer = await generateInvoicePDF(existingInvoice, project, customer, payment);
-
-    // Send email
+    // Generate PDF and send email only if status is 'Paid'
     let emailSent = false;
-    try {
-      await sendInvoiceEmail(
-        adminUser.email,
-        customer.contactPerson1.email,
-        pdfBuffer,
-        existingInvoice,
-        project,
-        customer,
-        payment
-      );
-      emailSent = true;
+    if (status === 'Paid') {
+      const pdfBuffer = await generateInvoicePDF(invoice, project, customer, payment);
 
-      // Check if ICV certificate should be sent
-      if (payment.paymentStatus === 'Fully Paid' &&
-        (project.projectType === 'ICV' || project.projectType === 'ICV+external Audit')) {
-        const icvCertificateBuffer = await generateICVCertificate(project, customer);
-        await sendICVCertificateEmail(
+      try {
+        await sendInvoiceEmail(
           adminUser.email,
           customer.contactPerson1.email,
-          icvCertificateBuffer,
+          pdfBuffer,
+          invoice,
           project,
-          customer
+          customer,
+          payment
         );
+        emailSent = true;
+
+        // Check if ICV certificate should be sent
+        if (payment.paymentStatus === 'Fully Paid' &&
+          (project.projectType === 'ICV' || project.projectType === 'ICV+external Audit')) {
+          const icvCertificateBuffer = await generateICVCertificate(project, customer);
+          await sendICVCertificateEmail(
+            adminUser.email,
+            customer.contactPerson1.email,
+            icvCertificateBuffer,
+            project,
+            customer
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        // Continue execution even if email sending fails
       }
-    } catch (emailError) {
-      console.error('Error sending email:', emailError);
-      // Continue execution even if email sending fails
     }
 
     res.status(200).json({
-      message: emailSent ? 'Payment updated successfully and invoice sent' : 'Payment updated successfully, but there was an issue sending the invoice email',
+      message: status === 'Paid'
+        ? (emailSent ? 'Payment received and invoice sent' : 'Payment received, but there was an issue sending the invoice email')
+        : `Invoice status updated to ${status}`,
       payment: {
         totalAmount: payment.totalAmount,
         paidAmount: payment.paidAmount,
@@ -218,9 +210,9 @@ const updatePayment = async (req, res) => {
         nextPaymentDue: payment.nextPaymentDue
       },
       updatedInvoice: {
-        invoiceNumber: existingInvoice.invoiceNumber,
-        amount: existingInvoice.total,
-        status: existingInvoice.status
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.total,
+        status: invoice.status
       },
       emailSent: emailSent
     });
@@ -553,7 +545,7 @@ const getProjectsWithPaymentStatus = async (req, res) => {
   try {
     let teamId;
 
-    if (req.role === 'admin' || req.role === 'General Manager') {
+    if (req.role === 'admin' || req.role === 'Operations Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },

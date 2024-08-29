@@ -47,7 +47,7 @@ const getManagedUsersData = async (req, res) => {
     let userIds = [];
     let salesTargets = [];
 
-    if (userRole === 'admin' || userRole === 'General Manager') {
+    if (userRole === 'admin' || userRole === 'Operations Manager') {
       const user=await GaapUser.findById(req.adminId)
       managedUsers = await GaapUser.find({teamId:user.teamId}).lean();
     } else {
@@ -80,7 +80,7 @@ const getManagedUsersData = async (req, res) => {
     }
 
     // Fetch Sales Targets
-    if (userRole === 'admin' || userRole === 'General Manager') {
+    if (userRole === 'admin' || userRole === 'Operations Manager') {
       salesTargets = await GaapSalesTarget.find().lean();
     } else {
       salesTargets = await GaapSalesTarget.find({ 

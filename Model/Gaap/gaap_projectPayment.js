@@ -23,6 +23,9 @@ const projectPaymentSchema = new Schema({
   teamId: {
     type: String,
   },
+  paymentOption: {
+    type: String,
+  },
   unpaidAmount: {
     type: Number,
     default: function() {
@@ -38,6 +41,7 @@ const projectPaymentSchema = new Schema({
       default: 'Pending'
     }
   }],
+
   paymentHistory: [{
     amount: Number,
     date: Date,

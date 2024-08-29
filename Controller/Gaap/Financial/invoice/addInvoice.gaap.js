@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport(
 
 const addInvoice = async (req, res) => {
   try {
-    const { projectId, invoiceDetails } = req.body;
+    const { projectId, invoiceDetails,paymentOption } = req.body;
 
     // Find the project
     const project = await GaapProject.findById(projectId);
@@ -53,6 +53,7 @@ const addInvoice = async (req, res) => {
     
     if (!projectPayment) {
       projectPayment = new ProjectPayment({
+        paymentOption:paymentOption,
         project: projectId,
         customer: project.customer,
         totalAmount: project.totalAmount,

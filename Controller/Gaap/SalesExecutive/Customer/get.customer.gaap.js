@@ -6,7 +6,7 @@ const getAllCustomersByAdmin = async (req, res) => {
   try {
     const { adminId, role } = req;
     let customers;
-    if (role === 'admin' || role === 'General Manager') {
+    if (role === 'admin' || role === 'Operations Manager') {
       // Find the team where the user is a parent
       const parentTeam = await GaapTeam.findOne({
         $or: [
