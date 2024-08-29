@@ -86,7 +86,7 @@ const addInvoice = async (req, res) => {
 
     // Fetch customer details
     const customer = await GaapCustomer.findById(project.customer);
-
+    console.log(customer)
     // Send email to customer
     const emailTemplate = `
     <!DOCTYPE html>
