@@ -173,7 +173,7 @@ const taskController = {
         );
       }
   
-      res.json(checkTask);
+      res.json(tasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
