@@ -520,39 +520,33 @@ const updateProject = async (req, res) => {
 
             if (currentProject.projectType === 'ICV' || currentProject.projectType === 'ICV+external Audit') {
                 const icvTasks = [
-                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'nafis registeration', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'ICV REGISTRATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'LEDGER RECONCILIATION /', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'ICV SUBMITTED', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
+                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'nafis registeration', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'ICV REGISTRATION', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'LEDGER RECONCILIATION /', project: projectId,teamId:currentProject.teamId, department: 'ICV'},
+                    { title: 'ICV SUBMITTED', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department:'ICV'},
+                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
+                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
                 ];
                 tasksToCreate.push(...icvTasks.filter(task => !existingTaskTitles.includes(task.title)));
             }
 
-            if (currentProject.projectType === 'External Audit' || currentProject.projectType === 'ICV+external Audit') {
+            if (currentProject.projectType === 'External Audit' || currentProject.projectType === 'ICV+external Audit'|| currentProject.projectType === 'Audit & Assurance') {
                 const auditTasks = [
-                    { title: 'KYC', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'LEDGER RECONCILIATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'bank reconcilation', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'asset register', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'FS PREPARATION', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType },
-                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: currentProject.projectType }
+                    { title: 'KYC', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
+                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department:'Audit' },
+                    { title: 'LEDGER RECONCILIATION', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
+                    { title: 'bank reconcilation', project: projectId,teamId:currentProject.teamId, department: 'Audit'},
+                    { title: 'asset register', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
+                    { title: 'FS PREPARATION', project: projectId,teamId:currentProject.teamId, department: 'Audit'},
+                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
+                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId,department: 'Audit' },
+                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
+                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: 'Audit' }
                 ];
                 tasksToCreate.push(...auditTasks.filter(task => !existingTaskTitles.includes(task.title)));
-            }
-
-            if (currentProject.projectType === 'Audit & Assurance') {
-                if (!existingTaskTitles.includes('AUDIT TASK')) {
-                    tasksToCreate.push({ title: 'AUDIT TASK', project: projectId, department: currentProject.projectType });
-                }
             }
 
             if (tasksToCreate.length > 0) {

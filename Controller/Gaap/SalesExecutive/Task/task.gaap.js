@@ -131,49 +131,43 @@ const taskController = {
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
-      const checkTask=await GaapTask.find()
-      res.status(200).json({ message: 'Error fetching tasks', checkTask});
+  
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
   
       let tasksQuery = { project: projectId };
-  
-      if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+      if (!(['Audit', 'ICV'].includes(project.department))) {
+       if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
-      } else if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
-        tasksQuery.teamId = user.teamId;
-        tasksQuery.$or = [
-          { createdBy: adminId },
-          { assignedTo: adminId }
-        ];
       } else {
         tasksQuery.$or = [
           { createdBy: adminId },
           { assignedTo: adminId }
         ];
       }
+    }
+      // Add department filter for Audit and ICV
+      if (['Audit', 'ICV'].includes(project.department)) {
+        tasksQuery.department = project.department;
+      }
   
-      let tasks = await GaapTask.find(tasksQuery)
+      const tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
   
-      // If the user is a manager, filter tasks based on department in the application
-      if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
-        const isDepartmentIncluded = (taskDepartment, userDepartment) => {
-          const taskDepts = taskDepartment.split('+').map(dept => dept.trim().toLowerCase());
-          return taskDepts.includes(userDepartment.toLowerCase());
-        };
+      // Additional processing for Audit and ICV tasks
+      const processedTasks = tasks.map(task => {
+        const taskObj = task.toObject();
+        if (['Audit', 'ICV'].includes(taskObj.department)) {
+          // Add any specific processing for Audit or ICV tasks here
+          taskObj.isSpecializedTask = true;
+        }
+        return taskObj;
+      });
   
-        tasks = tasks.filter(task => 
-          isDepartmentIncluded(task.department, user.department) ||
-          task.createdBy._id.toString() === adminId ||
-          (task.assignedTo && task.assignedTo._id.toString() === adminId)
-        );
-      }
-  
-      res.json(tasks);
+      res.json(processedTasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
