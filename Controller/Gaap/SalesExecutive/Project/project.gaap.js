@@ -555,6 +555,7 @@ const updateProject = async (req, res) => {
       if (tasksToCreate.length > 0) {
         const createdTasks = await GaapTask.insertMany(tasksToCreate);
         updatedProject.tasks = [...(updatedProject.tasks || []), ...createdTasks.map(task => task._id)];
+        updatedProject.status = 'In Progress';
         await updatedProject.save();
 
         notificationsToCreate.push({
