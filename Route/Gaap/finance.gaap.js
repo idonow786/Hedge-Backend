@@ -23,7 +23,7 @@ const upload = multer({
 
 
 
-router.get('/get-projects',verifyToken, getAllProjectsWithPayments);                                    //
+router.get('/get-projects',verifyToken, getAllProjectsWithPayments);                                    //check this
 router.post('/add-invoice',verifyToken, addInvoice);       
 
 

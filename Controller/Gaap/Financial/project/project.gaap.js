@@ -2,34 +2,29 @@ const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
 const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
-const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
-
-const mongoose = require('mongoose');
 
 const getAllProjectsWithPayments = async (req, res) => {
     try {
-        // Fetch all projects and populate relevant fields
-        let projects;
-        let projectPayments;
-        let invoices;
-        const team = await GaapUser.findById(req.adminId)
-          if (team) {
-            const projectQuery = GaapProject.find({teamId:team.teamId})
+        const user = await GaapUser.findById(req.adminId);
+        if (!user || !user.teamId) {
+            return res.status(400).json({ message: 'User or team not found' });
+        }
+
+        // Fetch all projects for the user's team
+        const projects = await GaapProject.find({ teamId: user.teamId })
             .populate('customer', 'name companyName')
-            .populate('assignedTo')
-            .populate('salesPerson');
+            .populate('assignedTo', 'fullName')
+            .populate('salesPerson', 'fullName')
+            .lean();
 
-         projects = await projectQuery.lean();
-        // Fetch all project payments
-         projectPayments = await ProjectPayment.find().lean();
+        // Fetch all project payments for these projects
+        const projectIds = projects.map(p => p._id);
+        const projectPayments = await ProjectPayment.find({ project: { $in: projectIds } }).lean();
 
-        // Fetch all invoices
-         invoices = await GaapInvoice.find().lean();
-        }
-        else{
-            res.status(400).json({ message: 'No fetching projects'});
-        }
+        // Fetch all invoices for these projects
+        const invoices = await GaapInvoice.find({ project: { $in: projectIds } }).lean();
+        console.log(await GaapInvoice.findOne({invoiceNumber:'INV-2024-00199911'}))
         // Create maps for quick lookup
         const paymentMap = new Map(projectPayments.map(payment => [payment.project.toString(), payment]));
         const invoiceMap = new Map();
@@ -48,27 +43,43 @@ const getAllProjectsWithPayments = async (req, res) => {
             // Fetch project products
             const projectProducts = await GaapProjectProduct.find({ project: project._id }).lean();
 
+            // Calculate total amount from products if project.totalAmount is not set
+            const calculatedTotalAmount = projectProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+            const totalAmount = project.totalAmount || calculatedTotalAmount;
+
+            // Calculate total invoiced amount
+            const totalInvoicedAmount = projectInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+
             return {
                 ...project,
+                totalAmount, // Use calculated total if not set in project
                 payment: payment ? {
-                    totalAmount: payment.totalAmount,
-                    paidAmount: payment.paidAmount,
-                    unpaidAmount: payment.unpaidAmount,
-                    paymentStatus: payment.paymentStatus,
-                    paymentProgress: (payment.paidAmount / payment.totalAmount) * 100,
+                    totalAmount: payment.totalAmount || totalAmount,
+                    paidAmount: payment.paidAmount || 0,
+                    unpaidAmount: (payment.totalAmount || totalAmount) - (payment.paidAmount || 0),
+                    paymentStatus: payment.paymentStatus || 'Not Started',
+                    paymentProgress: payment.totalAmount > 0 ? ((payment.paidAmount || 0) / payment.totalAmount) * 100 : 0,
                     lastPaymentDate: payment.lastPaymentDate,
                     nextPaymentDue: payment.nextPaymentDue,
-                    paymentSchedule: payment.paymentSchedule
-                } : null,
+                    paymentSchedule: payment.paymentSchedule || [],
+                    paymentOption: payment.paymentOption || 'Not Set'
+                } : {
+                    totalAmount,
+                    paidAmount: 0,
+                    unpaidAmount: totalAmount,
+                    paymentStatus: 'Not Started',
+                    paymentProgress: 0,
+                    paymentOption: 'Not Set'
+                },
                 invoices: projectInvoices.map(invoice => ({
                     invoiceNumber: invoice.invoiceNumber,
-                    invoiceDate: invoice.invoiceDate,
+                    issueDate: invoice.issueDate,
                     dueDate: invoice.dueDate,
-                    total: invoice.total,
-                    status: invoice.status,
-                    amountDue: invoice.total - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + payment.amount, 0) : 0)
+                    total: invoice.total || 0,
+                    status: invoice.status || 'Sent',
+                    amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
                 })),
-                invoiceStatus: getInvoiceStatus(projectInvoices, project.totalAmount),
+                invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
                 products: projectProducts.map(product => ({
                     name: product.name,
                     category: product.category,
@@ -109,12 +120,10 @@ const getAllProjectsWithPayments = async (req, res) => {
     }
 };
 
-const getInvoiceStatus = (invoices, totalAmount) => {
-    if (!invoices || invoices.length === 0) return 'Not Invoiced';
-    const totalInvoiced = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-    if (totalInvoiced >= totalAmount) return 'Fully Invoiced';
-    if (totalInvoiced > 0) return 'Partially Invoiced';
-    return 'Not Invoiced';
+const getInvoiceStatus = (totalInvoicedAmount, totalAmount) => {
+    if (totalInvoicedAmount === 0) return 'Not Invoiced';
+    if (totalInvoicedAmount >= totalAmount) return 'Fully Invoiced';
+    return 'Partially Invoiced';
 };
 
 const getStatusPriority = (status) => {

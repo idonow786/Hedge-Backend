@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport(
 
 const addInvoice = async (req, res) => {
   try {
-    const { projectId, invoiceDetails,paymentOption } = req.body;
+    const { projectId, invoiceDetails, paymentOption } = req.body;
 
     // Find the project
     const project = await GaapProject.findById(projectId);
@@ -34,6 +34,11 @@ const addInvoice = async (req, res) => {
       createdBy: req.adminId,
       teamId: user.teamId
     });
+
+    // Ensure that the total, subtotal, and taxTotal are set correctly
+    newInvoice.total = invoiceDetails.total || 0;
+    newInvoice.subtotal = invoiceDetails.subtotal || 0;
+    newInvoice.taxTotal = invoiceDetails.taxTotal || 0;
 
     // Validate the invoice
     const validationError = newInvoice.validateSync();
@@ -53,11 +58,12 @@ const addInvoice = async (req, res) => {
     
     if (!projectPayment) {
       projectPayment = new ProjectPayment({
-        paymentOption:paymentOption,
+        paymentOption: paymentOption,
         project: projectId,
         customer: project.customer,
         totalAmount: project.totalAmount,
-        createdBy: req.adminId
+        createdBy: req.adminId,
+        teamId: user.teamId
       });
     }
 
