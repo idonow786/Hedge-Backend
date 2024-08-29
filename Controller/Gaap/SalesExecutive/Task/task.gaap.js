@@ -146,7 +146,7 @@ const taskController = {
         tasksQuery.$or = [
           { createdBy: adminId },
           { assignedTo: adminId },
-          { department: project.department }
+          { department: 'ICV+external Audit' }
         ];
       }
 
