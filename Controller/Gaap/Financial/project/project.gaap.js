@@ -45,7 +45,6 @@ const getAllProjectsWithPayments = async (req, res) => {
 
         // Fetch all invoices for these projects
         const invoices = await GaapInvoice.find({ project: { $in: projectIds } }).lean();
-        console.log(await GaapInvoice.findOne({invoiceNumber:'INV-2024-00199911'}))
         // Create maps for quick lookup
         const paymentMap = new Map(projectPayments.map(payment => [payment.project.toString(), payment]));
         const invoiceMap = new Map();
