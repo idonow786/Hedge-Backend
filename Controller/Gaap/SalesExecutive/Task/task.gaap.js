@@ -131,7 +131,8 @@ const taskController = {
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
-  
+      const checkTask=await GaapTask.find()
+
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -143,23 +144,9 @@ const taskController = {
         tasksQuery.teamId = user.teamId;
       } else if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
-        
-        // Function to check if user's department is included in task's department
-        const isDepartmentIncluded = (taskDepartment, userDepartment) => {
-          const taskDepts = taskDepartment.split('+').map(dept => dept.trim().toLowerCase());
-          return taskDepts.includes(userDepartment.toLowerCase());
-        };
-  
         tasksQuery.$or = [
-          {
-            $expr: {
-              $function: {
-                body: isDepartmentIncluded.toString(),
-                args: ['$department', user.department],
-                lang: 'js'
-              }
-            }
-          }
+          { createdBy: adminId },
+          { assignedTo: adminId }
         ];
       } else {
         tasksQuery.$or = [
@@ -168,11 +155,25 @@ const taskController = {
         ];
       }
   
-      const tasks = await GaapTask.find(tasksQuery)
+      let tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
   
-      res.json(tasks);
+      // If the user is a manager, filter tasks based on department in the application
+      if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
+        const isDepartmentIncluded = (taskDepartment, userDepartment) => {
+          const taskDepts = taskDepartment.split('+').map(dept => dept.trim().toLowerCase());
+          return taskDepts.includes(userDepartment.toLowerCase());
+        };
+  
+        tasks = tasks.filter(task => 
+          isDepartmentIncluded(task.department, user.department) ||
+          task.createdBy._id.toString() === adminId ||
+          (task.assignedTo && task.assignedTo._id.toString() === adminId)
+        );
+      }
+  
+      res.json(checkTask);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
