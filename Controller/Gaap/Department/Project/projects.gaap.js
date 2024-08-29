@@ -123,7 +123,8 @@ const getProjects = async (req, res) => {
                     endDate: project.endDate,
                     status: project.status,
                     projectType: project.projectType,
-                    taskProgress: taskProgress
+                    taskProgress: taskProgress,
+                    
                 };
 
                 if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {

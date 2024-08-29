@@ -103,9 +103,10 @@ const transporter = nodemailer.createTransport(
     apiKey: process.env.SENDINBLUE_API_KEY,
   })
 );
+
 const updatePayment = async (req, res) => {
   try {
-    const { projectId, paymentType, amount } = req.body;
+    const { projectId, paymentType, amount, invoiceId } = req.body;
 
     const project = await GaapProject.findById(projectId);
     if (!project) {
@@ -136,28 +137,22 @@ const updatePayment = async (req, res) => {
 
     payment.addPayment(paidAmount, new Date(), 'Bank Transfer', req.adminId, 'Payment update by finance manager');
 
-    // Generate new invoice
-    const newInvoice = new GaapInvoice({
-      invoiceNumber: `INV-${Date.now()}`,
-      customer: project.customer,
-      project: projectId,
-      issueDate: new Date(),
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Due in 30 days
-      items: [{
-        description: `Payment for project ${project.projectName}`,
-        quantity: 1,
-        unitPrice: paidAmount,
-        amount: paidAmount
-      }],
-      subtotal: paidAmount,
-      total: paidAmount,
-      status: 'Paid',
-      createdBy: req.adminId
-    });
+    // Find and update existing invoice
+    const existingInvoice = await GaapInvoice.findById(invoiceId);
+    if (!existingInvoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
 
-    await newInvoice.save();
+    existingInvoice.status = 'Paid';
+    existingInvoice.items[0].amount = paidAmount;
+    existingInvoice.subtotal = paidAmount;
+    existingInvoice.total = paidAmount;
 
-    payment.invoices.push(newInvoice._id);
+    await existingInvoice.save();
+
+    if (!payment.invoices.includes(existingInvoice._id)) {
+      payment.invoices.push(existingInvoice._id);
+    }
     await payment.save();
 
     // Update project status if fully paid
@@ -179,7 +174,7 @@ const updatePayment = async (req, res) => {
     }
 
     // Generate PDF
-    const pdfBuffer = await generateInvoicePDF(newInvoice, project, customer, payment);
+    const pdfBuffer = await generateInvoicePDF(existingInvoice, project, customer, payment);
 
     // Send email
     let emailSent = false;
@@ -188,7 +183,7 @@ const updatePayment = async (req, res) => {
         adminUser.email,
         customer.contactPerson1.email,
         pdfBuffer,
-        newInvoice,
+        existingInvoice,
         project,
         customer,
         payment
@@ -222,10 +217,10 @@ const updatePayment = async (req, res) => {
         lastPaymentDate: payment.lastPaymentDate,
         nextPaymentDue: payment.nextPaymentDue
       },
-      newInvoice: {
-        invoiceNumber: newInvoice.invoiceNumber,
-        amount: newInvoice.total,
-        status: newInvoice.status
+      updatedInvoice: {
+        invoiceNumber: existingInvoice.invoiceNumber,
+        amount: existingInvoice.total,
+        status: existingInvoice.status
       },
       emailSent: emailSent
     });

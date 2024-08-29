@@ -99,6 +99,7 @@ const getProjectsAll = async (req, res) => {
                 discountApprovedBy: project.discountApprovedBy,
                 products: project.products,
                 tasks: project.tasks,
+                paymentPlan:project.paymentPlan,
                 documents: project.documents,
                 notes: project.notes,
                 approvals: project.approvals,

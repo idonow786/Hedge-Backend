@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const gaapprojectSchema = new Schema({
-  projectName: { 
+  projectName: {
     type: String,
     required: true,
     trim: true
@@ -21,9 +21,9 @@ const gaapprojectSchema = new Schema({
     type: String,
     required: true
   },
-  description:{
+  description: {
     type: String,
-    default:'nothing'
+    default: 'nothing'
   },
   assignedTo: {
     type: Schema.Types.ObjectId,
@@ -33,18 +33,26 @@ const gaapprojectSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
   },
-  financialApproval:{
-    type:Boolean,
-    default:false
+  financialApproval: {
+    type: Boolean,
+    default: false
   },
-  customerApproval:{
-    type:Boolean,
-    default:false
+  customerApproval: {
+    type: Boolean,
+    default: false
   },
-  salesManagerApproval:{
-    type:Boolean,
-    default:false
+  salesManagerApproval: {
+    type: Boolean,
+    default: false
   },
+  operationsManagerApproval: {
+    type: Boolean,
+    default: false
+  },
+  paymentPlan: {
+    type: String,
+  },
+
   startDate: {
     type: Date,
     required: true
@@ -69,7 +77,7 @@ const gaapprojectSchema = new Schema({
   },
   Progress: {
     type: Number,
-    default:0
+    default: 0
   },
   appliedDiscount: {
     type: Number,
@@ -139,31 +147,31 @@ const gaapprojectSchema = new Schema({
 });
 
 // Virtual for project progress
-gaapprojectSchema.virtual('progress').get(function() {
+gaapprojectSchema.virtual('progress').get(function () {
   if (this.tasks.length === 0) return 0;
   const completedTasks = this.tasks.filter(task => task.status === 'Completed').length;
   return (completedTasks / this.tasks.length) * 100;
 });
 
 // Method to get total invoiced amount
-gaapprojectSchema.methods.getTotalInvoicedAmount = async function() {
+gaapprojectSchema.methods.getTotalInvoicedAmount = async function () {
   await this.populate('invoices');
   return this.invoices.reduce((total, invoice) => total + invoice.amount, 0);
 };
 
 // Method to get total paid amount
-gaapprojectSchema.methods.getTotalPaidAmount = async function() {
+gaapprojectSchema.methods.getTotalPaidAmount = async function () {
   await this.populate('payments');
   return this.payments.reduce((total, payment) => total + payment.amount, 0);
 };
 
 // Static method to find projects by department
-gaapprojectSchema.statics.findByDepartment = function(department) {
+gaapprojectSchema.statics.findByDepartment = function (department) {
   return this.find({ department: department });
 };
 
 // Middleware to update lastUpdatedBy before save
-gaapprojectSchema.pre('save', function(next) {
+gaapprojectSchema.pre('save', function (next) {
   this.lastUpdatedBy = this.modifiedBy;
   next();
 });
