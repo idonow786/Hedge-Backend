@@ -21,6 +21,10 @@ const gaapprojectSchema = new Schema({
     type: String,
     required: true
   },
+  description:{
+    type: String,
+    default:'nothing'
+  },
   assignedTo: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
@@ -112,7 +116,7 @@ const gaapprojectSchema = new Schema({
   }],
   payments: [{
     type: Schema.Types.ObjectId,
-    ref: 'GaapPayment'
+    ref: 'ProjectPayment'
   }],
   vatDetails: {
     vatNumber: String,

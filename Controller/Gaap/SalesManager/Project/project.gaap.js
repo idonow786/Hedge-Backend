@@ -21,7 +21,12 @@ const getProjectsAll = async (req, res) => {
                 .populate('customer')
                 .populate('assignedTo')
                 .populate('salesPerson')
-                .populate('tasks');
+                .populate('tasks')
+                .populate('discountApprovedBy')
+                .populate('invoices')
+                .populate('payments')
+                .populate('createdBy')
+                .populate('lastUpdatedBy');
         } else {
             // Check if the user is a manager in any team
             const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
@@ -39,14 +44,24 @@ const getProjectsAll = async (req, res) => {
                     .populate('customer')
                     .populate('assignedTo')
                     .populate('salesPerson')
-                    .populate('tasks');
+                    .populate('tasks')
+                    .populate('discountApprovedBy')
+                    .populate('invoices')
+                    .populate('payments')
+                    .populate('createdBy')
+                    .populate('lastUpdatedBy');
             } else {
                 // If user is neither a parent nor a manager, get projects created by the user
                 projects = await GaapProject.find({ createdBy: adminId })
                     .populate('customer')
                     .populate('assignedTo')
                     .populate('salesPerson')
-                    .populate('tasks');
+                    .populate('tasks')
+                    .populate('discountApprovedBy')
+                    .populate('invoices')
+                    .populate('payments')
+                    .populate('createdBy')
+                    .populate('lastUpdatedBy');
             }
         }
 
@@ -61,42 +76,42 @@ const getProjectsAll = async (req, res) => {
                 project.status = 'Completed';
                 await project.save();
             }
-            const {
-                _id,
-                projectName,
-                customer,
-                projectType,
-                status,
-                startDate,
-                endDate,
-                totalAmount,
-                appliedDiscount,
-                assignedTo,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                salesPerson,
-                teamId
-            } = project;
 
             return {
-                _id,
-                projectName,
-                appliedDiscount,
-                progress,
-                customer,
-                projectType,
-                status,
-                startDate,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                endDate,
-                totalAmount,
-                assignedTo,
-                salesPerson,
-                teamId,
-                products: projectProducts.map(prod => ({
+                _id: project._id,
+                projectName: project.projectName,
+                customer: project.customer,
+                projectType: project.projectType,
+                department: project.department,
+                assignedTo: project.assignedTo,
+                salesPerson: project.salesPerson,
+                financialApproval: project.financialApproval,
+                customerApproval: project.customerApproval,
+                salesManagerApproval: project.salesManagerApproval,
+                startDate: project.startDate,
+                teamId: project.teamId,
+                endDate: project.endDate,
+                status: project.status,
+                pricingType: project.pricingType,
+                totalAmount: project.totalAmount,
+                Progress: project.Progress,
+                appliedDiscount: project.appliedDiscount,
+                discountApprovedBy: project.discountApprovedBy,
+                products: project.products,
+                tasks: project.tasks,
+                documents: project.documents,
+                notes: project.notes,
+                approvals: project.approvals,
+                invoices: project.invoices,
+                description:project.description,
+                payments: project.payments,
+                vatDetails: project.vatDetails,
+                createdBy: project.createdBy,
+                lastUpdatedBy: project.lastUpdatedBy,
+                createdAt: project.createdAt,
+                updatedAt: project.updatedAt,
+                progress: progress, // Add the calculated progress
+                formattedProducts: projectProducts.map(prod => ({
                     _id: prod._id,
                     name: prod.name,
                     description: prod.description,

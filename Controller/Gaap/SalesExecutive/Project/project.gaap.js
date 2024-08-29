@@ -18,6 +18,7 @@ const createProject = async (req, res) => {
             department,
             startDate,
             endDate,
+            description,
             status,
             pricingType,
             totalAmount,
@@ -105,6 +106,7 @@ const createProject = async (req, res) => {
             startDate: projectStartDate,
             endDate: projectEndDate,
             status,
+            description,
             teamId: user.teamId,
             pricingType,
             totalAmount,
@@ -202,14 +204,24 @@ const getProjects = async (req, res) => {
                     .populate('customer')
                     .populate('assignedTo')
                     .populate('salesPerson')
-                    .populate('tasks');
+                    .populate('tasks')
+                    .populate('discountApprovedBy')
+                    .populate('invoices')
+                    .populate('payments')
+                    .populate('createdBy')
+                    .populate('lastUpdatedBy');
             }
         } else {
             projects = await GaapProject.find({ createdBy: req.adminId })
                 .populate('customer')
                 .populate('assignedTo')
                 .populate('salesPerson')
-                .populate('tasks');
+                .populate('tasks')
+                .populate('discountApprovedBy')
+                .populate('invoices')
+                .populate('payments')
+                .populate('createdBy')
+                .populate('lastUpdatedBy');
         }
 
         const formattedProjects = await Promise.all(projects.map(async project => {
@@ -223,40 +235,43 @@ const getProjects = async (req, res) => {
                 project.status = 'Completed';
                 await project.save();
             }
-            const {
-                _id,
-                projectName,
-                customer,
-                projectType,
-                status,
-                startDate,
-                endDate,
-                totalAmount,
-                appliedDiscount,
-                assignedTo,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                salesPerson
-            } = project;
 
-            return {
-                _id,
-                projectName,
-                appliedDiscount,
-                progress,
-                customer,
-                projectType,
-                status,
-                startDate,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                endDate,
-                totalAmount,
-                assignedTo,
-                salesPerson,
-                products: projectProducts.map(prod => ({
+            // Include all fields from the GaapProject model
+            const formattedProject = {
+                _id: project._id,
+                projectName: project.projectName,
+                customer: project.customer,
+                projectType: project.projectType,
+                department: project.department,
+                assignedTo: project.assignedTo,
+                salesPerson: project.salesPerson,
+                financialApproval: project.financialApproval,
+                customerApproval: project.customerApproval,
+                salesManagerApproval: project.salesManagerApproval,
+                startDate: project.startDate,
+                teamId: project.teamId,
+                endDate: project.endDate,
+                status: project.status,
+                pricingType: project.pricingType,
+                totalAmount: project.totalAmount,
+                Progress: project.Progress,
+                appliedDiscount: project.appliedDiscount,
+                discountApprovedBy: project.discountApprovedBy,
+                products: project.products,
+                tasks: project.tasks,
+                documents: project.documents,
+                notes: project.notes,
+                approvals: project.approvals,
+                invoices: project.invoices,
+                payments: project.payments,
+                vatDetails: project.vatDetails,
+                description:project.description,
+                createdBy: project.createdBy,
+                lastUpdatedBy: project.lastUpdatedBy,
+                createdAt: project.createdAt,
+                updatedAt: project.updatedAt,
+                progress: progress, 
+                formattedProducts: projectProducts.map(prod => ({
                     _id: prod._id,
                     name: prod.name,
                     description: prod.description,
@@ -271,6 +286,8 @@ const getProjects = async (req, res) => {
                     isVatProduct: prod.isVatProduct
                 }))
             };
+
+            return formattedProject;
         }));
 
         res.json(formattedProjects);
