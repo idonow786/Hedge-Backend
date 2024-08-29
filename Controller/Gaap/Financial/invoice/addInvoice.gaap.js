@@ -86,7 +86,7 @@ const addInvoice = async (req, res) => {
 
     // Fetch customer details
     const customer = await GaapCustomer.findById(project.customer);
-    console.log(customer)
+
     // Send email to customer
     const emailTemplate = `
     <!DOCTYPE html>
@@ -153,7 +153,7 @@ const addInvoice = async (req, res) => {
             <h1>Invoice for Project: ${project.projectName}</h1>
         </div>
         <div class="content">
-            <p>Dear companyName,</p>
+            <p>Dear ${customer.companyName},</p>
             <p>We hope this email finds you well. Please find below the details of your invoice for the project "${project.projectName}".</p>
             
             <div class="invoice-details">
