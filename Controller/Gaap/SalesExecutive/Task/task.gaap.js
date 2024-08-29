@@ -122,53 +122,39 @@ const taskController = {
       const { projectId } = req.query;
       const adminId = req.adminId;
       const userRole = req.role;
-  
+
       if (!mongoose.Types.ObjectId.isValid(projectId)) {
         return res.status(400).json({ message: 'Invalid project ID' });
       }
-  
+
       const project = await GaapProject.findById(projectId);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
-  
+
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-  
+
       let tasksQuery = { project: projectId };
-      if (!(['Audit', 'ICV'].includes(project.department))) {
-       if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+
+      if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
-      } else {
+      }
+      else {
         tasksQuery.$or = [
           { createdBy: adminId },
-          { assignedTo: adminId }
+          { assignedTo: adminId },
+          { department: project.department }
         ];
       }
-    }
-      // Add department filter for Audit and ICV
-      if (['Audit', 'ICV'].includes(project.department)) {
-        tasksQuery.teamId = user.teamId;
-        tasksQuery.department = project.department;
-      }
-  
+
       const tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
-  
-      // Additional processing for Audit and ICV tasks
-      const processedTasks = tasks.map(task => {
-        const taskObj = task.toObject();
-        if (['Audit', 'ICV'].includes(taskObj.department)) {
-          // Add any specific processing for Audit or ICV tasks here
-          taskObj.isSpecializedTask = true;
-        }
-        return taskObj;
-      });
-  
-      res.json(processedTasks);
+
+      res.json(tasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });

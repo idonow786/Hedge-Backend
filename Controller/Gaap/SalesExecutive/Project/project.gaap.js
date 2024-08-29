@@ -359,253 +359,253 @@ const getStatusPriority = (status) => {
 
 
 const updateProject = async (req, res) => {
-    try {
-        const projectId = req.body.projectId;
-        const {
-            projectName,
-            customerId,
-            projectType,
-            department,
-            Progress,
-            assignedToId,
-            salesPersonId,
-            startDate,
-            financialApproval,
-            customerApproval,
-            salesManagerApproval,
-            paymentPlan,
-            endDate,
-            status,
-            pricingType,
-            totalAmount,
-            appliedDiscount,
-            description,
-            discountApprovedById,
-            operationsManagerApproval,
-            products,
-            approvalComments,
-            vatDetails
-        } = req.body;
+  try {
+    const projectId = req.body.projectId;
+    const {
+      projectName,
+      customerId,
+      projectType,
+      department,
+      Progress,
+      assignedToId,
+      salesPersonId,
+      startDate,
+      financialApproval,
+      customerApproval,
+      salesManagerApproval,
+      paymentPlan,
+      endDate,
+      status,
+      pricingType,
+      totalAmount,
+      appliedDiscount,
+      description,
+      discountApprovedById,
+      operationsManagerApproval,
+      products,
+      approvalComments,
+      vatDetails
+    } = req.body;
 
-        const existingProject = await GaapProject.findById(projectId);
-        if (!existingProject) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-
-        if (customerId) {
-            const customer = await GaapCustomer.findById(customerId);
-            if (!customer) {
-                return res.status(404).json({ message: 'Customer not found' });
-            }
-        }
-
-        let vatCertificateUrl = existingProject.vatDetails?.vatCertificate || '';
-        if (req.files && req.files.vatCertificate) {
-            const vatCertificateFile = req.files.vatCertificate[0];
-            vatCertificateUrl = await uploadFileToFirebase(vatCertificateFile.buffer, vatCertificateFile.originalname);
-        }
-
-        let updatedDocuments = existingProject.documents || [];
-        if (req.files && req.files.documents) {
-            for (const doc of req.files.documents) {
-                const url = await uploadFileToFirebase(doc.buffer, doc.originalname);
-                updatedDocuments.push({
-                    name: doc.originalname,
-                    url: url,
-                    uploadedBy: req.adminId,
-                    uploadDate: new Date()
-                });
-            }
-        }
-
-        const updateData = {
-            projectName,
-            Progress,
-            customer: customerId,
-            projectType,
-            department,
-            description,
-            assignedTo: assignedToId,
-            salesPerson: salesPersonId,
-            startDate,
-            financialApproval,
-            paymentPlan,
-            customerApproval,
-            salesManagerApproval,
-            operationsManagerApproval,
-            endDate,
-            status,
-            pricingType,
-            totalAmount,
-            vatDetails: {
-                ...vatDetails,
-                vatCertificate: vatCertificateUrl
-            },
-            documents: updatedDocuments,
-            lastUpdatedBy: req.adminId
-        };
-
-        const notificationsToCreate = [];
-
-        // Check for important changes and create notifications
-        if (customerApproval !== existingProject.customerApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-            });
-        }
-
-        if (salesManagerApproval !== existingProject.salesManagerApproval) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-            });
-        }
-
-        if (Progress !== existingProject.Progress) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} progress updated to ${Progress}%.`,
-            });
-        }
-
-        if (status !== existingProject.status) {
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Project ${projectName} status changed to ${status}.`,
-            });
-        }
-
-        if (approvalComments) {
-            updateData.approvals = [
-                ...existingProject.approvals,
-                {
-                    stage: 'Update Approval',
-                    approvedBy: req.adminId,
-                    approvedDate: new Date(),
-                    comments: approvalComments
-                }
-            ];
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Sales Manager added approval comments for project ${projectName}.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        if (appliedDiscount > 0) {
-            updateData.appliedDiscount = appliedDiscount;
-            updateData.discountApprovedBy = req.adminId;
-            notificationsToCreate.push({
-                user: req.adminId,
-                message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
-                teamId: existingProject.teamId
-            });
-        }
-
-        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
-
-        const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
-
-        // Check the database for current approval statuses
-        const currentProject = await GaapProject.findById(projectId);
-        
-        // Create tasks if financial approval and operational manager approval are both true in the database
-        if (currentProject.financialApproval && currentProject.operationsManagerApproval) {
-            const tasksToCreate = [];
-
-            // Check if tasks already exist for this project
-            const existingTasks = await GaapTask.find({ project: projectId });
-            const existingTaskTitles = existingTasks.map(task => task.title);
-
-            if (currentProject.projectType === 'ICV' || currentProject.projectType === 'ICV+external Audit') {
-                const icvTasks = [
-                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'nafis registeration', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'ICV REGISTRATION', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'LEDGER RECONCILIATION /', project: projectId,teamId:currentProject.teamId, department: 'ICV'},
-                    { title: 'ICV SUBMITTED', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId, department:'ICV'},
-                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: 'ICV' },
-                ];
-                tasksToCreate.push(...icvTasks.filter(task => !existingTaskTitles.includes(task.title)));
-            }
-
-            if (currentProject.projectType === 'External Audit' || currentProject.projectType === 'ICV+external Audit'|| currentProject.projectType === 'Audit & Assurance') {
-                const auditTasks = [
-                    { title: 'KYC', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
-                    { title: 'DOC collection', project: projectId,teamId:currentProject.teamId, department:'Audit' },
-                    { title: 'LEDGER RECONCILIATION', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
-                    { title: 'bank reconcilation', project: projectId,teamId:currentProject.teamId, department: 'Audit'},
-                    { title: 'asset register', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
-                    { title: 'FS PREPARATION', project: projectId,teamId:currentProject.teamId, department: 'Audit'},
-                    { title: 'DRFAT', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
-                    { title: 'CLIENT response yes or no', project: projectId,teamId:currentProject.teamId,department: 'Audit' },
-                    { title: 'FINAL RELEASE', project: projectId,teamId:currentProject.teamId, department: 'Audit' },
-                    { title: 'DISPATCH DETAILS', project: projectId,teamId:currentProject.teamId, department: 'Audit' }
-                ];
-                tasksToCreate.push(...auditTasks.filter(task => !existingTaskTitles.includes(task.title)));
-            }
-
-            if (tasksToCreate.length > 0) {
-                const createdTasks = await GaapTask.insertMany(tasksToCreate);
-                updatedProject.tasks = [...(updatedProject.tasks || []), ...createdTasks.map(task => task._id)];
-                await updatedProject.save();
-
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Tasks created for project ${currentProject.projectName} based on project type.`,
-                    teamId: currentProject.teamId
-                });
-            }
-        }
-
-        if (products && Array.isArray(products)) {
-            await GaapProjectProduct.deleteMany({ project: projectId });
-
-            const projectProducts = await Promise.all(products.map(async (product) => {
-                const projectProduct = new GaapProjectProduct({
-                    project: projectId,
-                    name: product.name,
-                    category: product.category,
-                    subCategory: product.subCategory,
-                    department: product.department,
-                    priceType: product.priceType,
-                    price: product.price,
-                    quantity: product.quantity,
-                    timeDeadline: product.timeDeadline,
-                    turnoverRange: product.turnoverRange,
-                    isVatProduct: product.isVatProduct
-                });
-
-                await projectProduct.save();
-                return projectProduct._id;
-            }));
-
-            updatedProject.products = projectProducts;
-            await updatedProject.save();
-
-            if (req.role === 'Sales Manager') {
-                notificationsToCreate.push({
-                    user: req.adminId,
-                    message: `Products updated for project ${projectName}.`,
-                    teamId: existingProject.teamId
-                });
-            }
-        }
-
-        // Create all notifications if the role is Sales Manager
-        if (req.role === 'Sales Manager' && notificationsToCreate.length > 0) {
-            await GaapNotification.insertMany(notificationsToCreate);
-        }
-
-        res.json(updatedProject);
-    } catch (error) {
-        console.error('Error updating project:', error);
-        res.status(500).json({ message: 'Error updating project', error: error.message });
+    const existingProject = await GaapProject.findById(projectId);
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+
+    if (customerId) {
+      const customer = await GaapCustomer.findById(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+    }
+
+    let vatCertificateUrl = existingProject.vatDetails?.vatCertificate || '';
+    if (req.files && req.files.vatCertificate) {
+      const vatCertificateFile = req.files.vatCertificate[0];
+      vatCertificateUrl = await uploadFileToFirebase(vatCertificateFile.buffer, vatCertificateFile.originalname);
+    }
+
+    let updatedDocuments = existingProject.documents || [];
+    if (req.files && req.files.documents) {
+      for (const doc of req.files.documents) {
+        const url = await uploadFileToFirebase(doc.buffer, doc.originalname);
+        updatedDocuments.push({
+          name: doc.originalname,
+          url: url,
+          uploadedBy: req.adminId,
+          uploadDate: new Date()
+        });
+      }
+    }
+
+    const updateData = {
+      projectName,
+      Progress,
+      customer: customerId,
+      projectType,
+      department,
+      description,
+      assignedTo: assignedToId,
+      salesPerson: salesPersonId,
+      startDate,
+      financialApproval,
+      paymentPlan,
+      customerApproval,
+      salesManagerApproval,
+      operationsManagerApproval,
+      endDate,
+      status,
+      pricingType,
+      totalAmount,
+      vatDetails: {
+        ...vatDetails,
+        vatCertificate: vatCertificateUrl
+      },
+      documents: updatedDocuments,
+      lastUpdatedBy: req.adminId
+    };
+
+    const notificationsToCreate = [];
+
+    // Check for important changes and create notifications
+    if (customerApproval !== existingProject.customerApproval) {
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (salesManagerApproval !== existingProject.salesManagerApproval) {
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (Progress !== existingProject.Progress) {
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Project ${projectName} progress updated to ${Progress}%.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (status !== existingProject.status) {
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Project ${projectName} status changed to ${status}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (approvalComments) {
+      updateData.approvals = [
+        ...existingProject.approvals,
+        {
+          stage: 'Update Approval',
+          approvedBy: req.adminId,
+          approvedDate: new Date(),
+          comments: approvalComments
+        }
+      ];
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Sales Manager added approval comments for project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (appliedDiscount > 0) {
+      updateData.appliedDiscount = appliedDiscount;
+      updateData.discountApprovedBy = req.adminId;
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
+
+    // Check if financial approval and operational manager approval have changed from false to true
+    if (
+      existingProject.financialApproval &&
+      !existingProject.operationsManagerApproval &&
+      operationsManagerApproval
+    ) {
+      const tasksToCreate = [];
+      const existingTasks = await GaapTask.find({ project: projectId });
+      const existingTaskTitles = existingTasks.map(task => task.title);
+
+      if (updatedProject.projectType === 'ICV' || updatedProject.projectType === 'ICV+external Audit') {
+        const icvTasks = [
+          { title: 'DOC collection', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'nafis registeration', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'ICV REGISTRATION', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'LEDGER RECONCILIATION /', project: projectId, teamId: updatedProject.teamId, department: 'ICV'},
+          { title: 'ICV SUBMITTED', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'DRFAT', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'CLIENT response yes or no', project: projectId, teamId: updatedProject.teamId, department:'ICV'},
+          { title: 'FINAL RELEASE', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'DISPATCH DETAILS', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+        ];
+        tasksToCreate.push(...icvTasks.filter(task => !existingTaskTitles.includes(task.title)));
+      }
+
+      if (updatedProject.projectType === 'External Audit' || updatedProject.projectType === 'ICV+external Audit' || updatedProject.projectType === 'Audit & Assurance') {
+        const auditTasks = [
+          { title: 'KYC', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'DOC collection', project: projectId, teamId: updatedProject.teamId, department:'Audit' },
+          { title: 'LEDGER RECONCILIATION', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'bank reconcilation', project: projectId, teamId: updatedProject.teamId, department: 'Audit'},
+          { title: 'asset register', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'FS PREPARATION', project: projectId, teamId: updatedProject.teamId, department: 'Audit'},
+          { title: 'DRFAT', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'CLIENT response yes or no', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'FINAL RELEASE', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'DISPATCH DETAILS', project: projectId, teamId: updatedProject.teamId, department: 'Audit' }
+        ];
+        tasksToCreate.push(...auditTasks.filter(task => !existingTaskTitles.includes(task.title)));
+      }
+
+      if (tasksToCreate.length > 0) {
+        const createdTasks = await GaapTask.insertMany(tasksToCreate);
+        updatedProject.tasks = [...(updatedProject.tasks || []), ...createdTasks.map(task => task._id)];
+        await updatedProject.save();
+
+        notificationsToCreate.push({
+          user: req.adminId,
+          message: `Tasks created for project ${updatedProject.projectName} based on project type.`,
+          teamId: updatedProject.teamId
+        });
+      }
+    }
+
+    if (products && Array.isArray(products)) {
+      await GaapProjectProduct.deleteMany({ project: projectId });
+      const projectProducts = await Promise.all(products.map(async (product) => {
+        const projectProduct = new GaapProjectProduct({
+          project: projectId,
+          name: product.name,
+          category: product.category,
+          subCategory: product.subCategory,
+          department: product.department,
+          priceType: product.priceType,
+          price: product.price,
+          quantity: product.quantity,
+          timeDeadline: product.timeDeadline,
+          turnoverRange: product.turnoverRange,
+          isVatProduct: product.isVatProduct
+        });
+        await projectProduct.save();
+        return projectProduct._id;
+      }));
+      updatedProject.products = projectProducts;
+      await updatedProject.save();
+
+      if (req.role === 'Sales Manager') {
+        notificationsToCreate.push({
+          user: req.adminId,
+          message: `Products updated for project ${projectName}.`,
+          teamId: existingProject.teamId
+        });
+      }
+    }
+
+    // Create all notifications if the role is Sales Manager
+    if (req.role === 'Sales Manager' && notificationsToCreate.length > 0) {
+      await GaapNotification.insertMany(notificationsToCreate);
+    }
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    res.status(500).json({ message: 'Error updating project', error: error.message });
+  }
 };
 
 
