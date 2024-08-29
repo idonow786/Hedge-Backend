@@ -150,6 +150,7 @@ const taskController = {
     }
       // Add department filter for Audit and ICV
       if (['Audit', 'ICV'].includes(project.department)) {
+        tasksQuery.teamId = user.teamId;
         tasksQuery.department = project.department;
       }
   
