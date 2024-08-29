@@ -3,16 +3,37 @@ const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
 const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 
 const getAllProjectsWithPayments = async (req, res) => {
     try {
         const user = await GaapUser.findById(req.adminId);
-        if (!user || !user.teamId) {
-            return res.status(400).json({ message: 'User or team not found' });
+        let TeamId
+        console.log(user)
+        if (!user) {
+            return res.status(400).json({ message: 'user not found' });
         }
+        if (req.role === 'admin' || req.role === 'Operation Manager') {
+            // For admin and Operation Manager, find the team first
+            const team = await GaapTeam.findOne({
+                $or: [
+                    { 'parentUser.userId': req.adminId },
+                    { 'GeneralUser.userId': req.adminId }
+                ]
+            });
 
+            if (!team) {
+                return res.status(404).json({ message: 'Team not found for this admin/manager' });
+            }
+
+            // Use the team's _id to filter DSRs
+            TeamId = team._id;
+        }
+        else{
+            TeamId=user.teamId
+        }
         // Fetch all projects for the user's team
-        const projects = await GaapProject.find({ teamId: user.teamId })
+        const projects = await GaapProject.find({ teamId: TeamId })
             .populate('customer', 'name companyName')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')
