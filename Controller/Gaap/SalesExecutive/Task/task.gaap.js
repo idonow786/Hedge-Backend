@@ -139,7 +139,7 @@ const taskController = {
   
       let tasksQuery = { project: projectId };
   
-      if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+      if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
       } else if (['Audit Manager', 'Accounting Manager', 'Tax Supervisor', 'ICV Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;

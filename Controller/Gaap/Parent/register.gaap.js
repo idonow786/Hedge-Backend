@@ -69,7 +69,7 @@ const registerUser = async (req, res) => {
     // Find the GAAP team and update it
     const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
     if (gaapTeam) {
-      if (role === 'Operations Manager') {
+      if (role === 'Operation Manager') {
         // Update the GeneralUser section
         gaapTeam.GeneralUser = {
           userId: newUser._id,

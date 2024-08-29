@@ -97,8 +97,8 @@ const dsrController = {
                 return res.status(404).json({ message: 'User not found' });
             }
     
-            if (userRole === 'admin' || userRole === 'Operations Manager') {
-                // For admin and Operations Manager, find the team first
+            if (userRole === 'admin' || userRole === 'Operation Manager') {
+                // For admin and Operation Manager, find the team first
                 const team = await GaapTeam.findOne({
                     $or: [
                         { 'parentUser.userId': userId },

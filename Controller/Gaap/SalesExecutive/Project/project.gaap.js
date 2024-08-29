@@ -197,7 +197,7 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
     try {
         let projects;
-        if (req.role === 'admin' || req.role === 'Operations Manager') {
+        if (req.role === 'admin' || req.role === 'Operation Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
                     { 'parentUser.userId': req.adminId },
