@@ -132,7 +132,7 @@ const taskController = {
         return res.status(404).json({ message: 'Project not found' });
       }
       const checkTask=await GaapTask.find()
-
+      res.status(200).json({ message: 'Error fetching tasks', checkTask});
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });

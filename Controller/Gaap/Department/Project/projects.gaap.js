@@ -93,10 +93,10 @@ const getProjects = async (req, res) => {
         }
         const teamId = user.teamId;
 
-        let query = { teamId, financialApproval: true };
+        let query = { teamId, financialApproval: true, operationsManagerApproval: true };
         if (department) {
-            const departmentRegex = new RegExp(department, 'i');
-            query.projectType = { $regex: departmentRegex };
+            // Use exact match for department
+            query.department = department;
         }
 
         // Helper function to format projects
@@ -124,7 +124,7 @@ const getProjects = async (req, res) => {
                     status: project.status,
                     projectType: project.projectType,
                     taskProgress: taskProgress,
-                    
+                    department: project.department // Include department in the formatted project
                 };
 
                 if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {
@@ -151,14 +151,14 @@ const getProjects = async (req, res) => {
             // Fetch projects where the user is assigned to at least one task
             const tasksWithUser = await GaapTask.find({ assignedTo: adminId }).distinct('project');
             projects = await GaapProject.find({ ...query, _id: { $in: tasksWithUser } })
-                .select('projectName customer assignedTo startDate endDate status projectType')
+                .select('projectName customer assignedTo startDate endDate status projectType department')
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         } else {
             // Fetch all projects for other roles
             projects = await GaapProject.find(query)
-                .select('projectName customer assignedTo startDate endDate status projectType')
+                .select('projectName customer assignedTo startDate endDate status projectType department')
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
