@@ -202,14 +202,24 @@ const getProjects = async (req, res) => {
                     .populate('customer')
                     .populate('assignedTo')
                     .populate('salesPerson')
-                    .populate('tasks');
+                    .populate('tasks')
+                    .populate('discountApprovedBy')
+                    .populate('createdBy')
+                    .populate('lastUpdatedBy')
+                    .populate('invoices')
+                    .populate('payments');
             }
         } else {
             projects = await GaapProject.find({ createdBy: req.adminId })
                 .populate('customer')
                 .populate('assignedTo')
                 .populate('salesPerson')
-                .populate('tasks');
+                .populate('tasks')
+                .populate('discountApprovedBy')
+                .populate('createdBy')
+                .populate('lastUpdatedBy')
+                .populate('invoices')
+                .populate('payments');
         }
 
         const formattedProjects = await Promise.all(projects.map(async project => {
@@ -223,39 +233,23 @@ const getProjects = async (req, res) => {
                 project.status = 'Completed';
                 await project.save();
             }
-            const {
-                _id,
-                projectName,
-                customer,
-                projectType,
-                status,
-                startDate,
-                endDate,
-                totalAmount,
-                appliedDiscount,
-                assignedTo,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                salesPerson
-            } = project;
 
             return {
-                _id,
-                projectName,
-                appliedDiscount,
+                _id: project._id,
+                projectName: project.projectName,
+                appliedDiscount: project.appliedDiscount,
                 progress,
-                customer,
-                projectType,
-                status,
-                startDate,
-                salesManagerApproval,
-                customerApproval,
-                financialApproval,
-                endDate,
-                totalAmount,
-                assignedTo,
-                salesPerson,
+                customer: project.customer,
+                projectType: project.projectType,
+                status: project.status,
+                startDate: project.startDate,
+                salesManagerApproval: project.salesManagerApproval,
+                customerApproval: project.customerApproval,
+                financialApproval: project.financialApproval,
+                endDate: project.endDate,
+                totalAmount: project.totalAmount,
+                assignedTo: project.assignedTo,
+                salesPerson: project.salesPerson,
                 products: projectProducts.map(prod => ({
                     _id: prod._id,
                     name: prod.name,
@@ -269,7 +263,23 @@ const getProjects = async (req, res) => {
                     department: prod.department,
                     priceType: prod.priceType,
                     isVatProduct: prod.isVatProduct
-                }))
+                })),
+                // Adding missing fields
+                department: project.department,
+                teamId: project.teamId,
+                pricingType: project.pricingType,
+                discountApprovedBy: project.discountApprovedBy,
+                tasks: project.tasks,
+                documents: project.documents,
+                notes: project.notes,
+                approvals: project.approvals,
+                invoices: project.invoices,
+                payments: project.payments,
+                vatDetails: project.vatDetails,
+                createdBy: project.createdBy,
+                lastUpdatedBy: project.lastUpdatedBy,
+                createdAt: project.createdAt,
+                updatedAt: project.updatedAt
             };
         }));
 
@@ -279,7 +289,6 @@ const getProjects = async (req, res) => {
         res.status(500).json({ message: 'Error fetching projects', error: error.message });
     }
 };
-
 
 
 const updateProject = async (req, res) => {
