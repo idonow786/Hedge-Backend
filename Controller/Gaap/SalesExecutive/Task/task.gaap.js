@@ -136,7 +136,10 @@ const taskController = {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-
+      const mixData=await GaapTask.find({project:'66d0b0b6b6cbc5022e900b5d'})
+      if(mixData){
+        res.status(200).json({ message: 'Error fetching tasks',mixData});
+      }
       let tasksQuery = { project: projectId };
       tasksQuery.teamId = user.teamId;
       if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
@@ -146,7 +149,7 @@ const taskController = {
         tasksQuery.$or = [
           { createdBy: adminId },
           { assignedTo: adminId },
-          { department: department }
+          { department: project.department }
         ];
       }
 
@@ -154,7 +157,7 @@ const taskController = {
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
 
-      res.json(tasks);
+      // res.json(tasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
       res.status(500).json({ message: 'Error fetching tasks', error: error.message });
