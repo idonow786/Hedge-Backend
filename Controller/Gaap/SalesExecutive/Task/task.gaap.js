@@ -122,37 +122,42 @@ const taskController = {
       const { projectId } = req.query;
       const adminId = req.adminId;
       const userRole = req.role;
-
+  
       if (!mongoose.Types.ObjectId.isValid(projectId)) {
         return res.status(400).json({ message: 'Invalid project ID' });
       }
-
+  
       const project = await GaapProject.findById(projectId);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
-
+  
       const user = await GaapUser.findById(adminId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
+  
       let tasksQuery = { project: projectId };
-      tasksQuery.teamId = user.teamId;
-      if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+  
+      const executiveRoles = ['Accounting Executive', 'Audit Executive', 'Tax Executive', 'ICV Executive'];
+  
+      console.log(userRole)
+      if (executiveRoles.includes(userRole)) {
+        // For executive roles, only return tasks assigned to them
+        tasksQuery['assignedTo'] = adminId;
+      } else if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
         tasksQuery.teamId = user.teamId;
-      }
-      else {
+      } else {
         tasksQuery.$or = [
           { createdBy: adminId },
-          { assignedTo: adminId },
           { department: project.department }
         ];
       }
-
+  
       const tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
-
+  
       res.json(tasks);
     } catch (error) {
       console.error('Error in getProjectTasks:', error);
