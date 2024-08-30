@@ -363,7 +363,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
   const mailOptions = {
     from: fromEmail,
     to: toEmail,
-    subject: `Invoice ${invoice.invoiceNumber} for ${project.projectName}`,
+    subject: `Receipt ${invoice.invoiceNumber} for ${project.projectName}`,
     html: emailContent,
     attachments: [{
       filename: `Invoice_${invoice.invoiceNumber}.pdf`,

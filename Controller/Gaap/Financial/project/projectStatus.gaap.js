@@ -82,8 +82,8 @@ const quotationController = {
                     return res.status(404).json({ message: 'Project payment not found' });
                 }
 
-                payment.paidAmount += Number(amount);
-                payment.unpaidAmount = payment.totalAmount - payment.paidAmount;
+                payment.approvalAmount = Number(amount);
+                // payment.unpaidAmount = payment.totalAmount - payment.paidAmount;
                 payment.lastPaymentDate = new Date();
                 payment.lastUpdatedBy = userId;
 

@@ -16,6 +16,10 @@ const projectPaymentSchema = new Schema({
     type: Number,
     required: true
   },
+  approvalAmount:{
+    type: Number,
+    default: 0
+  },
   paidAmount: {
     type: Number,
     default: 0
