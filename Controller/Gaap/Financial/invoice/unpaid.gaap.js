@@ -295,12 +295,12 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
   const emailTemplate = handlebars.compile(`
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2>Invoice for Project: {{projectName}}</h2>
+        <h2>Receipt for Project: {{projectName}}</h2>
         <p>Dear {{customerName}},</p>
-        <p>Please find attached the invoice {{invoiceNumber}} for your recent payment. Below are the details:</p>
+        <p>Please find attached the receipt {{invoiceNumber}} for your recent payment. Below are the details:</p>
         <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
           <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Invoice Number:</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Receipt Number:</strong></td>
             <td style="padding: 10px; border: 1px solid #ddd;">{{invoiceNumber}}</td>
           </tr>
           <tr>
@@ -308,7 +308,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
             <td style="padding: 10px; border: 1px solid #ddd;">{{projectName}}</td>
           </tr>
           <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Invoice Date:</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Receipt Date:</strong></td>
             <td style="padding: 10px; border: 1px solid #ddd;">{{invoiceDate}}</td>
           </tr>
           <tr>
@@ -357,7 +357,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
   });
 
   // Save the PDF buffer to a temporary file
-  const tempPdfPath = path.join(__dirname, `temp_invoice_${invoice.invoiceNumber}.pdf`);
+  const tempPdfPath = path.join(__dirname, `temp_receipt_${invoice.invoiceNumber}.pdf`);
   await fs.writeFile(tempPdfPath, pdfBuffer);
 
   const mailOptions = {
@@ -366,7 +366,7 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
     subject: `Receipt ${invoice.invoiceNumber} for ${project.projectName}`,
     html: emailContent,
     attachments: [{
-      filename: `Invoice_${invoice.invoiceNumber}.pdf`,
+      filename: `receipt_${invoice.invoiceNumber}.pdf`,
       path: tempPdfPath
     }]
   };
