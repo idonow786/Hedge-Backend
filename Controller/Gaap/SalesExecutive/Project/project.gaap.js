@@ -206,7 +206,7 @@ const getProjects = async (req, res) => {
           });
           if (team) {
               projects = await GaapProject.find({ teamId: team._id })
-                  .populate('customer', 'name companyName')
+                  .populate('customer')
                   .populate('assignedTo', 'fullName')
                   .populate('salesPerson', 'fullName')
                   .populate('tasks')
@@ -219,7 +219,7 @@ const getProjects = async (req, res) => {
           }
       } else {
           projects = await GaapProject.find({ createdBy: req.adminId })
-              .populate('customer', 'name companyName')
+              .populate('customer')
               .populate('assignedTo', 'fullName')
               .populate('salesPerson', 'fullName')
               .populate('tasks')
