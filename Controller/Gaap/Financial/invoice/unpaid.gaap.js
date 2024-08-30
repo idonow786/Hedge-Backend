@@ -142,32 +142,6 @@ const updatePayment = async (req, res) => {
       }
     }
 
-    // Recalculate total paid amount and update payment status
-    const paidInvoices = await GaapInvoice.find({ 
-      project: projectId, 
-      status: 'Paid' 
-    });
-    
-    const totalPaidAmount = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
-    payment.paidAmount = totalPaidAmount;
-    payment.unpaidAmount = payment.totalAmount - totalPaidAmount;
-
-    if (payment.paidAmount === 0) {
-      payment.paymentStatus = 'Not Started';
-    } else if (payment.paidAmount < payment.totalAmount) {
-      payment.paymentStatus = 'Partially Paid';
-    } else if (payment.paidAmount === payment.totalAmount) {
-      payment.paymentStatus = 'Fully Paid';
-    }
-
-    // Update next payment due date
-    const pendingInvoices = await GaapInvoice.find({
-      project: projectId,
-      status: { $ne: 'Paid' }
-    }).sort('dueDate');
-
-    payment.nextPaymentDue = pendingInvoices.length > 0 ? pendingInvoices[0].dueDate : null;
-
     await payment.save();
 
     // Update project status if fully paid
