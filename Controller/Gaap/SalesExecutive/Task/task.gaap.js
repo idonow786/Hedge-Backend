@@ -138,22 +138,26 @@ const taskController = {
       }
   
       let tasksQuery = { project: projectId };
-  
+      tasksQuery.teamId = user.teamId;
+
       const executiveRoles = ['Accounting Executive', 'Audit Executive', 'Tax Executive', 'ICV Executive'];
   
       console.log(userRole)
       if (executiveRoles.includes(userRole)) {
+        console.log('executive so using assignTo')
         // For executive roles, only return tasks assigned to them
         tasksQuery['assignedTo'] = adminId;
-      } else if (['admin', 'Operations Manager', 'Sales Executive', 'Sales Manager'].includes(userRole)) {
+      } else if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager','Finance Manager'].includes(userRole)) {
+        console.log('uperlevel so using teamId')
         tasksQuery.teamId = user.teamId;
       } else {
+        console.log('oper so using department')
         tasksQuery.$or = [
           { createdBy: adminId },
           { department: project.department }
         ];
       }
-  
+      console.log(tasksQuery)
       const tasks = await GaapTask.find(tasksQuery)
         .populate('assignedTo', 'fullName')
         .populate('createdBy', 'fullName');
