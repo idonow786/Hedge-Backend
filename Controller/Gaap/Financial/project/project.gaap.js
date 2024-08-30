@@ -90,7 +90,10 @@ const getAllProjectsWithPayments = async (req, res) => {
                     status: invoice.status || 'Sent',
                     amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
                 })),
-                invoiceStatus: getInvoiceStatus(projectInvoices.length, totalInvoicedAmount, totalAmount),
+                invoiceStatus: getInvoiceStatus(projectInvoices.length,
+                    totalInvoicedAmount,
+                    totalAmount,
+                    payment ? payment.paidAmount : 0),
                 products: projectProducts.map(product => ({
                     name: product.name,
                     category: product.category,
@@ -129,13 +132,13 @@ const getAllProjectsWithPayments = async (req, res) => {
     }
 };
 
-const getInvoiceStatus = (invoiceCount, totalInvoicedAmount, totalAmount) => {
+const getInvoiceStatus = (invoiceCount, totalInvoicedAmount, totalAmount, paidAmount) => {
     if (invoiceCount === 0) return 'Not Invoiced';
-    if (totalInvoicedAmount === 0) return 'Invoiced (Pending Payment)';
-    if (totalInvoicedAmount < totalAmount) return 'Partially Invoiced';
-    return 'Fully Invoiced';
+    if (paidAmount === 0) return 'Invoiced (Pending Payment)';
+    if (paidAmount < totalAmount) return 'Partially Paid';
+    if (paidAmount >= totalAmount) return 'Fully Paid';
+    return 'Invoiced';
 };
-
 const getStatusPriority = (status) => {
     const priorities = {
         'In Progress': 1,
