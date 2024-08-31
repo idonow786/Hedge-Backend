@@ -481,7 +481,7 @@ const updateProject = async (req, res) => {
       });
     }
 
-    if (appliedDiscount > 0) {
+    if (appliedDiscount >= 0) {
       updateData.appliedDiscount = appliedDiscount;
       updateData.discountApprovedBy = req.adminId;
       notificationsToCreate.push({
