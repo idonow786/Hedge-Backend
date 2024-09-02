@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const { uploadImageToFirebase } = require('../../../Firebase/uploadImage');
 const fs = require('fs').promises;
+const puppeteer = require('puppeteer');
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -128,8 +129,11 @@ const whatsappController = {
         {
           headless: 'new',
           devtools: false,
-          useChrome: true,
+          useChrome: false,
           browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
+          puppeteer: {
+            executablePath: puppeteer.executablePath(),
+          },
           disableSpins: true,
           disableWelcome: true,
           logQR: true,
