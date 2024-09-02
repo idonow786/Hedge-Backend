@@ -3,8 +3,6 @@ const GaapNotification = require('../../../Model/Gaap/gaap_notification');
 const getUserNotifications = async (req, res) => {
   try {
     const userId = req.adminId;
-    console.log(req.adminId)
-    console.log(await GaapNotification.find())
 
     const notifications = await GaapNotification.find({ user: userId })
     // const notifications = await GaapNotification.find()
