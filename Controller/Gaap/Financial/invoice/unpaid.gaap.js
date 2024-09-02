@@ -235,6 +235,8 @@ async function generateReceiptPDF(invoice, project, customer, payment) {
   const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media';
   const logoImageBytes = await fetch(logoUrl).then(res => res.arrayBuffer());
   const logoImage = await pdfDoc.embedPng(logoImageBytes);
+  const discountedAmount = project.totalAmount - project.appliedDiscount;
+  const remainingAmount = discountedAmount - payment.paidAmount;
   page.drawImage(logoImage, {
     x: 50,
     y: page.getHeight() - 100,
@@ -276,11 +278,11 @@ async function generateReceiptPDF(invoice, project, customer, payment) {
   currentY -= 40;
   page.drawText('Project Payment Summary:', { x: 50, y: currentY, size: 14, font: helveticaBold });
   currentY -= 25;
-  page.drawText(`Total Project Amount: ${payment.totalAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  page.drawText(`Total Project Amount: ${discountedAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
   page.drawText(`Total Paid Amount: ${payment.paidAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
-  page.drawText(`Remaining Amount: ${payment.unpaidAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
+  page.drawText(`Remaining Amount: ${remainingAmount.toFixed(2)} ${payment.currency}`, { x: 50, y: currentY, size: 12, font: helvetica });
   currentY -= 20;
   page.drawText(`Payment Status: ${payment.paymentStatus}`, { x: 50, y: currentY, size: 12, font: helvetica });
 
@@ -342,17 +344,18 @@ async function sendInvoiceEmail(fromEmail, toEmail, pdfBuffer, invoice, project,
       </body>
     </html>
   `);
-
-  const emailContent = emailTemplate({
+  const discountedAmount = project.totalAmount - project.appliedDiscount;
+  const remainingAmount = discountedAmount - payment.paidAmount;
+    const emailContent = emailTemplate({
     customerName: customer.companyName,
     invoiceNumber: invoice.invoiceNumber,
     projectName: project.projectName,
     invoiceDate: invoice.issueDate.toLocaleDateString(),
     dueDate: invoice.dueDate.toLocaleDateString(),
     amount: `${invoice.total.toFixed(2)}`,
-    totalAmount: `${payment.totalAmount.toFixed(2)}`,
+    totalAmount: `${discountedAmount.toFixed(2)}`,
     totalPaidAmount: `${payment.paidAmount.toFixed(2)}`,
-    remainingAmount: `${payment.unpaidAmount.toFixed(2)}`,
+    remainingAmount: `${remainingAmount.toFixed(2)}`,
     paymentStatus: payment.paymentStatus
   });
 

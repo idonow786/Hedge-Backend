@@ -118,6 +118,7 @@ const generatePDF = async (invoice, project, customer, user) => {
   const { width, height } = page.getSize();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const discountedAmount = project.totalAmount - project.appliedDiscount;
 
   const safeString = (value) => value === undefined || value === null || Number.isNaN(value) ? '' : String(value);
 
@@ -186,7 +187,8 @@ const generatePDF = async (invoice, project, customer, user) => {
   yPos -= 15;
   drawText(`Status: ${project.status}`, 50, yPos, 10);
   yPos -= 15;
-  drawText(`Total Project Amount: ${project.totalAmount.toFixed(2)} ${invoice.currency}`, 50, yPos, 10);
+  drawText(`Total Project Amount: ${discountedAmount.toFixed(2)} ${invoice.currency}`, 50, yPos, 10);
+
 
   // Customer Info
   yPos -= 30;

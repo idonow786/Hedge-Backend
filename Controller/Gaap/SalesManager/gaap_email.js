@@ -51,12 +51,12 @@ const generateAndSendProposal = async (req, res) => {
     console.log('Compiling templates...');
     const compiledTemplate1 = handlebars.compile(template1);
     const compiledTemplate2 = handlebars.compile(template2);
-
+    const discountedAmount = project.totalAmount - project.appliedDiscount;
     // Prepare data for templates
     console.log('Preparing data for templates...');
     const data = {
       projectName: project.projectName,
-      description:project.description,
+      description: project.description,
       customerName: customer.companyName,
       contactPerson: customer.contactPerson1.name,
       projectType: project.projectType,
@@ -68,13 +68,13 @@ const generateAndSendProposal = async (req, res) => {
       quoteNumber: `QUOTE-${project._id.toString().slice(-4)}`,
       validUntil: new Date(project.startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
       itemName: project.projectType,
-      rate: project.totalAmount.toFixed(2),
+      rate: discountedAmount.toFixed(2),
       quantity: 1,
-      amount: project.totalAmount.toFixed(2),
-      taxableAmount: project.totalAmount.toFixed(2),
-      vat: (project.totalAmount * 0.05).toFixed(2),
-      totalAmount: (project.totalAmount * 1.05).toFixed(2),
-      amountInWords: numberToWords(project.totalAmount * 1.05) + " AED only"
+      amount: discountedAmount.toFixed(2),
+      taxableAmount: discountedAmount.toFixed(2),
+      vat: (discountedAmount * 0.05).toFixed(2),
+      totalAmount: (discountedAmount * 1.05).toFixed(2),
+      amountInWords: numberToWords(discountedAmount * 1.05) + " AED only"
     };
 
     // Generate HTML content
