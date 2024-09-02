@@ -72,9 +72,9 @@ const generateAndSendProposal = async (req, res) => {
       quantity: 1,
       amount: discountedAmount.toFixed(2),
       taxableAmount: discountedAmount.toFixed(2),
-      vat: (discountedAmount * 0.05).toFixed(2),
-      totalAmount: (discountedAmount * 1.05).toFixed(2),
-      amountInWords: numberToWords(discountedAmount * 1.05) + " AED only"
+      vat: 0,
+      totalAmount: (discountedAmount).toFixed(2),
+      amountInWords: numberToWords(discountedAmount ) + " AED only"
     };
 
     // Generate HTML content
