@@ -6,115 +6,144 @@
   <title>VAT Filing Services Proposal</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary-color: #003366;
+      --secondary-color: #0066cc;
+      --accent-color: #ff9900;
+      --background-color: #f0f5ff;
+      --text-color: #333333;
+    }
     body {
       font-family: 'Roboto', Arial, sans-serif;
       margin: 0;
       padding: 20px;
-      color: #333;
-      background-color: #f9f9f9;
+      color: var(--text-color);
+      background-color: var(--background-color);
     }
     .container {
       background-color: #ffffff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      padding: 30px;
       max-width: 800px;
       margin: 0 auto;
+      border-radius: 10px;
     }
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #003366;
-      padding-bottom: 10px;
+      margin-bottom: 30px;
+      border-bottom: 3px solid var(--primary-color);
+      padding-bottom: 20px;
     }
     .logo {
-      width: 100px;
+      width: 120px;
       height: auto;
     }
     .company-info {
-      font-size: 12px;
-      color: #555;
-      margin-bottom: 20px;
+      font-size: 14px;
+      color: var(--secondary-color);
+      margin-bottom: 30px;
+      text-align: right;
     }
     .proposal-title {
       text-align: right;
-      color: #003366;
+      color: var(--primary-color);
     }
     .proposal-title h2 {
       margin: 0;
-      font-size: 22px;
+      font-size: 28px;
+      font-weight: 700;
     }
     .proposal-title p {
       margin: 5px 0 0;
-      font-size: 14px;
+      font-size: 16px;
+      color: var(--secondary-color);
     }
     .attention {
-      background-color: #003366;
+      background-color: var(--accent-color);
       color: white;
-      padding: 10px;
-      margin-bottom: 20px;
+      padding: 15px;
+      margin-bottom: 30px;
       font-weight: bold;
       text-align: center;
-      font-size: 14px;
+      font-size: 18px;
+      border-radius: 5px;
     }
     table {
       width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 12px;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 30px;
+      font-size: 14px;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 12px;
       text-align: left;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: var(--primary-color);
+      color: white;
       font-weight: bold;
-      color: #003366;
+    }
+    td {
+      background-color: #ffffff;
+    }
+    .number-cell {
+      text-align: right;
+      font-family: 'Courier New', monospace;
     }
     .total-row {
       font-weight: bold;
       background-color: #e6f2ff;
     }
     .terms {
-      margin-bottom: 20px;
-      font-size: 12px;
+      margin-bottom: 30px;
+      font-size: 14px;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
     }
     .signature {
-      margin-top: 20px;
-      border-top: 1px solid #ddd;
-      padding-top: 10px;
-      font-size: 12px;
+      margin-top: 30px;
+      border-top: 2px dashed var(--secondary-color);
+      padding-top: 20px;
+      font-size: 14px;
     }
     .signature p {
       margin: 5px 0;
     }
     #clientName, #clientCompany {
       font-weight: bold;
-      color: #003366;
-      font-size: 14px;
+      color: var(--primary-color);
+      font-size: 18px;
     }
     #amountInWords {
       font-style: italic;
-      color: #666;
-      font-size: 12px;
+      color: var(--secondary-color);
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .validity-notice {
+      text-align: center;
+      font-weight: bold;
+      color: var(--accent-color);
+      border-top: 2px solid var(--accent-color);
+      padding-top: 15px;
+      margin-top: 30px;
     }
     @media (max-width: 600px) {
       .header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
       }
       .proposal-title {
-        text-align: left;
-        margin-top: 10px;
+        text-align: center;
+        margin-top: 20px;
       }
       .company-info {
         text-align: center;
-      }
-      .attention {
-        font-size: 12px;
       }
     }
   </style>
@@ -148,14 +177,12 @@
       <tr>
         <th>DATE</th>
         <td id="date">{{currentDate}}</td>
-      </tr>
-      <tr>
         <th>QUOTE #</th>
         <td id="quoteNumber">{{quoteNumber}}</td>
       </tr>
       <tr>
         <th>VALID UNTIL</th>
-        <td id="validUntil">{{validUntil}}</td>
+        <td id="validUntil" colspan="3">{{validUntil}}</td>
       </tr>
     </table>
     
@@ -168,23 +195,23 @@
         <th>AMOUNT</th>
       </tr>
       <tr>
-        <td>1</td>
+        <td class="number-cell">1</td>
         <td id="itemName">{{itemName}}</td>
-        <td id="rate">{{rate}}</td>
-        <td id="quantity">{{quantity}}</td>
-        <td id="amount">{{amount}}</td>
+        <td class="number-cell" id="rate">{{rate}}</td>
+        <td class="number-cell" id="quantity">{{quantity}}</td>
+        <td class="number-cell" id="amount">{{amount}}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4">Taxable Amount</td>
-        <td id="taxableAmount">{{taxableAmount}}</td>
+        <td class="number-cell" id="taxableAmount">{{taxableAmount}}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4">VAT</td>
-        <td id="vat">{{vat}}</td>
+        <td class="number-cell" id="vat">{{vat}}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4">Total Amount</td>
-        <td id="totalAmount">{{totalAmount}}</td>
+        <td class="number-cell" id="totalAmount">{{totalAmount}}</td>
       </tr>
     </table>
     
@@ -205,6 +232,10 @@
       <h4>Customer Acceptance</h4>
       <p>Name: _______________________________</p>
       <p>Signature: _______________________________</p>
+    </div>
+
+    <div class="validity-notice">
+      <p>This proposal is valid for 15 days from the date of issue.</p>
     </div>
   </div>
 </body>

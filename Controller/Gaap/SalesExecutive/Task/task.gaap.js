@@ -3,7 +3,16 @@ const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+const sendinBlue = require('nodemailer-sendinblue-transport');
+const dotenv = require('dotenv');
+dotenv.config();
 
+const transporter = nodemailer.createTransport(
+  new sendinBlue({
+    apiKey: process.env.SENDINBLUE_API_KEY,
+  })
+);
 const taskController = {
   createTask: async (req, res) => {
     const session = await mongoose.startSession();
@@ -62,26 +71,97 @@ const taskController = {
     try {
       const { taskId } = req.query;
       const updateData = req.body;
-
+  
       if (!mongoose.Types.ObjectId.isValid(taskId)) {
         return res.status(400).json({ message: 'Invalid task ID' });
       }
-
+  
       const task = await GaapTask.findById(taskId);
       if (!task) {
         return res.status(404).json({ message: 'Task not found' });
       }
-
+  
       if (updateData.status === 'Completed' && task.status !== 'Completed') {
         updateData.completedDate = new Date();
       }
-
+  
       const updatedTask = await GaapTask.findByIdAndUpdate(taskId, updateData, { new: true });
-      res.json(updatedTask);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating task', error: error.message });
+  
+      // Check if all tasks for the same project are completed
+      const allProjectTasks = await GaapTask.find({ project: updatedTask.project });
+      const allTasksCompleted = allProjectTasks.every(task => task.status === 'Completed');
+  
+     
+    if (allTasksCompleted) {
+      // Update project status
+      const project = await GaapProject.findById(updatedTask.project);
+
+      if (project) {
+        // Find the Finance Manager using teamId
+        const financeManager = await GaapUser.findOne({ teamId: updatedTask.teamId, role: 'Finance Manager' });
+        if (financeManager && financeManager.email) {
+          console.log(financeManager.email)
+          // Prepare HTML email content with CSS
+          const htmlContent = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Project Tasks Completed</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+              <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                  <h1 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Project Tasks Completed</h1>
+                  <p>Dear ${financeManager.fullName},</p>
+                  <p>We are pleased to inform you that all tasks for the project <span style="font-weight: bold; color: #3498db;">"${project.projectName}"</span> have been successfully completed.</p>
+                  <div style="background-color: #f9f9f9; border-left: 4px solid #3498db; padding: 15px; margin-top: 20px;">
+                      <p><strong>Project Details:</strong></p>
+                      <ul style="list-style-type: none; padding-left: 0;">
+                          <li>Project Name: ${project.projectName}</li>
+                          <li>Project Type: ${project.projectType}</li>
+                          <li>Department: ${project.department}</li>
+                          <li>Start Date: ${project.startDate.toDateString()}</li>
+                          <li>End Date: ${project.endDate ? project.endDate.toDateString() : 'Not specified'}</li>
+                      </ul>
+                  </div>
+                  <p>Please review the project details and take any necessary actions.</p>
+                  <p>If you have any questions or need further information, please don't hesitate to contact the project manager.</p>
+                  <p>Thank you for your attention to this matter.</p>
+                  <p>Best regards,<br>Project Management Team</p>
+                  <p style="font-size: 12px; color: #888; margin-top: 20px;">This is an automated message. Please do not reply to this email.</p>
+              </div>
+          </body>
+          </html>
+          `;
+          
+          const mailOptions = {
+              from: {
+                  name: "IDO",
+                  address: process.env.Email_Sender
+              },
+              to: financeManager.email,
+              subject: `Project Completed: ${project.projectName}`,
+              html: htmlContent,
+              text: `Project Tasks Completed for ${project.projectName}. Please review the project details and take any necessary actions.`
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending email:', error);
+            } else {
+              console.log('Email sent:', info.response);
+            }
+          });
+        }
+      }
     }
-  },
+
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating task', error: error.message });
+  }
+},
 
   deleteTask: async (req, res) => {
     const session = await mongoose.startSession();

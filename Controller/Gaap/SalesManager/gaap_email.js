@@ -11,7 +11,72 @@ const dotenv = require('dotenv');
 const htmlPdf = require('html-pdf-node');
 
 dotenv.config();
+function numberToWords(number) {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
 
+  function convertLessThanOneThousand(n) {
+    if (n === 0) return '';
+
+    let result = '';
+
+    if (n >= 100) {
+      result += ones[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+
+    if (n >= 20) {
+      result += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    } else if (n >= 10) {
+      result += teens[n - 10] + ' ';
+      return result.trim();
+    }
+
+    if (n > 0) {
+      result += ones[n] + ' ';
+    }
+
+    return result.trim();
+  }
+
+  function convertToWords(n) {
+    if (n === 0) return 'Zero';
+
+    const billion = Math.floor(n / 1000000000);
+    const million = Math.floor((n % 1000000000) / 1000000);
+    const thousand = Math.floor((n % 1000000) / 1000);
+    const remainder = n % 1000;
+
+    let result = '';
+
+    if (billion) result += convertLessThanOneThousand(billion) + ' Billion ';
+    if (million) result += convertLessThanOneThousand(million) + ' Million ';
+    if (thousand) result += convertLessThanOneThousand(thousand) + ' Thousand ';
+    if (remainder) result += convertLessThanOneThousand(remainder);
+
+    return result.trim();
+  }
+
+  // Split the number into dirhams and fils
+  const parts = number.toFixed(2).split('.');
+  const dirhams = parseInt(parts[0]);
+  const fils = parseInt(parts[1]);
+
+  let result = '';
+
+  if (dirhams > 0) {
+    result += convertToWords(dirhams) + ' Dirham' + (dirhams !== 1 ? 's' : '');
+  }
+
+  if (fils > 0) {
+    if (result !== '') result += ' and ';
+    result += convertToWords(fils) + ' Fil' + (fils !== 1 ? 's' : '');
+  }
+
+  return result + ' Only';
+}
 const generateAndSendProposal = async (req, res) => {
   try {
     console.log('Starting proposal generation process...');
@@ -74,7 +139,7 @@ const generateAndSendProposal = async (req, res) => {
       taxableAmount: discountedAmount.toFixed(2),
       vat: 0,
       totalAmount: (discountedAmount).toFixed(2),
-      amountInWords: numberToWords(discountedAmount ) + " AED only"
+      amountInWords: numberToWords(Math.floor(discountedAmount))
     };
 
     // Generate HTML content
@@ -142,6 +207,8 @@ We are happy to discuss any aspects of the proposal to ensure it meets your need
 
 Please confirm your approval, so we can move forward with the next steps.
 
+Kindly note that this proposal is valid for 15 days from the date of issue.
+
 Thank you for your attention to this matter. We look forward to your feedback and to working together on this project.
 
 Best regards,
@@ -173,11 +240,5 @@ GAAP`,
   }
 };
 
-// Helper function to convert numbers to words (you may want to use a library for this)
-function numberToWords(num) {
-  // Implement number to words conversion
-  // This is a placeholder implementation
-  return num.toFixed(2).toString();
-}
 
 module.exports = { generateAndSendProposal };

@@ -23,6 +23,11 @@ const {generateDashboard} = require('../../Controller/Gaap/SalesExecutive/gaap_d
 //Task
 const taskController = require('../../Controller/Gaap/SalesExecutive/Task/task.gaap');
 
+
+
+//Document
+const documentController = require('../../Controller/Gaap/SalesExecutive/gaap_document');
+
 const upload = multer({ storage: multer.memoryStorage() });
 const { verifyToken } = require('../../Middleware/jwt');
 
@@ -105,5 +110,13 @@ router.get('/dsr/user',verifyToken, dsrController.getAllDsrForUser);
 
 //===========Dashboard
 router.get('/dashboard',verifyToken, generateDashboard);
+
+
+
+
+//===========Document
+router.post('/document-add', verifyToken, upload.array('documents'), documentController.addDocument);
+router.get('/document-get', verifyToken, documentController.getDocuments);
+router.delete('/document-delete', verifyToken, documentController.deleteDocument);
 
 module.exports = router;

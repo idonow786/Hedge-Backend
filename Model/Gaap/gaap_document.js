@@ -5,20 +5,16 @@ const gaapdocumentSchema = new Schema({
   project: {
     type: Schema.Types.ObjectId,
     ref: 'GaapProject', 
-    required: true
   },
   documentType: {
     type: String,
-    required: true
   },
-  filePath: {
+  filePath: [{
     type: String,
-    required: true
-  },
+  }],
   uploadedBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',  
-    required: true
   },
   createdAt: {
     type: Date,
