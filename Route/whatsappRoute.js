@@ -22,7 +22,7 @@ router.get('/messages',verifyToken, getAllMessages);
 //venom
 router.get('/inbox',verifyToken, getMessages);
 router.get('/report',verifyToken, getReport);
-router.post('/send-messages', upload.single('file'),verifyToken, whatsappController.processAndSendMessages);
+// router.post('/send-messages', upload.single('file'),verifyToken, whatsappController.processAndSendMessages);
 // router.post('/removeSession',verifyToken, sessionController.removeSession);
 
 
