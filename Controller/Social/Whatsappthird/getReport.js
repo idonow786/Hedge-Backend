@@ -1,4 +1,3 @@
-const venom = require('venom-bot');
 const User = require('../../../Model/whatsappUser');
 const Message = require('../../../Model/messageWhatsapp');
 const Business = require('../../../Model/Business');
