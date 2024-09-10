@@ -10,6 +10,8 @@ const Payment = require('../../Model/Payment');
 const GaapTeam = require('../../Model/Gaap/gaap_team');
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
+const StaffingTeam = require('../../Model/Staffing/staffing_team');
+const StaffingUser = require('../../Model/Staffing/staffing_user');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -18,7 +20,8 @@ const transporter = nodemailer.createTransport(
   })
 );
 
-// Signup controller
+
+
 const signup = async (req, res) => {
   try {
     const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
@@ -94,12 +97,65 @@ const signup = async (req, res) => {
         },
         members: []
       });
-      newUser.teamId=newTeam._id
+      newUser.teamId = newTeam._id
       await newUser.save()
       await newTeam.save();
 
-      console.log("team ",newTeam)
-    } else {
+      console.log("team ", newTeam)
+    }
+    else if (CompanyActivity === 'staffing') {
+      console.log('working staffing')
+      existingUser = await StaffingUser.findOne({ email: email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Staffing User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      newUser = new StaffingUser({
+        username: username,
+        email: email,
+        password: hashedPassword,
+        fullName: username,
+        role: 'HR Personnel',
+        companyActivity: CompanyActivity
+      });
+
+      savedUser = await newUser.save();
+
+      const newBusiness = new Business({
+        AdminID: savedUser._id,
+        BusinessName: businessName,
+        BusinessAddress: BusinessAddress,
+        BusinessPhoneNo: BusinessPhoneNo,
+        BusinessEmail: BusinessEmail,
+        OwnerName: OwnerName,
+        YearofEstablishment: YearofEstablishment,
+        BusinessType: BusinessType,
+        CompanyType: CompanyType,
+        CompanyActivity: CompanyActivity
+      });
+
+      const savedBusiness = await newBusiness.save();
+      console.log(savedBusiness)
+
+      const newTeam = new StaffingTeam({
+        teamName: `${businessName} Team`,
+        businessId: savedBusiness._id,
+        parentUser: {
+          userId: savedUser._id,
+          name: username,
+          role: 'HR Personnel'
+        },
+        members: []
+      });
+      newUser.teamId = newTeam._id
+      await newUser.save()
+      await newTeam.save();
+
+      console.log("team ", newTeam)
+    }
+    else {
       existingUser = await Admin.findOne({ Email: email });
       if (existingUser) {
         return res.status(400).json({ message: 'Admin already exists' });
@@ -259,6 +315,7 @@ const signup = async (req, res) => {
 };
 
 
+
 const updateUser = async (req, res) => {
   try {
     const { id } = req.body;
@@ -266,6 +323,7 @@ const updateUser = async (req, res) => {
 
     let user;
     let isGaapUser = false;
+    let isStaffUser = false;
     if (role === 'superadmin') {
       user = await SuperAdmin.findById(id);
       if (!user) {
@@ -277,6 +335,12 @@ const updateUser = async (req, res) => {
         return res.status(404).json({ message: 'GAAP User not found' });
       }
       isGaapUser = true;
+    } else if (CompanyActivity === 'staffing') {
+      user = await StaffingUser.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'Staffing User not found' });
+      }
+      isStaffUser = true;
     } else {
       user = await Admin.findById(id);
       if (!user) {
@@ -424,7 +488,7 @@ const deleteUser = async (req, res) => {
         return res.status(404).json({ message: 'Super Admin not found' });
       }
     } else {
-      user = await GaapUser.findByIdAndDelete(id) || await Admin.findByIdAndDelete(id);
+      user = await GaapUser.findByIdAndDelete(id) || await Admin.findByIdAndDelete(id) || await StaffingUser.findByIdAndDelete(id);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -529,10 +593,12 @@ const deleteUser = async (req, res) => {
 
 
 
+
+
 const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const lowercaseEmail = email.toLowerCase(); 
+    const lowercaseEmail = email.toLowerCase();
 
     let user;
     let secretKey;
@@ -541,30 +607,33 @@ const signin = async (req, res) => {
     let business = null;
 
     // Check GAAP User
-    console.log(await GaapUser.find())
     user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
-    console.log(user)
     if (user) {
       secretKey = user.role === 'admin' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
       business = await Business.findOne({ AdminID: user._id });
     } else {
-      // Check SuperAdmin
-      user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+      // Check Staffing User
+      user = await StaffingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
       if (user) {
-        secretKey = process.env.JWT_SECRET_Super;
+        secretKey = user.role === 'Admin' ? process.env.JWT_SECRET_STAFFING : process.env.JWT_SECRET_STAFFING_USER;
+        business = await Business.findOne({ AdminID: user._id });
       } else {
-        // Check Admin
-        user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+        // Check SuperAdmin
+        user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
         if (user) {
-          secretKey = process.env.JWT_SECRET;
-          // Find associated business for Admin
-          business = await Business.findOne({ AdminID: user._id });
-          console.log("yes")
+          secretKey = process.env.JWT_SECRET_Super;
         } else {
-          // Check Vendor
-          user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+          // Check Admin
+          user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
           if (user) {
-            secretKey = process.env.JWT_SECRET_VENDOR;
+            secretKey = process.env.JWT_SECRET;
+            business = await Business.findOne({ AdminID: user._id });
+          } else {
+            // Check Vendor
+            user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+            if (user) {
+              secretKey = process.env.JWT_SECRET_VENDOR;
+            }
           }
         }
       }
@@ -579,15 +648,16 @@ const signin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check if GAAP user is active
-    if (user.constructor.modelName === 'GaapUser' && !user.isActive) {
+    // Check if user is active
+    if ((user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser') && !user.isActive) {
       return res.status(403).json({ message: 'Account is inactive. Please contact an administrator.' });
     }
 
     // Check payment status for non-superadmin and non-vendor users
-    if (user.role !== 'superadmin' && user.role !== 'vendor' && user.constructor.modelName !== 'GaapUser') {
+    if (user.role !== 'superadmin' && user.role !== 'vendor' && 
+        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser') {
       const payment = await Payment.findOne({ UserID: user._id });
-      console.log(payment);
+      
       // Uncomment the following lines if you want to enforce payment check
       // if (!payment || payment.Status === 'Pending' || payment.Status === 'Failed') {
       //   return res.status(404).json({ message: 'Payment not completed' });
@@ -609,20 +679,19 @@ const signin = async (req, res) => {
       {
         userId: user._id,
         username: user.username || user.Name || user.name,
-        email: user.email || user.Email || user.contactInformation.email,
+        email: user.email || user.Email || user.contactInformation?.email,
         role: user.role
       },
       secretKey,
       { expiresIn: '30d' }
     );
 
-    // Update last login for GAAP users
-    if (user.constructor.modelName === 'GaapUser') {
+    // Update last login for GAAP and Staffing users
+    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser') {
       user.lastLogin = new Date();
-      user.companyActivity='Gaap'
       await user.save();
     }
-    console.log(user)
+
     const response = {
       message: 'Login successful',
       token,
@@ -632,11 +701,13 @@ const signin = async (req, res) => {
       user: {
         id: user._id,
         username: user.username || user.Name || user.name,
-        email: user.email || user.Email || user.contactInformation.email,
+        email: user.email || user.Email || user.contactInformation?.email,
         role: user.role,
         fullName: user.fullName,
         department: user.department || '',
-        CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : (user.companyActivity || '')
+        CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : 
+                         user.constructor.modelName === 'StaffingUser' ? 'Staffing' : 
+                         (user.companyActivity || '')
       }
     };
 
@@ -650,10 +721,6 @@ const signin = async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
-
-
-
-
 
 
 

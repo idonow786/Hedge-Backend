@@ -47,6 +47,11 @@ const CommentGaapRoute=require('./Route/Gaap/comment.gaap')
 
 
 
+const HRRoute=require('./Route/hrRoute') 
+const POSRoute=require('./Route/posRoute') 
+
+
+
 
 
 // Connect to MongoDB
@@ -91,6 +96,13 @@ app.use('/api/social',socialRoute)
 app.use('/api/whatsapp',whatsappRoute)
 app.use('/api/vendor',vendorRoute)
 app.use('/api/task',taskRoute)
+
+
+
+
+
+app.use('/api/hr',HRRoute)
+app.use('/api/pos',POSRoute)
 
 
 
