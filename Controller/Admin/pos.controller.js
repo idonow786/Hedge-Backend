@@ -165,7 +165,7 @@ const createUserAndBusiness = async (req, res) => {
                 <p><strong>Password:</strong> ${password}</p>
               </div>
               
-              <a href="https://ido-crm.netlify.app/" class="btn">Log In to Your Account</a>
+              <a href="https://mediumaquamarine-stingray-773000.hostingersite.com" class="btn">Log In to Your Account</a>
               
               <h3>What You Can Expect:</h3>
               <ul>
