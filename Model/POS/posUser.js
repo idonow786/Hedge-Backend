@@ -22,7 +22,6 @@ const posuserSchema = new Schema({
   },
   fullName: {
     type: String,
-    required: true
   },
   manager: {
     type: String,

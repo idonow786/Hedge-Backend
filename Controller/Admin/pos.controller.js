@@ -19,10 +19,10 @@ const transporter = nodemailer.createTransport(
 
 const createUserAndBusiness = async (req, res) => {
   try {
-    const { 
+    const {
       username, email, password, role, fullName,
       businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail,
-      OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity 
+      OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity
     } = req.body;
 
     // Check if business name is unique
@@ -37,7 +37,7 @@ const createUserAndBusiness = async (req, res) => {
     const newUser = new POSUser({
       username,
       email,
-      password: hashedPassword, 
+      password: hashedPassword,
       role,
       fullName
     });
@@ -69,7 +69,8 @@ const createUserAndBusiness = async (req, res) => {
           params: {
             email,
             password,
-            business_name: businessName
+            business_name: businessName,
+            user_name: username
           },
           timeout: 10000 // 10 seconds timeout
         });
@@ -223,7 +224,7 @@ const createUserAndBusiness = async (req, res) => {
 
 const updateUserAndBusiness = async (req, res) => {
   try {
-    const { userId } = req.body; 
+    const { userId } = req.body;
     const updateData = req.body;
     console.log(updateData)
     // Find the user
@@ -279,9 +280,10 @@ const updateUserAndBusiness = async (req, res) => {
         apiResponse = await axios.post('https://mediumaquamarine-stingray-773000.hostingersite.com/api/update-user', null, {
           params: {
             email: user.email,
-            password: updateData.password || user.password, // Use new password if provided
+            password: updateData.password || user.password,
             business_name: business.BusinessName,
-            id: user.businessPhpId
+            id: user.businessPhpId,
+            user_name: updateData.username || user.username
           },
           timeout: 10000 // 10 seconds timeout
         });
@@ -465,31 +467,31 @@ const deleteUserAndBusiness = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while processing your request' });
   }
 };
-  const getAllUsersWithBusinesses = async (req, res) => {
-    try {
-      const users = await POSUser.find({});
-  
-      const usersWithBusinesses = await Promise.all(users.map(async (user) => {
-        const userData = user.toObject();
-        delete userData.password;
-  
-        const business = await POSBusiness.findOne({ AdminID: user._id });
-  
-        return {
-          user: userData,
-          business: business ? business.toObject() : null
-        };
-      }));
-  
-      res.status(200).json({
-        message: 'All users and their businesses retrieved successfully',
-        data: usersWithBusinesses
-      });
-  
-    } catch (error) {
-      console.error('Error in getAllUsersWithBusinesses:', error);
-      res.status(500).json({ message: 'An error occurred while retrieving the data' });
-    }
+const getAllUsersWithBusinesses = async (req, res) => {
+  try {
+    const users = await POSUser.find({});
+
+    const usersWithBusinesses = await Promise.all(users.map(async (user) => {
+      const userData = user.toObject();
+      delete userData.password;
+
+      const business = await POSBusiness.findOne({ AdminID: user._id });
+
+      return {
+        user: userData,
+        business: business ? business.toObject() : null
+      };
+    }));
+
+    res.status(200).json({
+      message: 'All users and their businesses retrieved successfully',
+      data: usersWithBusinesses
+    });
+
+  } catch (error) {
+    console.error('Error in getAllUsersWithBusinesses:', error);
+    res.status(500).json({ message: 'An error occurred while retrieving the data' });
+  }
 }
 
-  module.exports={updateUserAndBusiness,createUserAndBusiness,deleteUserAndBusiness,getAllUsersWithBusinesses}
+module.exports = { updateUserAndBusiness, createUserAndBusiness, deleteUserAndBusiness, getAllUsersWithBusinesses }
