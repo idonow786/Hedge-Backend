@@ -14,10 +14,14 @@ const POSbusinessSchema = new mongoose.Schema({
   BusinessAddress: {
     type: String,
   },
+  posType: {
+    type: String,
+  },
   Date: {
     type: Date,
     default: Date.now,
   },
+
   BusinessPhoneNo: {
     type: String,
   },

@@ -15,6 +15,11 @@ const transporter = nodemailer.createTransport(
 );
 
 
+const posTypeToUrl = {
+  pos_non_food: 'darkviolet-viper-469564.hostingersite.com',
+  pos_food_basic: 'mediumaquamarine-stingray-773000.hostingersite.com',
+  pos_food_pro: 'slategray-mule-847204.hostingersite.com'
+};
 
 
 const createUserAndBusiness = async (req, res) => {
@@ -22,9 +27,13 @@ const createUserAndBusiness = async (req, res) => {
     const {
       username, email, password, role, fullName,
       businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail,
-      OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity
+      OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity,
+      posType
     } = req.body;
-
+    const baseUrl = posTypeToUrl[posType];
+    if (!baseUrl) {
+      return res.status(400).json({ message: 'Invalid posType' });
+    }
     // Check if business name is unique
     const existingBusiness = await POSBusiness.findOne({ BusinessName: businessName });
     if (existingBusiness) {
@@ -55,7 +64,8 @@ const createUserAndBusiness = async (req, res) => {
       YearofEstablishment,
       BusinessType,
       CompanyType,
-      CompanyActivity
+      CompanyActivity,
+      posType
     });
 
     const savedBusiness = await newBusiness.save();
@@ -65,7 +75,7 @@ const createUserAndBusiness = async (req, res) => {
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        apiResponse = await axios.post('https://mediumaquamarine-stingray-773000.hostingersite.com/api/create-user', null, {
+        apiResponse = await axios.post(`https://${baseUrl}/api/create-user`, null, {
           params: {
             email,
             password,
@@ -226,7 +236,7 @@ const updateUserAndBusiness = async (req, res) => {
   try {
     const { userId } = req.body;
     const updateData = req.body;
-    console.log(updateData)
+    console.log(updateData);
     // Find the user
     const user = await POSUser.findById(userId);
     if (!user) {
@@ -260,13 +270,20 @@ const updateUserAndBusiness = async (req, res) => {
       user.password = await bcrypt.hash(updateData.password, 10);
     }
 
-    // Update business fields
-    const businessFields = ['BusinessName', 'BusinessAddress', 'BusinessPhoneNo', 'BusinessEmail', 'OwnerName', 'YearofEstablishment', 'BusinessType', 'CompanyType', 'CompanyActivity'];
+    // Update business fields, including posType
+    const businessFields = ['BusinessName', 'BusinessAddress', 'BusinessPhoneNo', 'BusinessEmail', 'OwnerName', 'YearofEstablishment', 'BusinessType', 'CompanyType', 'CompanyActivity', 'posType'];
     businessFields.forEach(field => {
       if (updateData[field] !== undefined) {
         business[field] = updateData[field];
       }
     });
+
+    // Validate updated or existing posType
+    const posType = business.posType;
+    const baseUrl = posTypeToUrl[posType];
+    if (!baseUrl) {
+      return res.status(400).json({ message: 'Invalid posType' });
+    }
 
     // Save updated user and business
     await user.save();
@@ -277,13 +294,13 @@ const updateUserAndBusiness = async (req, res) => {
     let apiResponse;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        apiResponse = await axios.post('https://mediumaquamarine-stingray-773000.hostingersite.com/api/update-user', null, {
+        apiResponse = await axios.post(`https://${baseUrl}/api/update-user`, null, {
           params: {
             email: user.email,
             password: updateData.password || user.password,
             business_name: business.BusinessName,
             id: user.businessPhpId,
-            user_name: updateData.username || user.username
+            user_name: user.username
           },
           timeout: 10000 // 10 seconds timeout
         });
@@ -297,6 +314,7 @@ const updateUserAndBusiness = async (req, res) => {
     // Check if email or password was updated
     const emailChanged = updateData.email && updateData.email !== user.email;
     const passwordChanged = updateData.password !== undefined;
+
 
     if (emailChanged || passwordChanged) {
       // Send update notification email
@@ -376,10 +394,20 @@ const deleteUserAndBusiness = async (req, res) => {
     const businessPhpId = user.businessPhpId;
 
     // Find and delete the associated business
-    const deletedBusiness = await POSBusiness.findOneAndDelete({ AdminID: userId });
-    if (!deletedBusiness) {
+    const business = await POSBusiness.findOne({ AdminID: userId });
+    if (!business) {
       return res.status(404).json({ message: 'Associated business not found' });
     }
+
+    // Get baseUrl from business.posType
+    const posType = business.posType;
+    const baseUrl = posTypeToUrl[posType];
+    if (!baseUrl) {
+      return res.status(400).json({ message: 'Invalid posType in business' });
+    }
+
+    // Delete the business
+    const deletedBusiness = await POSBusiness.findOneAndDelete({ AdminID: userId });
 
     // Delete the user
     await POSUser.findByIdAndDelete(userId);
@@ -388,7 +416,7 @@ const deleteUserAndBusiness = async (req, res) => {
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        await axios.post('https://mediumaquamarine-stingray-773000.hostingersite.com/api/delete-user', null, {
+        await axios.post(`https://${baseUrl}/api/delete-user`, null, {
           params: {
             id: businessPhpId
           },
