@@ -66,7 +66,140 @@ const taskController = {
       res.status(500).json({ message: 'Error creating task', error: error.message });
     }
   },
+  assignTasks: async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
+    try {
+      const { taskIds, userId } = req.body;
+
+      // 1. Input Validation
+      if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+        return res.status(400).json({ message: 'taskIds must be a non-empty array' });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ message: 'userId is required' });
+      }
+
+      // Validate each taskId is a valid ObjectId
+      const invalidTaskIds = taskIds.filter(id => !mongoose.Types.ObjectId.isValid(id));
+      if (invalidTaskIds.length > 0) {
+        return res.status(400).json({ message: `Invalid taskIds: ${invalidTaskIds.join(', ')}` });
+      }
+
+      // 2. Verify User Exists
+      const user = await GaapUser.findById(userId).session(session);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // 3. Fetch Tasks
+      const tasks = await GaapTask.find({ _id: { $in: taskIds } }).session(session);
+
+      if (tasks.length !== taskIds.length) {
+        const foundTaskIds = tasks.map(task => task._id.toString());
+        const notFoundTaskIds = taskIds.filter(id => !foundTaskIds.includes(id));
+        return res.status(404).json({ message: `Tasks not found: ${notFoundTaskIds.join(', ')}` });
+      }
+
+      // 4. Ensure All Tasks Belong to the Same Team
+      const teamIds = [...new Set(tasks.map(task => task.teamId))];
+      if (teamIds.length !== 1) {
+        return res.status(400).json({ message: 'All tasks must belong to the same team' });
+      }
+
+      const teamId = teamIds[0];
+
+      // Ensure the user belongs to the same team
+      if (user.teamId !== teamId) {
+        return res.status(403).json({ message: 'User does not belong to the same team as the tasks' });
+      }
+
+      // 5. Fetch Projects Associated with Tasks
+      const projectIds = [...new Set(tasks.map(task => task.project))];
+      const projects = await GaapProject.find({ _id: { $in: projectIds } }).session(session);
+
+      // Map of projectId to project for quick access
+      const projectMap = {};
+      projects.forEach(project => {
+        projectMap[project._id.toString()] = project;
+      });
+
+      // 6. Update Tasks
+      const updateTasksPromises = tasks.map(task => {
+        const originalStatus = task.status;
+        let newStatus = task.status;
+
+        // If task was previously unassigned or in a status that indicates not started, set to 'In Progress'
+        if (!task.assignedTo || ['Pending', 'On Hold', '25 Percent', '50 Percent'].includes(task.status)) {
+          newStatus = 'In Progress';
+        }
+
+        return GaapTask.updateOne(
+          { _id: task._id },
+          {
+            assignedTo: userId,
+            status: newStatus,
+            updatedAt: new Date()
+          },
+          { session }
+        );
+      });
+
+      await Promise.all(updateTasksPromises);
+
+      // 7. Update Associated Projects' Status if Necessary
+      // If any task's status was updated to 'In Progress', set the project's status to 'In Progress'
+      const projectsToUpdate = new Set();
+
+      tasks.forEach(task => {
+        if (['In Progress'].includes(task.status)) {
+          projectsToUpdate.add(task.project.toString());
+        }
+      });
+
+      const updateProjectsPromises = Array.from(projectsToUpdate).map(projectId => {
+        return GaapProject.updateOne(
+          { _id: projectId },
+          { status: 'In Progress', updatedAt: new Date() },
+          { session }
+        );
+      });
+
+      await Promise.all(updateProjectsPromises);
+
+      // 8. Create Notifications for the Assigned User
+      const notifications = tasks.map(task => ({
+        user: userId,
+        message: `You have been assigned to the task "${task.title}" in project "${projectMap[task.project.toString()].projectName}".`,
+        createdAt: new Date()
+      }));
+
+      if (notifications.length > 0) {
+        await GaapNotification.insertMany(notifications, { session });
+      }
+
+      // 9. Commit Transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      // 10. Fetch Updated Tasks to Return
+      const updatedTasks = await GaapTask.find({ _id: { $in: taskIds } }).populate('assignedTo', 'name email');
+
+      res.status(200).json({
+        message: 'Tasks successfully assigned',
+        tasks: updatedTasks
+      });
+    } catch (error) {
+      // Abort Transaction in Case of Error
+      await session.abortTransaction();
+      session.endSession();
+
+      console.error('Error assigning tasks:', error);
+      res.status(500).json({ message: 'Error assigning tasks', error: error.message });
+    }
+  },
   updateTask: async (req, res) => {
     try {
       const { taskId } = req.query;
