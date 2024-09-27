@@ -85,6 +85,7 @@ const getProjects = async (req, res) => {
         const { department } = req.query;
         const adminId = req.adminId;
         const userRole = req.role;
+        console.log(userRole)
 
         // Fetch the user's team ID
         const user = await GaapUser.findById(adminId);

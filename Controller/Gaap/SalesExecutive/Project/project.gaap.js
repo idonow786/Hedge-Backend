@@ -317,6 +317,14 @@ const getProjects = async (req, res) => {
       if (progress >= 100 && project.status !== 'Completed') {
         await GaapProject.findByIdAndUpdate(project._id, { status: 'Completed' });
         project.status = 'Completed';
+        const notificationMessage = `Project "${project.projectName}" have been completed.`;
+        const notification = new GaapNotification({
+          user: req.adminId,
+          message: notificationMessage,
+          department: project.department, 
+        });
+
+        await notification.save();
       }
 
       return {

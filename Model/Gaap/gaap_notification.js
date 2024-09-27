@@ -11,6 +11,9 @@ const gaapnotificationSchema = new Schema({
     type: String,
     required: true
   },
+  department: {
+    type: String,
+  },
   isRead: {
     type: Boolean,
     default: false
