@@ -105,7 +105,7 @@ router.put('/tasks-update',verifyToken, taskController.updateTask);
 router.delete('/tasks-delete',verifyToken, taskController.deleteTask);
 router.get('/projects-get',verifyToken, taskController.getProjectTasks);
 router.get('/tasks-projects',verifyToken, taskController.getTask);
-router.get('/assign-tasks',verifyToken, taskController.assignTasks);
+router.post('/assign-tasks',verifyToken, taskController.assignTasks);
 
 router.get('/dsr/user',verifyToken, dsrController.getAllDsrForUser);
 
