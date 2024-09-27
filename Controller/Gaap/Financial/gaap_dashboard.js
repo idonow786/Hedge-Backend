@@ -30,6 +30,26 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
+    // Define progress weights based on status
+    const statusProgress = {
+      'Proposed': 0,
+      'In Progress': 50,
+      'Approved': 75,
+      'Completed': 100
+      // Add more statuses and their corresponding progress if needed
+    };
+
+    // Calculate average progress based on projectOverview
+    let totalProgress = 0;
+    let totalProjects = 0;
+    projectOverview.forEach(item => {
+      const progress = statusProgress[item._id] !== undefined ? statusProgress[item._id] : 0;
+      totalProgress += progress * item.count;
+      totalProjects += item.count;
+    });
+
+    const averageProgress = totalProjects > 0 ? totalProgress / totalProjects : 0;
+
     // 2. Overview of all invoices
     const invoiceOverview = await GaapInvoice.aggregate([
       { $match: { teamId: teamId } },
@@ -62,17 +82,8 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    // 4. Overall project progress
-    const projectProgress = await GaapProject.aggregate([
-      { $match: { teamId: teamId } },
-      {
-        $group: {
-          _id: null,
-          averageProgress: { $avg: '$Progress' },
-          totalProjects: { $sum: 1 }
-        }
-      }
-    ]);
+    // 4. Remove the original projectProgress aggregation as it's no longer needed
+    // Instead, use the calculated averageProgress above
 
     // 5. Financial overview
     const financialOverview = await ProjectPayment.aggregate([
@@ -129,7 +140,10 @@ const getDashboardData = async (req, res) => {
         return acc;
       }, {}),
       dsrSummary: dsrSummary.length > 0 ? dsrSummary[0] : null,
-      projectProgress: projectProgress.length > 0 ? projectProgress[0] : null,
+      projectProgress: {
+        averageProgress: parseFloat(averageProgress.toFixed(2)), // Rounded to 2 decimal places
+        totalProjects: totalProjects
+      },
       financialOverview: {
         totalCashInflow: financialOverview.length > 0 ? financialOverview[0].totalCashInflow : 0,
         totalPayments: financialOverview.length > 0 ? financialOverview[0].totalPayments : 0,
@@ -162,8 +176,6 @@ const getDashboardData = async (req, res) => {
     res.status(500).json({ message: 'Error fetching dashboard data', error: error.message });
   }
 };
-
-
 
 module.exports = {
   getDashboardData
