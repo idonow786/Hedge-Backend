@@ -79,7 +79,7 @@ const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
-
+const GaapProjectProduct=require('../../../../Model/Gaap/gaap_product')
 const getProjects = async (req, res) => {
     try {
         const { department } = req.query;
@@ -113,7 +113,8 @@ const getProjects = async (req, res) => {
                     project.status = 'Completed';
                     await project.save();
                 }
-
+                const projectProducts = await GaapProjectProduct.find({ project: project._id }).lean();
+                console.log(project)
                 let formattedProject = {
                     _id: project._id,
                     projectName: project.projectName,
@@ -121,10 +122,12 @@ const getProjects = async (req, res) => {
                     assignedStaff: project.assignedTo ? project.assignedTo.name : 'Unassigned',
                     startDate: project.startDate,
                     endDate: project.endDate,
+                    TotalAmount:project.totalAmount,
                     status: project.status,
                     projectType: project.projectType,
                     taskProgress: taskProgress,
-                    department: project.department // Include department in the formatted project
+                    department: project.department,
+                    projectProducts
                 };
 
                 if (['In Progress', 'Approved', 'Proposed'].includes(project.status)) {
@@ -151,14 +154,14 @@ const getProjects = async (req, res) => {
             // Fetch projects where the user is assigned to at least one task
             const tasksWithUser = await GaapTask.find({ assignedTo: adminId }).distinct('project');
             projects = await GaapProject.find({ ...query, _id: { $in: tasksWithUser } })
-                .select('projectName customer assignedTo startDate endDate status projectType department')
+                .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         } else {
             // Fetch all projects for other roles
             projects = await GaapProject.find(query)
-                .select('projectName customer assignedTo startDate endDate status projectType department')
+                .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
                 .populate('customer', 'name')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
