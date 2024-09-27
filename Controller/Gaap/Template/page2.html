@@ -235,8 +235,25 @@
     </div>
 
     <div class="validity-notice">
-      <p>This proposal is valid for 15 days from the date of issue.</p>
+      <p>This proposal is valid until <span id="expirationDate"></span>.</p>
     </div>
   </div>
+
+  <script>
+    // Get the current date from the date field
+    var currentDateString = document.getElementById('date').textContent;
+    var currentDate = new Date(currentDateString);
+
+    // Add 15 days to the current date
+    var expirationDate = new Date(currentDate);
+    expirationDate.setDate(expirationDate.getDate() + 15);
+
+    // Format the expiration date
+    var options = { year: 'numeric', month: 'long', day: 'numeric' };
+    var formattedExpirationDate = expirationDate.toLocaleDateString('en-US', options);
+
+    // Update the expiration date in the validity notice
+    document.getElementById('expirationDate').textContent = formattedExpirationDate;
+  </script>
 </body>
 </html>

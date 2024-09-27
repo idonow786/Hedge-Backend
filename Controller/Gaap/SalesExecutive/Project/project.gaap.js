@@ -10,7 +10,7 @@ const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 const FixedPriceProduct = require('../../../../Model/Gaap/gaap_fixed_price_product');
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
-
+const GaapDocument = require('../../../../Model/Gaap/gaap_document');
 const createProject = async (req, res) => {
     try {
         const {
@@ -196,131 +196,193 @@ const createProject = async (req, res) => {
 
 const getProjects = async (req, res) => {
   try {
-      let projects;
-      if (req.role === 'admin' || req.role === 'Operation Manager') {
-          const team = await GaapTeam.findOne({
-              $or: [
-                  { 'parentUser.userId': req.adminId },
-                  { 'GeneralUser.userId': req.adminId }
-              ]
-          });
-          if (team) {
-              projects = await GaapProject.find({ teamId: team._id })
-                  .populate('customer')
-                  .populate('assignedTo', 'fullName')
-                  .populate('salesPerson', 'fullName')
-                  .populate('tasks')
-                  .populate('discountApprovedBy')
-                  .populate('invoices')
-                  .populate('payments')
-                  .populate('createdBy')
-                  .populate('lastUpdatedBy')
-                  .lean();
-          }
+    let projects;
+
+    // Determine the projects to fetch based on user role
+    if (req.role === 'admin' || req.role === 'Operation Manager') {
+      const team = await GaapTeam.findOne({
+        $or: [
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser.userId': req.adminId }
+        ]
+      });
+
+      if (team) {
+        projects = await GaapProject.find({ teamId: team._id })
+          .populate('customer')
+          .populate('assignedTo', 'fullName')
+          .populate('salesPerson', 'fullName')
+          .populate('tasks')
+          .populate('discountApprovedBy')
+          .populate('invoices')
+          .populate('payments')
+          .populate('createdBy')
+          .populate('lastUpdatedBy')
+          .lean();
       } else {
-          projects = await GaapProject.find({ createdBy: req.adminId })
-              .populate('customer')
-              .populate('assignedTo', 'fullName')
-              .populate('salesPerson', 'fullName')
-              .populate('tasks')
-              .populate('discountApprovedBy')
-              .populate('invoices')
-              .populate('payments')
-              .populate('createdBy')
-              .populate('lastUpdatedBy')
-              .lean();
+        projects = []; // No team found, return empty array
+      }
+    } else {
+      projects = await GaapProject.find({ createdBy: req.adminId })
+        .populate('customer')
+        .populate('assignedTo', 'fullName')
+        .populate('salesPerson', 'fullName')
+        .populate('tasks')
+        .populate('discountApprovedBy')
+        .populate('invoices')
+        .populate('payments')
+        .populate('createdBy')
+        .populate('lastUpdatedBy')
+        .lean();
+    }
+
+    if (!projects || projects.length === 0) {
+      // No projects found, return empty response
+      return res.status(200).json({
+        allProjects: [],
+        groupedProjects: {
+          ongoingProjects: [],
+          pendingProjects: [],
+          completedProjects: [],
+          cancelledProjects: [],
+          onHoldProjects: []
+        }
+      });
+    }
+
+    const projectIds = projects.map(p => p._id);
+
+    // Fetch related data in parallel
+    const [projectPayments, invoices, projectDocuments] = await Promise.all([
+      ProjectPayment.find({ project: { $in: projectIds } }).lean(),
+      GaapInvoice.find({ project: { $in: projectIds } }).lean(),
+      GaapDocument.find({ project: { $in: projectIds } })
+        .populate('uploadedBy', 'fullName') // Populate uploadedBy if needed
+        .lean()
+    ]);
+
+    // Map payments by project ID
+    const paymentMap = new Map(projectPayments.map(payment => [payment.project.toString(), payment]));
+
+    // Map invoices by project ID
+    const invoiceMap = new Map();
+    invoices.forEach(invoice => {
+      const projectId = invoice.project.toString();
+      if (!invoiceMap.has(projectId)) {
+        invoiceMap.set(projectId, []);
+      }
+      invoiceMap.get(projectId).push(invoice);
+    });
+
+    // Map documents by project ID
+    const documentMap = new Map();
+    projectDocuments.forEach(document => {
+      const projectId = document.project.toString();
+      if (!documentMap.has(projectId)) {
+        documentMap.set(projectId, []);
+      }
+      documentMap.get(projectId).push({
+        documentType: document.documentType,
+        filePath: document.filePath,
+        uploadedBy: document.uploadedBy ? document.uploadedBy.fullName : null,
+        createdAt: document.createdAt,
+        updatedAt: document.updatedAt
+      });
+    });
+
+    // Format each project
+    const formattedProjects = await Promise.all(projects.map(async project => {
+      // Fetch products related to the project
+      const projectProducts = await GaapProjectProduct.find({ project: project._id }).lean();
+
+      // Fetch payment information
+      const payment = paymentMap.get(project._id.toString());
+
+      // Fetch invoices related to the project
+      const projectInvoices = invoiceMap.get(project._id.toString()) || [];
+
+      // Calculate the total amount
+      const calculatedTotalAmount = projectProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+      const totalAmount = project.totalAmount || calculatedTotalAmount;
+
+      // Calculate the total invoiced amount
+      const totalInvoicedAmount = projectInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+
+      // Calculate progress based on completed tasks
+      const totalTasks = project.tasks.length;
+      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      // Update project status if necessary
+      if (progress >= 100 && project.status !== 'Completed') {
+        await GaapProject.findByIdAndUpdate(project._id, { status: 'Completed' });
+        project.status = 'Completed';
       }
 
-      const projectIds = projects.map(p => p._id);
-      const projectPayments = await ProjectPayment.find({ project: { $in: projectIds } }).lean();
-      const invoices = await GaapInvoice.find({ project: { $in: projectIds } }).lean();
-
-      const paymentMap = new Map(projectPayments.map(payment => [payment.project.toString(), payment]));
-      const invoiceMap = new Map();
-      invoices.forEach(invoice => {
-          if (!invoiceMap.has(invoice.project.toString())) {
-              invoiceMap.set(invoice.project.toString(), []);
-          }
-          invoiceMap.get(invoice.project.toString()).push(invoice);
-      });
-
-      const formattedProjects = await Promise.all(projects.map(async project => {
-        const projectProducts = await GaapProjectProduct.find({ project: project._id }).lean();
-        const payment = paymentMap.get(project._id.toString());
-        const projectInvoices = invoiceMap.get(project._id.toString()) || [];
-        const calculatedTotalAmount = projectProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
-        const totalAmount = project.totalAmount || calculatedTotalAmount;
-        const totalInvoicedAmount = projectInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-      
-        // Calculate progress based on completed tasks
-        const totalTasks = project.tasks.length;
-        const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-      
-        if (progress >= 100 && project.status !== 'Completed') {
-          project.status = 'Completed';
-          await GaapProject.findByIdAndUpdate(project._id, { status: 'Completed' });
-        }
-      
-        return {
-          ...project,
+      return {
+        ...project,
+        totalAmount,
+        payment: payment ? {
+          totalAmount: payment.totalAmount || totalAmount,
+          paidAmount: payment.paidAmount || 0,
+          unpaidAmount: (payment.totalAmount || totalAmount) - (payment.paidAmount || 0),
+          paymentStatus: payment.paymentStatus || 'Not Started',
+          paymentProgress: payment.totalAmount > 0 ? ((payment.paidAmount || 0) / payment.totalAmount) * 100 : 0,
+          lastPaymentDate: payment.lastPaymentDate,
+          nextPaymentDue: payment.nextPaymentDue,
+          paymentSchedule: payment.paymentSchedule || [],
+          paymentOption: payment.paymentOption || 'Not Set'
+        } : {
           totalAmount,
-          payment: payment ? {
-            totalAmount: payment.totalAmount || totalAmount,
-            paidAmount: payment.paidAmount || 0,
-            unpaidAmount: (payment.totalAmount || totalAmount) - (payment.paidAmount || 0),
-            paymentStatus: payment.paymentStatus || 'Not Started',
-            paymentProgress: payment.totalAmount > 0 ? ((payment.paidAmount || 0) / payment.totalAmount) * 100 : 0,
-            lastPaymentDate: payment.lastPaymentDate,
-            nextPaymentDue: payment.nextPaymentDue,
-            paymentSchedule: payment.paymentSchedule || [],
-            paymentOption: payment.paymentOption || 'Not Set'
-          } : {
-            totalAmount,
-            paidAmount: 0,
-            unpaidAmount: totalAmount,
-            paymentStatus: 'Not Started',
-            paymentProgress: 0,
-            paymentOption: 'Not Set'
-          },
-          invoices: projectInvoices.map(invoice => ({
-            invoiceNumber: invoice.invoiceNumber,
-            issueDate: invoice.issueDate,
-            dueDate: invoice.dueDate,
-            total: invoice.total || 0,
-            status: invoice.status || 'Sent',
-            amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
-          })),
-          invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
-          progress,
-          products: projectProducts // Include the full product model here
-        };
-      }));
-
-      formattedProjects.sort((a, b) => {
-          if (a.status === b.status) {
-              return new Date(b.startDate) - new Date(a.startDate);
-          }
-          return getStatusPriority(a.status) - getStatusPriority(b.status);
-      });
-
-      const groupedProjects = {
-          ongoingProjects: formattedProjects.filter(p => ['Approved', 'In Progress'].includes(p.status)),
-          pendingProjects: formattedProjects.filter(p => p.status === 'Proposed'),
-          completedProjects: formattedProjects.filter(p => p.status === 'Completed'),
-          cancelledProjects: formattedProjects.filter(p => p.status === 'Cancelled'),
-          onHoldProjects: formattedProjects.filter(p => p.status === 'On Hold')
+          paidAmount: 0,
+          unpaidAmount: totalAmount,
+          paymentStatus: 'Not Started',
+          paymentProgress: 0,
+          paymentOption: 'Not Set'
+        },
+        invoices: projectInvoices.map(invoice => ({
+          invoiceNumber: invoice.invoiceNumber,
+          issueDate: invoice.issueDate,
+          dueDate: invoice.dueDate,
+          total: invoice.total || 0,
+          status: invoice.status || 'Sent',
+          amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
+        })),
+        invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
+        progress,
+        products: projectProducts, // Include the full product model here
+        documents: documentMap.get(project._id.toString()) || [] // Include documents
       };
+    }));
 
-      res.status(200).json({
-          allProjects: formattedProjects,
-          groupedProjects: groupedProjects
-      });
+    // Sort projects based on status priority and startDate
+    formattedProjects.sort((a, b) => {
+      if (a.status === b.status) {
+        return new Date(b.startDate) - new Date(a.startDate);
+      }
+      return getStatusPriority(a.status) - getStatusPriority(b.status);
+    });
+
+    // Group projects by their status
+    const groupedProjects = {
+      ongoingProjects: formattedProjects.filter(p => ['Approved', 'In Progress'].includes(p.status)),
+      pendingProjects: formattedProjects.filter(p => p.status === 'Proposed'),
+      completedProjects: formattedProjects.filter(p => p.status === 'Completed'),
+      cancelledProjects: formattedProjects.filter(p => p.status === 'Cancelled'),
+      onHoldProjects: formattedProjects.filter(p => p.status === 'On Hold')
+    };
+
+    // Send the response
+    res.status(200).json({
+      allProjects: formattedProjects,
+      groupedProjects: groupedProjects
+    });
   } catch (error) {
-      console.error('Error fetching projects:', error);
-      res.status(500).json({ message: 'Error fetching projects', error: error.message });
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ message: 'Error fetching projects', error: error.message });
   }
 };
+
 
 const getInvoiceStatus = (totalInvoicedAmount, totalAmount) => {
   if (totalInvoicedAmount === 0) return 'Not Invoiced';
