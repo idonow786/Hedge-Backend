@@ -1,3 +1,4 @@
+// Import required models
 const GaapProject = require('../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../Model/Gaap/gaap_invoice');
@@ -5,11 +6,21 @@ const GaapDsr = require('../../../Model/Gaap/gaap_dsr');
 const GaapSalesTarget = require('../../../Model/Gaap/gaap_salestarget');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
 
+/**
+ * Utility function to replace spaces with underscores in a string.
+ * @param {string} str - The input string.
+ * @returns {string} - The transformed string with underscores.
+ */
+const replaceSpacesWithUnderscores = (str) => {
+  return str.replace(/\s+/g, '_');
+};
+
 const getDashboardData = async (req, res) => {
   try {
+    // 1. Fetch the user based on adminId
     const userId = req.adminId;
     const user = await GaapUser.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -19,8 +30,8 @@ const getDashboardData = async (req, res) => {
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-    // 1. Overview of all projects
-    const projectOverview = await GaapProject.aggregate([
+    // 2. Overview of all projects
+    const projectOverviewRaw = await GaapProject.aggregate([
       { $match: { teamId: teamId } },
       {
         $group: {
@@ -39,19 +50,28 @@ const getDashboardData = async (req, res) => {
       // Add more statuses and their corresponding progress if needed
     };
 
-    // Calculate average progress based on projectOverview
+    // Calculate average progress based on projectOverviewRaw
     let totalProgress = 0;
     let totalProjects = 0;
-    projectOverview.forEach(item => {
+
+    // Transform projectOverview keys by replacing spaces with underscores
+    const projectOverview = projectOverviewRaw.reduce((acc, item) => {
+      // Replace spaces with underscores in the status
+      const statusKey = replaceSpacesWithUnderscores(item._id);
+      acc[statusKey] = item.count;
+
+      // Calculate total progress
       const progress = statusProgress[item._id] !== undefined ? statusProgress[item._id] : 0;
       totalProgress += progress * item.count;
       totalProjects += item.count;
-    });
+
+      return acc;
+    }, {});
 
     const averageProgress = totalProjects > 0 ? totalProgress / totalProjects : 0;
 
-    // 2. Overview of all invoices
-    const invoiceOverview = await GaapInvoice.aggregate([
+    // 3. Overview of all invoices
+    const invoiceOverviewRaw = await GaapInvoice.aggregate([
       { $match: { teamId: teamId } },
       {
         $group: {
@@ -62,13 +82,29 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    // 3. DSR (Daily Sales Report) summary for team users
-    const today = new Date().setHours(0, 0, 0, 0);
-    const dsrSummary = await GaapDsr.aggregate([
+    // Transform invoiceOverview keys by replacing spaces with underscores (if needed)
+    const invoiceOverview = invoiceOverviewRaw.reduce((acc, item) => {
+      // Replace spaces with underscores in the status
+      const statusKey = replaceSpacesWithUnderscores(item._id);
+      acc[statusKey] = {
+        count: item.count,
+        totalAmount: item.totalAmount
+      };
+      return acc;
+    }, {});
+
+    // 4. DSR (Daily Sales Report) summary for team users
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of the day
+
+    // Fetch distinct user IDs belonging to the team
+    const teamUserIds = await GaapUser.find({ teamId: teamId }).distinct('_id');
+
+    const dsrSummaryRaw = await GaapDsr.aggregate([
       {
         $match: { 
           date: today,
-          userId: { $in: await GaapUser.find({ teamId: teamId }).distinct('_id') }
+          userId: { $in: teamUserIds }
         }
       },
       {
@@ -82,11 +118,10 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    // 4. Remove the original projectProgress aggregation as it's no longer needed
-    // Instead, use the calculated averageProgress above
+    const dsrSummary = dsrSummaryRaw.length > 0 ? dsrSummaryRaw[0] : null;
 
     // 5. Financial overview
-    const financialOverview = await ProjectPayment.aggregate([
+    const financialOverviewRaw = await ProjectPayment.aggregate([
       {
         $match: {
           'paymentHistory.date': { $gte: startOfMonth, $lte: endOfMonth },
@@ -105,13 +140,17 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    const totalInvoicesCreated = await GaapInvoice.countDocuments({
-      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-      teamId: teamId
-    });
+    const financialOverview = {
+      totalCashInflow: financialOverviewRaw.length > 0 ? financialOverviewRaw[0].totalCashInflow : 0,
+      totalPayments: financialOverviewRaw.length > 0 ? financialOverviewRaw[0].totalPayments : 0,
+      totalInvoicesCreated: await GaapInvoice.countDocuments({
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+        teamId: teamId
+      })
+    };
 
     // 6. Sales targets summary
-    const salesTargetsSummary = await GaapSalesTarget.aggregate([
+    const salesTargetsSummaryRaw = await GaapSalesTarget.aggregate([
       {
         $match: {
           'targetPeriod.endDate': { $gte: currentDate },
@@ -129,47 +168,43 @@ const getDashboardData = async (req, res) => {
       }
     ]);
 
-    // Prepare the response
+    // Transform salesTargetsSummary keys by replacing spaces with underscores (if needed)
+    const salesTargetsSummary = salesTargetsSummaryRaw.reduce((acc, item) => {
+      // Replace spaces with underscores in the targetType
+      const targetTypeKey = replaceSpacesWithUnderscores(item._id);
+      acc[targetTypeKey] = {
+        officeVisits: {
+          target: item.totalOfficeVisitsTarget,
+          achieved: item.totalOfficeVisitsAchieved,
+          progressPercentage: item.totalOfficeVisitsTarget > 0 
+            ? (item.totalOfficeVisitsAchieved / item.totalOfficeVisitsTarget) * 100 
+            : 0
+        },
+        closings: {
+          target: item.totalClosingsTarget,
+          achieved: item.totalClosingsAchieved,
+          progressPercentage: item.totalClosingsTarget > 0 
+            ? (item.totalClosingsAchieved / item.totalClosingsTarget) * 100 
+            : 0
+        }
+      };
+      return acc;
+    }, {});
+
+    // Prepare the final dashboard data
     const dashboardData = {
-      projectOverview: projectOverview.reduce((acc, item) => {
-        acc[item._id] = item.count;
-        return acc;
-      }, {}),
-      invoiceOverview: invoiceOverview.reduce((acc, item) => {
-        acc[item._id] = { count: item.count, totalAmount: item.totalAmount };
-        return acc;
-      }, {}),
-      dsrSummary: dsrSummary.length > 0 ? dsrSummary[0] : null,
+      projectOverview, // Already transformed with underscores
+      invoiceOverview, // Already transformed with underscores
+      dsrSummary,
       projectProgress: {
         averageProgress: parseFloat(averageProgress.toFixed(2)), // Rounded to 2 decimal places
         totalProjects: totalProjects
       },
-      financialOverview: {
-        totalCashInflow: financialOverview.length > 0 ? financialOverview[0].totalCashInflow : 0,
-        totalPayments: financialOverview.length > 0 ? financialOverview[0].totalPayments : 0,
-        totalInvoicesCreated
-      },
-      salesTargetsSummary: salesTargetsSummary.reduce((acc, item) => {
-        acc[item._id] = {
-          officeVisits: {
-            target: item.totalOfficeVisitsTarget,
-            achieved: item.totalOfficeVisitsAchieved,
-            progressPercentage: item.totalOfficeVisitsTarget > 0 
-              ? (item.totalOfficeVisitsAchieved / item.totalOfficeVisitsTarget) * 100 
-              : 0
-          },
-          closings: {
-            target: item.totalClosingsTarget,
-            achieved: item.totalClosingsAchieved,
-            progressPercentage: item.totalClosingsTarget > 0 
-              ? (item.totalClosingsAchieved / item.totalClosingsTarget) * 100 
-              : 0
-          }
-        };
-        return acc;
-      }, {})
+      financialOverview,
+      salesTargetsSummary // Already transformed with underscores
     };
 
+    // Respond with the dashboard data
     res.status(200).json(dashboardData);
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
