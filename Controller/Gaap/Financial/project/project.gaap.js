@@ -4,6 +4,8 @@ const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice');
 const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapTeam = require('../../../../Model/Gaap/gaap_team');
+const mongoose = require('mongoose');
+const GaapTask = require('../../../../Model/Gaap/gaap_task');
 
 const getAllProjectsWithPayments = async (req, res) => {
     try {
@@ -60,6 +62,15 @@ const getAllProjectsWithPayments = async (req, res) => {
             console.log(calculatedTotalAmount);
             console.log(totalAmount);
             console.log(totalInvoicedAmount);
+            console.log(project._id)
+            const tasks = await GaapTask.find({ project: new mongoose.Types.ObjectId(project._id) });
+            const totalTasks = tasks.length;
+            console.log(totalTasks)
+            const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+            console.log('C: ',completedTasks)
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            console.log('P: ',progress)
+
 
             return {
                 ...project,
@@ -104,6 +115,8 @@ const getAllProjectsWithPayments = async (req, res) => {
                     timeDeadline: product.timeDeadline,
                     turnoverRange: product.turnoverRange
                 }))
+                ,
+                taskProgress:progress
             };
         }));
 
