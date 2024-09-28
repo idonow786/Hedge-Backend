@@ -112,7 +112,7 @@ const getProjectsAll = async (req, res) => {
           amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
         })),
         invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
-        progress,
+        taskProgress:progress,
         products: project.products, // Include the original products array
         formattedProducts: projectProducts.map(prod => ({
           _id: prod._id,

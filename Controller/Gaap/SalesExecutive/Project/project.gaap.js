@@ -10,6 +10,8 @@ const GaapTeam = require('../../../../Model/Gaap/gaap_team')
 const FixedPriceProduct = require('../../../../Model/Gaap/gaap_fixed_price_product');
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice'); 
+const mongoose = require('mongoose');
+
 const GaapDocument = require('../../../../Model/Gaap/gaap_document');
 const createProject = async (req, res) => {
     try {
@@ -289,7 +291,7 @@ const getProjects = async (req, res) => {
         updatedAt: document.updatedAt
       });
     });
-
+    // Format each project
     // Format each project
     const formattedProjects = await Promise.all(projects.map(async project => {
       // Fetch products related to the project
@@ -309,9 +311,14 @@ const getProjects = async (req, res) => {
       const totalInvoicedAmount = projectInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
 
       // Calculate progress based on completed tasks
-      const totalTasks = project.tasks.length;
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+      console.log(project._id)
+      const tasks = await GaapTask.find({ project: new mongoose.Types.ObjectId(project._id) });
+      const totalTasks = tasks.length;
+      console.log(totalTasks)
+      const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+      console.log('C: ',completedTasks)
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      console.log('P: ',progress)
 
       // Update project status if necessary
       if (progress >= 100 && project.status !== 'Completed') {
@@ -357,7 +364,7 @@ const getProjects = async (req, res) => {
           amountDue: (invoice.total || 0) - (invoice.payments ? invoice.payments.reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0)
         })),
         invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
-        progress,
+        taskProgress:progress,
         products: projectProducts, // Include the full product model here
         documents: documentMap.get(project._id.toString()) || [] // Include documents
       };
