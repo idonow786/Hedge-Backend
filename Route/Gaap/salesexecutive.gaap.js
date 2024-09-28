@@ -8,6 +8,7 @@ const { registerCustomer } = require('../../Controller/Gaap/SalesExecutive/Custo
 const { updateCustomer } = require('../../Controller/Gaap/SalesExecutive/Customer/update.customer.gaap');
 const { getAllCustomersByAdmin } = require('../../Controller/Gaap/SalesExecutive/Customer/get.customer.gaap');
 const { deleteCustomer } = require('../../Controller/Gaap/SalesExecutive/Customer/delete.customer.gaap');
+const { registerCustomersFromCSV } = require('../../Controller/Gaap/SalesExecutive/Customer/customer.excell');
 
 //==============Project
 const { createProject,getProjects,updateProject,deleteProject,getAllProjectsWithComments } = require('../../Controller/Gaap/SalesExecutive/Project/project.gaap');
@@ -57,6 +58,12 @@ router.put('/update-customer',
 router.get('/customers', verifyToken, getAllCustomersByAdmin);
 router.delete('/delete-customer', verifyToken, deleteCustomer);
 
+router.post(
+    '/register-customers',
+    verifyToken, 
+    upload.single('file'),
+    registerCustomersFromCSV
+  );
 
 //==============Project
 router.post('/add-project',
