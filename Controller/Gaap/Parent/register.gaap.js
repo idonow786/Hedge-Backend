@@ -38,7 +38,7 @@ const registerUser = async (req, res) => {
 
     // Check user limit
     const userCount = await GaapUser.countDocuments({ createdBy: req.adminId });
-    const maxUsers = 15; // Set this to the package limit
+    const maxUsers = 20; // Set this to the package limit
 
     if (userCount >= maxUsers && role !== 'Sales Executive') {
       return res.status(403).json({ 
