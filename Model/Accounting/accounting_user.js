@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const staffinguserSchema = new Schema({
+const accountinguserSchema = new Schema({
   username: {
     type: String,
     required: true,
@@ -21,18 +21,12 @@ const staffinguserSchema = new Schema({
     type: String,
     required: true
   },
-  manager: {
-    type: String,
-  },
-  managerType: {
-    type: String,
-  },
   teamId: {
     type: String,
   },
   role: {
     type: String,
-    enum: ['Security Guard','HR Personnel' ],
+    enum: ['admin','accountant' ],
     required: true
   },
   department: {
@@ -68,17 +62,17 @@ const staffinguserSchema = new Schema({
   timestamps: true
 });
 
-staffinguserSchema.virtual('name').get(function() {
+accountinguserSchema.virtual('name').get(function() {
   return this.fullName;
 });
 
 
-staffinguserSchema.statics.findActive = function() {
+accountinguserSchema.statics.findActive = function() {
   return this.find({ isActive: true });
 };
 
 
 
-const StaffingUser = mongoose.model('StaffingUser', staffinguserSchema);
+const AccountingUser = mongoose.model('AccountingUser', accountinguserSchema);
 
-module.exports = StaffingUser;
+module.exports = AccountingUser;

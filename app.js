@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const session = require('express-session');
-const passport = require('./Controller/Social/passport');
+// const passport = require('./Controller/Social/passport');
 
 
 const app = express();
@@ -28,7 +28,7 @@ const reportRoute=require('./Route/reportRoute')
 const projectRoute=require('./Route/projectRoute') 
 const dashboardRoute=require('./Route/dashboardRoute') 
 const businessRoute=require('./Route/businessRoute') 
-const socialRoute=require('./Route/socialRoute') 
+// const socialRoute=require('./Route/socialRoute') 
 const whatsappRoute=require('./Route/whatsappRoute') 
 const vendorRoute=require('./Route/vendorRoute') 
 const taskRoute=require('./Route/taskRoute') 
@@ -72,8 +72,8 @@ app.use(
     cookie: { secure: true } 
   })
 );
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 // Routes
 app.get('/', (req, res) => {
   res.send('Hello, world!');
@@ -92,7 +92,7 @@ app.use('/api/project',projectRoute)
 app.use('/api/report',reportRoute)
 app.use('/api/dashboard',dashboardRoute)
 app.use('/api/business',businessRoute)
-app.use('/api/social',socialRoute)
+// app.use('/api/social',socialRoute)
 app.use('/api/whatsapp',whatsappRoute)
 app.use('/api/vendor',vendorRoute)
 app.use('/api/task',taskRoute)

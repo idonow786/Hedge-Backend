@@ -12,6 +12,8 @@ const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
 const StaffingTeam = require('../../Model/Staffing/staffing_team');
 const StaffingUser = require('../../Model/Staffing/staffing_user');
+const AccountingUser = require('../../Model/Accounting/accounting_user');
+const AccountingTeam = require('../../Model/Accounting/accounting_team');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -146,6 +148,58 @@ const signup = async (req, res) => {
           userId: savedUser._id,
           name: username,
           role: 'HR Personnel'
+        },
+        members: []
+      });
+      newUser.teamId = newTeam._id
+      await newUser.save()
+      await newTeam.save();
+
+      console.log("team ", newTeam)
+    }
+    else if (CompanyActivity === 'accounting') {
+      console.log('working accounting')
+      existingUser = await AccountingUser.findOne({ email: email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Accounting User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      newUser = new AccountingUser({
+        username: username,
+        email: email,
+        password: hashedPassword,
+        fullName: username,
+        role: 'admin',
+        companyActivity: CompanyActivity
+      });
+
+      savedUser = await newUser.save();
+
+      const newBusiness = new Business({
+        AdminID: savedUser._id,
+        BusinessName: businessName,
+        BusinessAddress: BusinessAddress,
+        BusinessPhoneNo: BusinessPhoneNo,
+        BusinessEmail: BusinessEmail,
+        OwnerName: OwnerName,
+        YearofEstablishment: YearofEstablishment,
+        BusinessType: BusinessType,
+        CompanyType: CompanyType,
+        CompanyActivity: CompanyActivity
+      });
+
+      const savedBusiness = await newBusiness.save();
+      console.log(savedBusiness)
+
+      const newTeam = new AccountingTeam({
+        teamName: `${businessName} Team`,
+        businessId: savedBusiness._id,
+        parentUser: {
+          userId: savedUser._id,
+          name: username,
+          role: 'admin'
         },
         members: []
       });
@@ -618,21 +672,28 @@ const signin = async (req, res) => {
         secretKey = user.role === 'Admin' ? process.env.JWT_SECRET_STAFFING : process.env.JWT_SECRET_STAFFING_USER;
         business = await Business.findOne({ AdminID: user._id });
       } else {
-        // Check SuperAdmin
-        user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+        // Check Accounting User
+        user = await AccountingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
         if (user) {
-          secretKey = process.env.JWT_SECRET_Super;
+          secretKey = user.role === 'admin' ? process.env.JWT_ACCOUNTING : process.env.JWT_ACCOUNTING_USER;
+          business = await Business.findOne({ AdminID: user._id });
         } else {
-          // Check Admin
-          user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+          // Check SuperAdmin
+          user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
           if (user) {
-            secretKey = process.env.JWT_SECRET;
-            business = await Business.findOne({ AdminID: user._id });
+            secretKey = process.env.JWT_SECRET_Super;
           } else {
-            // Check Vendor
-            user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+            // Check Admin
+            user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
             if (user) {
-              secretKey = process.env.JWT_SECRET_VENDOR;
+              secretKey = process.env.JWT_SECRET;
+              business = await Business.findOne({ AdminID: user._id });
+            } else {
+              // Check Vendor
+              user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+              if (user) {
+                secretKey = process.env.JWT_SECRET_VENDOR;
+              }
             }
           }
         }
@@ -649,13 +710,13 @@ const signin = async (req, res) => {
     }
 
     // Check if user is active
-    if ((user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser') && !user.isActive) {
+    if ((user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser') && !user.isActive) {
       return res.status(403).json({ message: 'Account is inactive. Please contact an administrator.' });
     }
 
     // Check payment status for non-superadmin and non-vendor users
     if (user.role !== 'superadmin' && user.role !== 'vendor' && 
-        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser') {
+        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser' && user.constructor.modelName !== 'AccountingUser') {
       const payment = await Payment.findOne({ UserID: user._id });
       
       // Uncomment the following lines if you want to enforce payment check
@@ -686,8 +747,8 @@ const signin = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    // Update last login for GAAP and Staffing users
-    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser') {
+    // Update last login for GAAP, Staffing, and Accounting users
+    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser') {
       user.lastLogin = new Date();
       await user.save();
     }
@@ -707,6 +768,7 @@ const signin = async (req, res) => {
         department: user.department || '',
         CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : 
                          user.constructor.modelName === 'StaffingUser' ? 'Staffing' : 
+                         user.constructor.modelName === 'AccountingUser' ? 'Accounting' :
                          (user.companyActivity || '')
       }
     };
@@ -721,6 +783,7 @@ const signin = async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
+
 
 
 
