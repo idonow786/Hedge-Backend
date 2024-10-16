@@ -14,7 +14,7 @@ const gaapprojectSchema = new Schema({
   },
   projectType: {
     type: String,
-    enum: ['External Audit', 'ICV', 'ICV+external Audit', 'Audit & Assurance', 'Book keeping', 'Registration & Filing', 'Taxation', 'Compliance','VAT Registration','ESR Registration','ESR Filing','FIU registration & Filing', 'Other'],
+    enum: ['External Audit', 'ICV', 'ICV+external Audit', 'Audit & Assurance', 'Book keeping', 'Registration & Filing', 'Taxation', 'Compliance','VAT Registration','ESR Registration','ESR Filing','FIU registration & Filing','GoAML registration & Filing', 'Other'],
     required: true
   },
   department: {

@@ -131,10 +131,11 @@ const productController = {
             // { name: 'vendor Registration', department: 'compliance manager' },
             // { name: 'VAT account amendment', department: 'compliance manager' },
             // { name: 'Business setup', department: 'compliance manager' },
-            { name: 'VAT Registration', department: 'compliance manager' },
-            { name: 'ESR Registration', department: 'compliance manager' },
-            { name: 'ESR Filing', department: 'compliance manager' },
-            { name: 'FIU registration & Filing', department: 'compliance manager' },
+            // { name: 'VAT Registration', department: 'compliance manager' },
+            // { name: 'ESR Registration', department: 'compliance manager' },
+            // { name: 'ESR Filing', department: 'compliance manager' },
+            // { name: 'FIU registration & Filing', department: 'compliance manager' },
+            { name: 'GoAML registration & Filing', department: 'compliance manager' },
           ]
         }
         // {
