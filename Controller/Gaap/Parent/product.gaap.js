@@ -98,79 +98,83 @@ const productController = {
 
       // Variable Price Products data
       const variablePriceData = [
-        { 
-          category: 'Audit & Assurance',
-          subCategories: [
-            { name: 'internal audit', department: 'audit' },
-            { name: 'tax audit', department: 'audit' },
-            { name: 'audit review', department: 'audit' },
-            { name: 'cost audit', department: 'audit' },
-            { name: 'stock audit', department: 'audit' },
-            { name: 'interim audit', department: 'audit' },
-            { name: 'stock audit', department: 'audit' },
-            { name: 'other audit', department: 'audit' }
-          ]
-        },
-        { 
-          category: 'Book keeping',
-          subCategories: [
-            { name: 'accounting & supervisory services', department: 'accounts manager' },
-            { name: 'accounting and VAT', department: 'accounts manager' },
-            { name: 'accounting and auditing', department: 'accounts manager' },
-            { name: 'others', department: 'accounts manager' }
-          ]
-        },
+        // { 
+        //   category: 'Audit & Assurance',
+        //   subCategories: [
+        //     { name: 'internal audit', department: 'audit' },
+        //     { name: 'tax audit', department: 'audit' },
+        //     { name: 'audit review', department: 'audit' },
+        //     { name: 'cost audit', department: 'audit' },
+        //     { name: 'stock audit', department: 'audit' },
+        //     { name: 'interim audit', department: 'audit' },
+        //     { name: 'stock audit', department: 'audit' },
+        //     { name: 'other audit', department: 'audit' }
+        //   ]
+        // },
+        // { 
+        //   category: 'Book keeping',
+        //   subCategories: [
+        //     { name: 'accounting & supervisory services', department: 'accounts manager' },
+        //     { name: 'accounting and VAT', department: 'accounts manager' },
+        //     { name: 'accounting and auditing', department: 'accounts manager' },
+        //     { name: 'others', department: 'accounts manager' }
+        //   ]
+        // },
         {
           category: 'Registration & Filing',
           subCategories: [
-            { name: 'VAT filing', department: 'compliance manager' },
-            { name: 'corporate TAX registration', department: 'compliance manager' },
-            { name: 'corporate TAX registration filing', department: 'compliance manager' },
-            { name: 'VAT filing', department: 'compliance manager' },
-            { name: 'AONC registration', department: 'compliance manager' },
-            { name: 'vendor Registration', department: 'compliance manager' },
-            { name: 'VAT account amendment', department: 'compliance manager' },
-            { name: 'Business setup', department: 'compliance manager' }
-          ]
-        },
-        {
-          category: 'Taxation',
-          subCategories: [
-            { name: 'TRN cancelation/deregistration', department: 'compliance manager' },
-            { name: 'VAT refund services', department: 'compliance manager' },
-            { name: 'TAX assessment', department: 'compliance manager' },
-            { name: 'trade license amendment', department: 'compliance manager' },
-            { name: 'penalty waiver', department: 'compliance manager' },
-            { name: 'TAX group amendment and registration', department: 'compliance manager' },
-            { name: 'TRN transfer', department: 'compliance manager' },
-            { name: 'other', department: 'compliance manager' }
-          ]
-        },
-        {
-          category: 'Compliance',
-          subCategories: [
-            { name: 'ISO KML', department: 'audit' },
-            { name: 'liquidation', department: 'audit' },
-            { name: 'other consultancy', department: 'audit' },
-            { name: 'liability reports', department: 'audit' },
-            { name: 'business valuation', department: 'audit' },
-            { name: 'others', department: 'audit' }
+            // { name: 'VAT filing', department: 'compliance manager' },
+            // { name: 'corporate TAX registration', department: 'compliance manager' },
+            // { name: 'corporate TAX registration filing', department: 'compliance manager' },
+            // { name: 'VAT filing', department: 'compliance manager' },
+            // { name: 'AONC registration', department: 'compliance manager' },
+            // { name: 'vendor Registration', department: 'compliance manager' },
+            // { name: 'VAT account amendment', department: 'compliance manager' },
+            // { name: 'Business setup', department: 'compliance manager' },
+            { name: 'VAT Registration', department: 'compliance manager' },
+            { name: 'ESR Registration', department: 'compliance manager' },
+            { name: 'ESR Filing', department: 'compliance manager' },
+            { name: 'FIU registration & Filing', department: 'compliance manager' },
           ]
         }
+        // {
+        //   category: 'Taxation',
+        //   subCategories: [
+        //     { name: 'TRN cancelation/deregistration', department: 'compliance manager' },
+        //     { name: 'VAT refund services', department: 'compliance manager' },
+        //     { name: 'TAX assessment', department: 'compliance manager' },
+        //     { name: 'trade license amendment', department: 'compliance manager' },
+        //     { name: 'penalty waiver', department: 'compliance manager' },
+        //     { name: 'TAX group amendment and registration', department: 'compliance manager' },
+        //     { name: 'TRN transfer', department: 'compliance manager' },
+        //     { name: 'other', department: 'compliance manager' }
+        //   ]
+        // },
+        // {
+        //   category: 'Compliance',
+        //   subCategories: [
+        //     { name: 'ISO KML', department: 'audit' },
+        //     { name: 'liquidation', department: 'audit' },
+        //     { name: 'other consultancy', department: 'audit' },
+        //     { name: 'liability reports', department: 'audit' },
+        //     { name: 'business valuation', department: 'audit' },
+        //     { name: 'others', department: 'audit' }
+        //   ]
+        // }
       ];
 
-      // Save Fixed Price Products
-      for (const auditTypeData of fixedPriceData) {
-        for (const product of auditTypeData.data) {
-          await FixedPriceProduct.create({
-            adminId:req.adminId,
-            auditType: auditTypeData.auditType,
-            turnover: product.turnover,
-            amount: product.amount,
-            timeDeadline: product.timeDeadline
-          });
-        }
-      }
+      // // Save Fixed Price Products
+      // for (const auditTypeData of fixedPriceData) {
+      //   for (const product of auditTypeData.data) {
+      //     await FixedPriceProduct.create({
+      //       adminId:req.adminId,
+      //       auditType: auditTypeData.auditType,
+      //       turnover: product.turnover,
+      //       amount: product.amount,
+      //       timeDeadline: product.timeDeadline
+      //     });
+      //   }
+      // }
 
       // Save Variable Price Products
       for (const categoryData of variablePriceData) {

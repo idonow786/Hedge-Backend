@@ -9,7 +9,7 @@
     :root {
       --primary-color: #003366;
       --secondary-color: #0066cc;
-      --accent-color: #ff9900;
+      --accent-color: #0066cc;
       --background-color: #f0f5ff;
       --text-color: #333333;
     }
@@ -19,32 +19,37 @@
       padding: 20px;
       color: var(--text-color);
       background-color: var(--background-color);
+      font-size: 12px;
+      line-height: 1.2;
     }
     .container {
       background-color: #ffffff;
       box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      padding: 30px;
-      max-width: 800px;
+      padding: 20px;
+      max-width: 750px;
       margin: 0 auto;
       border-radius: 10px;
     }
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      border-bottom: 3px solid var(--primary-color);
-      padding-bottom: 20px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 15px;
+    }
+    .logo-address {
+      display: flex;
+      align-items: flex-start;
     }
     .logo {
-      width: 120px;
+      width: 100px;
       height: auto;
+      margin-right: 15px;
     }
     .company-info {
-      font-size: 14px;
+      font-size: 11px;
       color: var(--secondary-color);
-      margin-bottom: 30px;
-      text-align: right;
     }
     .proposal-title {
       text-align: right;
@@ -52,34 +57,34 @@
     }
     .proposal-title h2 {
       margin: 0;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
     }
     .proposal-title p {
-      margin: 5px 0 0;
-      font-size: 16px;
+      margin: 3px 0 0;
+      font-size: 14px;
       color: var(--secondary-color);
     }
     .attention {
       background-color: var(--accent-color);
       color: white;
-      padding: 15px;
-      margin-bottom: 30px;
+      padding: 10px;
+      margin-bottom: 20px;
       font-weight: bold;
       text-align: center;
-      font-size: 18px;
+      font-size: 14px;
       border-radius: 5px;
     }
     table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin-bottom: 30px;
-      font-size: 14px;
+      margin-bottom: 20px;
+      font-size: 11px;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 12px;
+      padding: 8px;
       text-align: left;
     }
     th {
@@ -99,51 +104,47 @@
       background-color: #e6f2ff;
     }
     .terms {
-      margin-bottom: 30px;
-      font-size: 14px;
+      margin-bottom: 20px;
+      font-size: 11px;
       background-color: #f9f9f9;
-      padding: 20px;
+      padding: 15px;
       border-radius: 5px;
     }
     .signature {
-      margin-top: 30px;
-      border-top: 2px dashed var(--secondary-color);
-      padding-top: 20px;
-      font-size: 14px;
+      margin-top: 20px;
+      border-top: 1px dashed var(--secondary-color);
+      padding-top: 15px;
+      font-size: 11px;
     }
     .signature p {
-      margin: 5px 0;
+      margin: 3px 0;
     }
     #clientName, #clientCompany {
       font-weight: bold;
       color: var(--primary-color);
-      font-size: 18px;
+      font-size: 14px;
     }
     #amountInWords {
       font-style: italic;
       color: var(--secondary-color);
-      font-size: 14px;
-      margin-top: 10px;
+      font-size: 12px;
+      margin-top: 8px;
     }
-    .validity-notice {
-      text-align: center;
-      font-weight: bold;
-      color: var(--accent-color);
-      border-top: 2px solid var(--accent-color);
-      padding-top: 15px;
-      margin-top: 30px;
+    .quote-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .quote-info div {
+      flex: 1;
     }
     @media (max-width: 600px) {
-      .header {
+      .header, .quote-info {
         flex-direction: column;
-        align-items: center;
       }
       .proposal-title {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .company-info {
-        text-align: center;
+        text-align: left;
+        margin-top: 15px;
       }
     }
   </style>
@@ -151,40 +152,41 @@
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media" alt="GAAP Associates Logo" class="logo">
+      <div class="logo-address">
+        <img src="https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media" alt="GAAP Associates Logo" class="logo">
+        <div class="company-info">
+          <p>Abu Dhabi - UAE</p>
+          <p>Mob: 055-5260084</p>
+          <p>Tel: 02 650 2924</p>
+          <p>Email: info@gaapaudit.com</p>
+        </div>
+      </div>
       <div class="proposal-title">
         <h2>PROPOSAL</h2>
-        <p>FOR {{projectType}}</p>
-        <p>{{description}}</p>
+        <p>FOR {{projectsubCategory}}</p>
       </div>
     </div>
     
-    <div class="company-info">
-      <p>Abu Dhabi - UAE</p>
-      <p>Mob: 055-5260084</p>
-      <p>Tel: 02 650 2924</p>
-      <p>Email: info@gaapaudit.com</p>
-    </div>
-    
     <div class="attention">
-      <p>ATTENTION</p>
+      ATTENTION
     </div>
     
     <p id="clientName">{{contactPerson}}</p>
     <p id="clientCompany">{{customerName}}</p>
+    <p>Mobile: {{customerMobile}}</p>
+    <p>Email: {{customerEmail}}</p>
     
-    <table>
-      <tr>
-        <th>DATE</th>
-        <td id="date">{{currentDate}}</td>
-        <th>QUOTE #</th>
-        <td id="quoteNumber">{{quoteNumber}}</td>
-      </tr>
-      <tr>
-        <th>VALID UNTIL</th>
-        <td id="validUntil" colspan="3">{{validUntil}}</td>
-      </tr>
-    </table>
+    <div class="quote-info">
+      <div>
+        <strong>DATE:</strong> {{currentDate}}
+      </div>
+      <div>
+        <strong>QUOTE #:</strong> {{quoteNumber}}
+      </div>
+      <div>
+        <strong>VALID UNTIL:</strong> {{validUntil}}
+      </div>
+    </div>
     
     <table>
       <tr>
@@ -196,17 +198,24 @@
       </tr>
       <tr>
         <td class="number-cell">1</td>
-        <td id="itemName">{{itemName}}</td>
+        <td id="itemName">{{projectsubCategory}}</td>
         <td class="number-cell" id="rate">{{rate}}</td>
         <td class="number-cell" id="quantity">{{quantity}}</td>
         <td class="number-cell" id="amount">{{amount}}</td>
+      </tr>
+      <tr>
+        <td colspan="5">{{description}}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4">Taxable Amount</td>
         <td class="number-cell" id="taxableAmount">{{taxableAmount}}</td>
       </tr>
-      <tr class="total-row">
-        <td colspan="4">VAT</td>
+      <tr>
+        <td colspan="4">Discount</td>
+        <td class="number-cell" id="discount">{{discount}}</td>
+      </tr>
+      <tr>
+        <td colspan="4">VAT (5%)</td>
         <td class="number-cell" id="vat">{{vat}}</td>
       </tr>
       <tr class="total-row">
@@ -215,7 +224,7 @@
       </tr>
     </table>
     
-    <p id="amountInWords">{{amountInWords}}</p>
+    <p id="amountInWords">In words AED: {{amountInWords}}</p>
     
     <div class="terms">
       <h4>Terms & Conditions:</h4>
@@ -233,27 +242,6 @@
       <p>Name: _______________________________</p>
       <p>Signature: _______________________________</p>
     </div>
-
-    <div class="validity-notice">
-      <p>This proposal is valid until <span id="expirationDate"></span>.</p>
-    </div>
   </div>
-
-  <script>
-    // Get the current date from the date field
-    var currentDateString = document.getElementById('date').textContent;
-    var currentDate = new Date(currentDateString);
-
-    // Add 15 days to the current date
-    var expirationDate = new Date(currentDate);
-    expirationDate.setDate(expirationDate.getDate() + 15);
-
-    // Format the expiration date
-    var options = { year: 'numeric', month: 'long', day: 'numeric' };
-    var formattedExpirationDate = expirationDate.toLocaleDateString('en-US', options);
-
-    // Update the expiration date in the validity notice
-    document.getElementById('expirationDate').textContent = formattedExpirationDate;
-  </script>
 </body>
 </html>

@@ -8,67 +8,60 @@
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      line-height: 1.4;
+      line-height: 1.2;
       color: #333;
-      max-width: 800px;
+      max-width: 700px;
       margin: 0 auto;
-      padding: 15px;
-      font-size: 14px;
+      padding: 10px;
+      font-size: 12px;
     }
     .header, .footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
-    .logo {
-      width: 120px;
-    }
+    .logo { width: 100px; }
     .proposal-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
       text-align: right;
     }
-    .reference, .recipient, .content, .signature {
-      margin-bottom: 15px;
-    }
+    .reference, .recipient, .content, .signature { margin-bottom: 10px; }
     .service-title {
       text-align: center;
       font-weight: bold;
-      margin: 15px 0;
-      font-size: 16px;
+      margin: 10px 0;
+      font-size: 14px;
     }
     .scope h3 {
       text-transform: uppercase;
-      margin-bottom: 8px;
-      font-size: 14px;
+      margin-bottom: 5px;
+      font-size: 13px;
     }
     .scope ul {
       list-style-type: disc;
-      padding-left: 18px;
+      padding-left: 15px;
+      margin: 5px 0;
     }
     .contact-info {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       background-color: #f0f0f0;
-      padding: 8px;
-      margin-top: 30px;
-      font-size: 12px;
+      padding: 5px;
+      margin-top: 20px;
+      font-size: 10px;
     }
     .contact-info div {
       display: flex;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       flex: 1 1 30%;
     }
     .contact-info i {
-      margin-right: 8px;
-      font-size: 16px;
-    }
-    /* Page break styling */
-    .page-break {
-      page-break-before: always;
+      margin-right: 5px;
+      font-size: 12px;
     }
     @media (max-width: 600px) {
       .header, .footer {
@@ -77,14 +70,12 @@
       }
       .proposal-title {
         text-align: left;
-        margin-top: 8px;
+        margin-top: 5px;
       }
       .contact-info {
         flex-direction: column;
       }
-      .contact-info div {
-        flex: 1 1 100%;
-      }
+      .contact-info div { flex: 1 1 100%; }
     }
   </style>
 </head>
@@ -100,45 +91,41 @@
   </div>
   
   <div class="service-title">
-    FOR {{projectType}}
+    FOR {{projectsubCategory}}
   </div>
   
   <div class="recipient">
-    <p>To,</p>
-    <p>{{contactPerson}}</p>
-    <p>{{customerName}}</p>
-    <p>{{customerAddress}}</p>
+    <p>To,<br>
+    {{contactPerson}}<br>
+    {{customerName}}<br>
+    {{customerAddress}}</p>
   </div>
   
   <div class="content">
     <p>Dear Sir,</p>
-    <p>We are delighted to present this proposal outlining for {{projectType}}. We aim to provide you with expert guidance and support in managing your {{projectType}} requirements efficiently while ensuring compliance with all relevant regulations for smooth business functioning.</p>
+    <p>We are pleased to present this proposal for {{projectType}}. Our aim is to provide expert guidance and support in managing your {{projectType}} requirements efficiently while ensuring compliance with all relevant regulations.</p>
   </div>
   
   <div class="scope">
     <h3>SCOPE OF THE WORKS</h3>
     <ul>
-      <li>{{projectType}}</li>
-    </ul>
-    <h3>Description</h3>
-    <ul>
-      <li>{{description}}</li>
+      <li>{{projectsubCategory}}</li>
     </ul>
     <h4>Additional Services:</h4>
-    <p>In addition to the above, we offer a range of supplementary services, including internal audit, bookkeeping, tax audit support, tax dispute resolution, and representation before tax authorities. These services are designed to provide you with comprehensive supports for various corporate services in your success journey.</p>
+    <p>We offer supplementary services including internal audit, bookkeeping, tax audit support, tax dispute resolution, and representation before tax authorities, providing comprehensive support for various corporate services.</p>
   </div>
   
   <div class="content">
-    <p>Our proposed engagement will be structured on a retainer basis, allowing for ongoing support and timely advice as and when required. We are confident that our expertise and dedication will add significant value to your business by ensuring compliance for competent austerities and internal MIS for a brighter future. We look forward to the opportunity to work with you and contribute to your success.</p>
-    <p>We are looking forward to hearing from you.</p>
+    <p>Our engagement will be on a retainer basis, allowing for ongoing support and timely advice. We are confident our expertise will add significant value to your business by ensuring compliance and internal MIS for a brighter future.</p>
+    <p>We look forward to hearing from you.</p>
   </div>
   
   <div class="footer">
-    <p>Please refer below proposal No# {{referenceNumber}} Dated {{currentDate}}</p>
+    <p>Please refer to proposal No# {{referenceNumber}} Dated {{currentDate}}</p>
     <p>For GAAP ASSOCIATES AUDITING LLC</p>
     <div class="signature">
-      <p>Abdul Akbar</p>
-      <p>Audit Partner</p>
+      <p>Abdul Akbar<br>
+      Audit Partner</p>
     </div>
   </div>
   
