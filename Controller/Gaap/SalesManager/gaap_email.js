@@ -157,36 +157,40 @@ const generateAndSendProposal = async (req, res) => {
     console.log("Compiling templates...");
     const compiledTemplate1 = handlebars.compile(template1);
     const compiledTemplate2 = handlebars.compile(template2);
-    const discountedAmount = project.totalAmount - project.appliedDiscount;
+    const discountedAmount = (project.totalAmount * project.appliedDiscount)/100;
     // Prepare data for templates
     console.log("Preparing data for templates...");
-    console.log(projectProducts.subCategory)
+    console.log(project)
+    console.log(customer)
     const data = {
       projectName: project.projectName,
       description: project.description,
       customerName: customer.companyName,
       contactPerson: customer.contactPerson1.name,
+      customerEmail: customer.contactPerson1.email,
+      customerPhone: customer.contactPerson1.phoneNumber,
       projectType: project.projectType,
       projectsubCategory: projectProducts.subCategory,
       startDate: project.startDate.toLocaleDateString(),
       endDate: project.endDate ? project.endDate.toLocaleDateString() : "TBD",
       referenceNumber: `GAAP/MR/${project._id.toString().slice(-2)}`,
       currentDate: new Date().toLocaleDateString(),
-      customerAddress: `${customer.address.street}, ${customer.address.city}, ${customer.address.country}`,
+      customerAddress: `${customer.address.street}, ${customer.address.city}, ${customer.address.state}, ${customer.address.country}, ${customer.address.postalCode}`,
       quoteNumber: `QUOTE-${project._id.toString().slice(-4)}`,
       validUntil: new Date(
         project.startDate.getTime() + 30 * 24 * 60 * 60 * 1000
       ).toLocaleDateString(),
       itemName: project.projectType,
-      rate: discountedAmount.toFixed(2),
+      rate: project.totalAmount.toFixed(2),
       quantity: 1,
-      amount: discountedAmount.toFixed(2),
-      taxableAmount: discountedAmount.toFixed(2),
-      vat: 0,
-      totalAmount: discountedAmount.toFixed(2),
-      amountInWords: numberToWords(Math.floor(discountedAmount)),
+      amount: project.totalAmount.toFixed(2),
+      taxableAmount: project.totalAmount.toFixed(2),
+      discount:discountedAmount,
+      vat: (project.totalAmount * 0.05).toFixed(2),
+      totalAmount: (project.totalAmount * 1.05).toFixed(2),
+      amountInWords: numberToWords(Math.floor(project.totalAmount * 1.05)),
     };
-
+    
     // Generate HTML content
     console.log("Generating HTML content...");
     const html1 = compiledTemplate1(data);
@@ -288,7 +292,7 @@ GAAP`,
         .json({ message: "Proposal generated and sent successfully" });
     } catch (error) {
       console.error("Error in PDF generation or email sending:", error);
-      throw error; // Re-throw to be caught by the main try-catch block
+      throw error; 
     }
   } catch (error) {
     console.error("Error in generateAndSendProposal:", error);

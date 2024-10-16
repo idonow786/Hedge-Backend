@@ -40,12 +40,13 @@
     }
     .logo-address {
       display: flex;
+      flex-direction: column;
       align-items: flex-start;
     }
     .logo {
       width: 100px;
       height: auto;
-      margin-right: 15px;
+      margin-bottom: 15px;
     }
     .company-info {
       font-size: 11px;
@@ -173,7 +174,7 @@
     
     <p id="clientName">{{contactPerson}}</p>
     <p id="clientCompany">{{customerName}}</p>
-    <p>Mobile: {{customerMobile}}</p>
+    <p>Mobile: {{customerPhone}}</p>
     <p>Email: {{customerEmail}}</p>
     
     <div class="quote-info">
@@ -224,7 +225,7 @@
       </tr>
     </table>
     
-    <p id="amountInWords">In words AED: {{amountInWords}}</p>
+    <p id="amountInWords">{{amountInWords}}</p>
     
     <div class="terms">
       <h4>Terms & Conditions:</h4>
