@@ -152,7 +152,7 @@ const generateAndSendProposal = async (req, res) => {
       path.join(__dirname, "../Template/page2.html"),
       "utf8"
     );
-
+//
     // Compile templates
     console.log("Compiling templates...");
     const compiledTemplate1 = handlebars.compile(template1);
