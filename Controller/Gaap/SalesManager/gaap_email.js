@@ -168,7 +168,7 @@ const generateAndSendProposal = async (req, res) => {
       customerName: customer.companyName,
       contactPerson: customer.contactPerson1.name,
       customerEmail: customer.contactPerson1.email,
-      customerPhone: customer.contactPerson1.phoneNumber,
+      customerPhone: customer.contactPerson1.phoneNumber || customer.mobile,
       projectType: project.projectType,
       projectsubCategory: projectProducts.subCategory,
       startDate: project.startDate.toLocaleDateString(),
