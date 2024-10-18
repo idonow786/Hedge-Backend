@@ -157,7 +157,7 @@ const generateAndSendProposal = async (req, res) => {
     console.log("Compiling templates...");
     const compiledTemplate1 = handlebars.compile(template1);
     const compiledTemplate2 = handlebars.compile(template2);
-    const discountedAmount = (project.totalAmount * project.appliedDiscount)/100;
+    const discountedAmount = project.totalAmount - project.appliedDiscount;
     // Prepare data for templates
     console.log("Preparing data for templates...");
     console.log(project)
@@ -184,11 +184,11 @@ const generateAndSendProposal = async (req, res) => {
       rate: project.totalAmount.toFixed(2),
       quantity: 1,
       amount: project.totalAmount.toFixed(2),
-      taxableAmount: project.totalAmount.toFixed(2),
-      discount:discountedAmount,
-      vat: (project.totalAmount * 0.05).toFixed(2),
-      totalAmount: (project.totalAmount * 1.05).toFixed(2),
-      amountInWords: numberToWords(Math.floor(project.totalAmount * 1.05)),
+      taxableAmount: project.totalAmount.toFixed(2)-project.appliedDiscount,
+      discount:project.appliedDiscount,
+      vat: (discountedAmount * 0.05).toFixed(2),
+      totalAmount: (discountedAmount * 1.05).toFixed(2),
+      amountInWords: numberToWords(Math.floor(discountedAmount * 1.05)),
     };
     
     // Generate HTML content
