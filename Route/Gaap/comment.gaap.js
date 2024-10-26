@@ -5,6 +5,9 @@ const {
     getUserNotifications,
     markNotificationAsRead
 } = require('../../Controller/Gaap/Notification/notification.gaap');
+
+const { getUserAlerts, markAlertAsRead } = require('../../Controller/Gaap/Alert/alert.gaap');
+
 const { verifyToken } = require('../../Middleware/jwt');
 
 router.post('/add', verifyToken, commentController.addComment);
@@ -19,5 +22,9 @@ router.delete('project', verifyToken, commentController.deleteComment);
 router.put('/notification-mark', verifyToken, markNotificationAsRead);
 router.get('/get-notification', verifyToken,   getUserNotifications);
 
+
+
+router.get('/alerts', verifyToken, getUserAlerts);
+router.put('/alert/read', verifyToken, markAlertAsRead);
 
 module.exports = router;
