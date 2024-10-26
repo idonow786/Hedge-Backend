@@ -31,6 +31,9 @@ const createProject = async (req, res) => {
             vatDetails,
             paymentPlan,
             approvalComments,
+            recurring,
+            RecurringDate,
+            RecurringPaymentMethod,
         } = req.body;
 
         console.log(req.body);
@@ -122,7 +125,10 @@ const createProject = async (req, res) => {
                 vatCertificate: vatCertificateUrl
             },
             documents: documents,
-            createdBy: req.adminId
+            createdBy: req.adminId,
+            ...(recurring && { recurring }),
+            ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
+            ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
         });
 
         // If the user is a Sales Manager, add approval and handle discount
@@ -445,7 +451,10 @@ const updateProject = async (req, res) => {
       operationsManagerApproval,
       products,
       approvalComments,
-      vatDetails
+      vatDetails,
+      recurring,
+      RecurringDate,
+      RecurringPaymentMethod,
     } = req.body;
 
     const existingProject = await GaapProject.findById(projectId);
@@ -503,7 +512,10 @@ const updateProject = async (req, res) => {
         vatCertificate: vatCertificateUrl
       },
       documents: updatedDocuments,
-      lastUpdatedBy: req.adminId
+      lastUpdatedBy: req.adminId,
+      ...(recurring !== undefined && { recurring }),
+      ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
+      ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
     };
 
     const notificationsToCreate = [];

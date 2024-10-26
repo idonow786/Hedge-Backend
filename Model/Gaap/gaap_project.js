@@ -21,6 +21,20 @@ const gaapprojectSchema = new Schema({
     type: String,
     required: true
   },
+  recurring: {
+    type: Boolean,
+    default:false
+  },
+  recurringMail: {
+    type: Boolean,
+    default:false
+  },
+  RecurringDate: {
+    type: Date,
+  },
+  RecurringPaymentMethod: {
+    type: String,
+  },
   description: {
     type: String,
     default: 'nothing'

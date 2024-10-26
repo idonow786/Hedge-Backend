@@ -14,8 +14,20 @@ const app = express();
 
 dotenv.config();
 
-
-
+// Initialize scheduler with detailed logging
+console.log('\n=== Initializing Scheduler ===');
+try {
+  require('./scheduler');
+  console.log('✅ Scheduler Status:');
+  console.log('   • Scheduler service: Connected');
+  console.log('   • Daily check: 9:00 AM - Recurring project notifications');
+  console.log('   • Monthly reset: 1:00 AM - First day of month');
+  console.log('=== Scheduler Ready ===\n');
+} catch (error) {
+  console.error('\n❌ Scheduler Initialization Failed:');
+  console.error('   • Error:', error.message);
+  console.error('=== Scheduler Error ===\n');
+}
 
 
 //    Routes Importing
