@@ -67,14 +67,13 @@ const checkAndNotifyRecurringProjects = async () => {
                 console.log('👤 Customer:', project.customer.name || project.customer.companyName);
                 console.log('💰 Amount:', `AED ${project.totalAmount.toLocaleString()}`);
                 console.log('⚠️ Past Due:', isPastDue ? 'Yes' : 'No');
-                // Create alert
+                // Create alert and notification
                 await GaapAlert.create({
                     user: teamFinanceManager._id,
                     message: `${urgencyPrefix}Recurring project "${project.projectName}" requires financial review. Renewal date: ${formattedDate}`,
                     department: 'Finance'
                 });
 
-                // Create notification
                 await GaapNotification.create({
                     user: teamFinanceManager._id,
                     message: `${urgencyPrefix}Financial review required for recurring project "${project.projectName}". Renewal date: ${formattedDate}`,
@@ -84,6 +83,14 @@ const checkAndNotifyRecurringProjects = async () => {
 
             // Handle Operation Manager notifications
             if (operationManager) {
+                // Create alert
+                await GaapAlert.create({
+                    user: operationManager._id,
+                    message: `${notificationMessage}. Please coordinate with the finance team for review.`,
+                    department: 'Operations'
+                });
+
+                // Create notification
                 await GaapNotification.create({
                     user: operationManager._id,
                     message: `${notificationMessage}. Please coordinate with the finance team for review.`,
@@ -93,6 +100,14 @@ const checkAndNotifyRecurringProjects = async () => {
 
             // Handle Admin notifications
             if (adminUser) {
+                // Create alert
+                await GaapAlert.create({
+                    user: adminUser._id,
+                    message: `${notificationMessage}. Finance team has been notified for review.`,
+                    department: 'Admin'
+                });
+
+                // Create notification
                 await GaapNotification.create({
                     user: adminUser._id,
                     message: `${notificationMessage}. Finance team has been notified for review.`,
