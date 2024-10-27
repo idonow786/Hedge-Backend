@@ -14,15 +14,14 @@ const checkAndNotifyRecurringProjects = async () => {
         const twoDaysFromNow = new Date(today);
         twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
 
-        // Find all recurring projects that:
-        // 1. Are within 2 days of recurring date
-        // 2. Haven't been notified yet
-        // 3. Including past due dates
+        // Updated query to include approval checks
         const recurringProjects = await GaapProject.find({
             recurring: true,
             recurringMail: false,
+            customerApproval: true,
+            salesManagerApproval: true,
             RecurringDate: {
-                $lte: twoDaysFromNow // Less than or equal to 2 days from now (includes past dates)
+                $lte: twoDaysFromNow
             }
         }).populate('customer', 'name companyName');
 
@@ -101,12 +100,29 @@ const checkAndNotifyRecurringProjects = async () => {
                 });
             }
 
-            // Update project to mark email as sent
+            // Update RecurringDate based on payment method
+            const currentRecurringDate = new Date(project.RecurringDate);
+            let nextRecurringDate = new Date(currentRecurringDate);
+
+            switch (project.RecurringPaymentMethod) {
+                case 'Weekly':
+                    nextRecurringDate.setDate(currentRecurringDate.getDate() + 7);
+                    break;
+                case 'Monthly':
+                    nextRecurringDate.setMonth(currentRecurringDate.getMonth() + 1);
+                    break;
+                case 'Quarterly':
+                    nextRecurringDate.setMonth(currentRecurringDate.getMonth() + 3);
+                    break;
+            }
+
+            // Update project with new recurring date and reset mail flag
             await GaapProject.findByIdAndUpdate(project._id, {
-                recurringMail: true
+                recurringMail: true,
+                RecurringDate: nextRecurringDate
             });
 
-            console.log(`Notifications sent for project: ${project.projectName} (${isPastDue ? 'Past Due' : 'Upcoming'})`);
+            console.log(`Updated next recurring date for ${project.projectName} to ${nextRecurringDate.toLocaleDateString()}`);
         }
 
         return {
@@ -118,7 +134,7 @@ const checkAndNotifyRecurringProjects = async () => {
         console.error('Error in recurring project notification:', error);
         throw new Error('Failed to process recurring project notifications');
     }
-};
+}
 
 // Reset recurringMail flag for next month's notifications
 const resetRecurringMailFlag = async () => {
