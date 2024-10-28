@@ -14,6 +14,10 @@ const checkAndNotifyRecurringProjects = async () => {
         const twoDaysFromNow = new Date(today);
         twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
 
+        console.log('Searching for projects with:');
+        console.log('- Today:', today.toLocaleDateString());
+        console.log('- Two days from now:', twoDaysFromNow.toLocaleDateString());
+
         // Updated query to include approval checks
         const recurringProjects = await GaapProject.find({
             recurring: true,
@@ -25,6 +29,15 @@ const checkAndNotifyRecurringProjects = async () => {
             }
         }).populate('customer', 'name companyName');
 
+        console.log(`Found ${recurringProjects.length} projects to process`);
+
+        if (recurringProjects.length === 0) {
+            return {
+                success: true,
+                message: 'No projects require notification at this time'
+            };
+        }
+
         // Get all finance managers
         const financeManagers = await GaapUser.find({
             role: 'Finance Manager',
@@ -33,6 +46,8 @@ const checkAndNotifyRecurringProjects = async () => {
 
         // Process each project
         for (const project of recurringProjects) {
+            console.log(`\nProcessing project: ${project.projectName}`);
+            
             // Get team information
             const team = await GaapTeam.findOne({ _id: project.teamId });
             if (!team) continue;
@@ -142,23 +157,65 @@ const checkAndNotifyRecurringProjects = async () => {
 
         return {
             success: true,
-            message: `Processed ${recurringProjects.length} recurring projects`
+            message: `Successfully processed ${recurringProjects.length} recurring projects`
         };
 
     } catch (error) {
-        console.error('Error in recurring project notification:', error);
-        throw new Error('Failed to process recurring project notifications');
+        console.error('Detailed error in recurring project notification:', error);
+        throw new Error(`Failed to process recurring project notifications: ${error.message}`);
     }
 }
 
-// Reset recurringMail flag for next month's notifications
+// Updated reset function to handle different payment methods
 const resetRecurringMailFlag = async () => {
     try {
-        const result = await GaapProject.updateMany(
-            { recurring: true, recurringMail: true },
-            { recurringMail: false }
-        );
-        console.log(`Reset recurringMail flag for ${result.modifiedCount} projects`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get all recurring projects
+        const recurringProjects = await GaapProject.find({
+            recurring: true,
+            recurringMail: true
+        });
+
+        let resetCount = 0;
+        for (const project of recurringProjects) {
+            const lastRecurringDate = new Date(project.RecurringDate);
+            let shouldReset = false;
+
+            switch (project.RecurringPaymentMethod) {
+                case 'Weekly':
+                    // Reset if 7 days have passed since last recurring date
+                    const weekDiff = Math.floor((today - lastRecurringDate) / (1000 * 60 * 60 * 24));
+                    shouldReset = weekDiff >= 7;
+                    break;
+
+                case 'Monthly':
+                    // Reset if we're in a new month from the last recurring date
+                    shouldReset = 
+                        today.getMonth() !== lastRecurringDate.getMonth() ||
+                        today.getFullYear() !== lastRecurringDate.getFullYear();
+                    break;
+
+                case 'Quarterly':
+                    // Reset if 3 months have passed since last recurring date
+                    const monthDiff = 
+                        (today.getFullYear() - lastRecurringDate.getFullYear()) * 12 +
+                        (today.getMonth() - lastRecurringDate.getMonth());
+                    shouldReset = monthDiff >= 3;
+                    break;
+            }
+
+            if (shouldReset) {
+                await GaapProject.findByIdAndUpdate(project._id, {
+                    recurringMail: false
+                });
+                resetCount++;
+                console.log(`Reset mail flag for project ${project.projectName} (${project.RecurringPaymentMethod})`);
+            }
+        }
+
+        console.log(`Reset recurringMail flag for ${resetCount} projects`);
     } catch (error) {
         console.error('Error resetting recurringMail flag:', error);
     }
