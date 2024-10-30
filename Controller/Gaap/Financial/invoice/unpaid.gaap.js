@@ -3,6 +3,7 @@ const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapCustomer = require('../../../../Model/Gaap/gaap_customer');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
+const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
@@ -143,9 +144,12 @@ const updatePayment = async (req, res) => {
     }
 
     await payment.save();
-
+    const tasks = await GaapTask.find({ project: project._id });
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+    const taskProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     // Update project status if fully paid
-    if (payment.paymentStatus === 'Fully Paid') {
+    if (payment.paymentStatus === 'Fully Paid'&&taskProgress === 100 ) {
       project.status = 'Completed';
       await project.save();
     }

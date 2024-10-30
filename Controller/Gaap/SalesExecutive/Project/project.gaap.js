@@ -325,9 +325,10 @@ const getProjects = async (req, res) => {
       console.log('C: ',completedTasks)
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       console.log('P: ',progress)
+      let paymentM = await ProjectPayment.findOne({ project: project._id });
 
       // Update project status if necessary
-      if (progress >= 100 && project.status !== 'Completed') {
+      if (progress >= 100 && project.status !== 'Completed'&&paymentM.paymentStatus === 'Fully Paid') {
         await GaapProject.findByIdAndUpdate(project._id, { status: 'Completed' });
         project.status = 'Completed';
         const notificationMessage = `Project "${project.projectName}" have been completed.`;
