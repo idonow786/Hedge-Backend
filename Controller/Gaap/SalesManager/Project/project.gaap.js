@@ -76,8 +76,9 @@ const getProjectsAll = async (req, res) => {
       const totalTasks = project.tasks.length;
       const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      let paymentM = await ProjectPayment.findOne({ project: project._id });
 
-      if (progress >= 100 && project.status !== 'Completed') {
+      if (progress >= 100 && project.status !== 'Completed'&&paymentM.paymentStatus === 'Fully Paid') {
         project.status = 'Completed';
         await project.save();
       }

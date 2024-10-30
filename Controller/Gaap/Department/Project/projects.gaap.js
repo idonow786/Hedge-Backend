@@ -80,6 +80,7 @@ const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapProjectProduct=require('../../../../Model/Gaap/gaap_product')
+const ProjectPayment=require('../../../../Model/Gaap/gaap_payment')
 const getProjects = async (req, res) => {
     try {
         const { department } = req.query;
@@ -108,9 +109,10 @@ const getProjects = async (req, res) => {
                 const totalTasks = tasks.length;
                 const completedTasks = tasks.filter(task => task.status === 'Completed').length;
                 const taskProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                let payment = await ProjectPayment.findOne({ project: project._id });
 
                 // Update project status if all tasks are completed
-                if (taskProgress === 100 && project.status !== 'Completed') {
+                if (taskProgress === 100 && project.status !== 'Completed'&&payment.paymentStatus === 'Fully Paid') {
                     project.status = 'Completed';
                     await project.save();
                 }
