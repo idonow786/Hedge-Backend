@@ -17,6 +17,7 @@ const verifyToken = (req, res, next) => {
     process.env.JWT_SECRET_VENDOR,
     process.env.JWT_SECRET_GAAP,
     process.env.JWT_SECRET_GAAP_USER,
+    process.env.JWT_ATIS_USER,
   ];
   let decoded;
   let lastError;

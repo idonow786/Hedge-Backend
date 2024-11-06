@@ -14,6 +14,8 @@ const StaffingTeam = require('../../Model/Staffing/staffing_team');
 const StaffingUser = require('../../Model/Staffing/staffing_user');
 const AccountingUser = require('../../Model/Accounting/accounting_user');
 const AccountingTeam = require('../../Model/Accounting/accounting_team');
+const AtisUser = require('../../Model/ATIS/atis_user');
+const AtisTeam = require('../../Model/ATIS/atis_team');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -194,6 +196,58 @@ const signup = async (req, res) => {
       console.log(savedBusiness)
 
       const newTeam = new AccountingTeam({
+        teamName: `${businessName} Team`,
+        businessId: savedBusiness._id,
+        parentUser: {
+          userId: savedUser._id,
+          name: username,
+          role: 'admin'
+        },
+        members: []
+      });
+      newUser.teamId = newTeam._id
+      await newUser.save()
+      await newTeam.save();
+
+      console.log("team ", newTeam)
+    }
+    else if (CompanyActivity === 'atis') {
+      console.log('working atis')
+      existingUser = await AtisUser.findOne({ email: email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'ATIS User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      newUser = new AtisUser({
+        username: username,
+        email: email,
+        password: hashedPassword,
+        fullName: username,
+        role: 'admin',
+        companyActivity: CompanyActivity
+      });
+
+      savedUser = await newUser.save();
+
+      const newBusiness = new Business({
+        AdminID: savedUser._id,
+        BusinessName: businessName,
+        BusinessAddress: BusinessAddress,
+        BusinessPhoneNo: BusinessPhoneNo,
+        BusinessEmail: BusinessEmail,
+        OwnerName: OwnerName,
+        YearofEstablishment: YearofEstablishment,
+        BusinessType: BusinessType,
+        CompanyType: CompanyType,
+        CompanyActivity: CompanyActivity
+      });
+
+      const savedBusiness = await newBusiness.save();
+      console.log(savedBusiness)
+
+      const newTeam = new AtisTeam({
         teamName: `${businessName} Team`,
         businessId: savedBusiness._id,
         parentUser: {
@@ -678,21 +732,28 @@ const signin = async (req, res) => {
           secretKey = user.role === 'admin' ? process.env.JWT_ACCOUNTING : process.env.JWT_ACCOUNTING_USER;
           business = await Business.findOne({ AdminID: user._id });
         } else {
-          // Check SuperAdmin
-          user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+          // Check ATIS User
+          user = await AtisUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
           if (user) {
-            secretKey = process.env.JWT_SECRET_Super;
+            secretKey = user.role === 'admin' ? process.env.JWT_ATIS_USER : process.env.JWT_ATIS_USER;
+            business = await Business.findOne({ AdminID: user._id });
           } else {
-            // Check Admin
-            user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+            // Check SuperAdmin
+            user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
             if (user) {
-              secretKey = process.env.JWT_SECRET;
-              business = await Business.findOne({ AdminID: user._id });
+              secretKey = process.env.JWT_SECRET_Super;
             } else {
-              // Check Vendor
-              user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+              // Check Admin
+              user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
               if (user) {
-                secretKey = process.env.JWT_SECRET_VENDOR;
+                secretKey = process.env.JWT_SECRET;
+                business = await Business.findOne({ AdminID: user._id });
+              } else {
+                // Check Vendor
+                user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+                if (user) {
+                  secretKey = process.env.JWT_SECRET_VENDOR;
+                }
               }
             }
           }
