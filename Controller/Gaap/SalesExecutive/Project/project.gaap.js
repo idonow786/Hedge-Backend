@@ -48,9 +48,9 @@ const createProject = async (req, res) => {
         }
 
         const user = await GaapUser.findById(req.adminId);
-        // if (!user) {
-        //     return res.status(404).json({ message: 'User not found' });
-        // }
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
         const customer = await GaapCustomer.findById(customerId);
         if (!customer) {
@@ -109,7 +109,21 @@ const createProject = async (req, res) => {
             }
         }
 
+        // Get the last project to determine the next number
+        const lastProject = await GaapProject.findOne({}, {}, { sort: { 'createdAt': -1 } });
+        let nextNumber = 10001;
+
+        if (lastProject && lastProject.projectGaapId) {
+            // Extract the number from the last project ID
+            const lastNumber = parseInt(lastProject.projectGaapId.split('/').pop());
+            nextNumber = lastNumber + 1;
+        }
+
+        // Create the project ID format: Gaap/UserFullName/10001
+        const projectGaapId = `Gaap/${user.fullName}/${nextNumber}`;
+
         const newProject = new GaapProject({
+            projectGaapId,
             projectName,
             customer: customerId,
             projectType,

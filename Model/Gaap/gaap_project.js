@@ -164,7 +164,7 @@ const gaapprojectSchema = new Schema({
       required: false
     },
     meetingTime: {
-      type: String,  // Store time as string in format "HH:mm"
+      type: String, 
       required: false
     },
     meetingVenue: {
@@ -175,6 +175,11 @@ const gaapprojectSchema = new Schema({
       type: String,
       required: false
     }
+  },
+
+  projectGaapId: {
+    type: String,
+    required: true
   }
 }, {
   timestamps: true
