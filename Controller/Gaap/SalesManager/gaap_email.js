@@ -168,12 +168,12 @@ const generateAndSendProposal = async (req, res) => {
       customerName: customer.companyName,
       contactPerson: customer.contactPerson1.name,
       customerEmail: customer.contactPerson1.email,
-      customerPhone: customer.contactPerson1.phoneNumber || customer.mobile,
+      customerPhone: customer.contactPerson1.phoneNumber,
       projectType: project.projectType,
       projectsubCategory: projectProducts.subCategory,
       startDate: project.startDate.toLocaleDateString(),
       endDate: project.endDate ? project.endDate.toLocaleDateString() : "TBD",
-      referenceNumber: `GAAP/MR/${project._id.toString().slice(-2)}`,
+      referenceNumber: project.projectGaapId,
       currentDate: new Date().toLocaleDateString(),
       customerAddress: `${customer.address.street}, ${customer.address.city}, ${customer.address.state}, ${customer.address.country}, ${customer.address.postalCode}`,
       quoteNumber: `QUOTE-${project._id.toString().slice(-4)}`,
@@ -246,8 +246,8 @@ const generateAndSendProposal = async (req, res) => {
 
       const mailOptions = {
         from: sender.email,
-        // to: 'hashmiosama555@gmail.com',
-        to: customer.contactPerson1.email,
+        to: 'hashmiosama555@gmail.com',
+        // to: customer.contactPerson1.email,
         subject: "Business Proposal from GAAP",
         text: `Dear Sir,
 
