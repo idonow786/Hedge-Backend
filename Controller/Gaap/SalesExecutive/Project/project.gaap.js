@@ -171,6 +171,19 @@ const createProject = async (req, res) => {
         }
 
         await newProject.save();
+
+        // Create notification for new project
+        const notification = new GaapNotification({
+            user: req.adminId,
+            message: `New project "${projectName}" has been created.`,
+            department: department,
+            teamId: user.teamId,
+            type: 'Project',
+            projectId: newProject._id,
+            status: 'unread'
+        });
+        await notification.save();
+
         console.log(newProject);
 
         const projectProducts = await Promise.all(products.map(async (product) => {
@@ -703,7 +716,11 @@ const updateProject = async (req, res) => {
         notificationsToCreate.push({
           user: req.adminId,
           message: `Products updated for project ${projectName}.`,
-          teamId: existingProject.teamId
+          teamId: existingProject.teamId,
+          department: existingProject.department,
+          type: 'Project',
+          projectId: projectId,
+          status: 'unread'
         });
       }
     }

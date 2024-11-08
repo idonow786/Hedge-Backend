@@ -246,8 +246,8 @@ const generateAndSendProposal = async (req, res) => {
 
       const mailOptions = {
         from: sender.email,
-        to: 'hashmiosama555@gmail.com',
-        // to: customer.contactPerson1.email,
+        // to: 'hashmiosama555@gmail.com',
+        to: customer.contactPerson1.email,
         subject: "Business Proposal from GAAP",
         text: `Dear Sir,
 
