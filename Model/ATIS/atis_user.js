@@ -31,6 +31,7 @@ const atisuserSchema = new Schema({
       'frontDesk',      // Front desk agent for complaint registration
       'serviceManager', // Manages service teams and assignments
       'technician',     // Field technicians/operatives
+      'departmentManager',
       'channelPartner', // External partners who can register complaints
       'accountant',     // For billing and AMC management
       'client'          // Clients who can view their complaints/reports
