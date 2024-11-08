@@ -493,6 +493,10 @@ const updateProject = async (req, res) => {
       recurring,
       RecurringDate,
       RecurringPaymentMethod,
+      meetingDate,
+      meetingTime,
+      meetingVenue,
+      meetingComment,
     } = req.body;
 
     const existingProject = await GaapProject.findById(projectId);
@@ -543,6 +547,10 @@ const updateProject = async (req, res) => {
       operationsManagerApproval,
       endDate,
       status,
+      meetingDate,
+      meetingTime,
+      meetingVenue,
+      meetingComment,
       pricingType,
       totalAmount,
       vatDetails: {
