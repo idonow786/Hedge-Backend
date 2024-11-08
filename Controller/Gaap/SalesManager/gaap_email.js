@@ -170,7 +170,7 @@ const generateAndSendProposal = async (req, res) => {
       customerEmail: customer.contactPerson1.email,
       customerPhone: customer.contactPerson1.phoneNumber,
       projectType: project.projectType,
-      projectsubCategory: projectProducts.subCategory,
+      projectsubCategory: projectProducts.subCategory || project.projectType,
       startDate: project.startDate.toLocaleDateString(),
       endDate: project.endDate ? project.endDate.toLocaleDateString() : "TBD",
       referenceNumber: project.projectGaapId,
