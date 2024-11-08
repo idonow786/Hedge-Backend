@@ -4,148 +4,212 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VAT Filing Services Proposal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/calibri" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri-Bold.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri-Bold.ttf') format('truetype');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri-Italic.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri-Italic.ttf') format('truetype');
+      font-weight: normal;
+      font-style: italic;
+    }
+
     :root {
-      --primary-color: #003366;
-      --secondary-color: #0066cc;
-      --accent-color: #0066cc;
-      --background-color: #f0f5ff;
-      --text-color: #333333;
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --text-color: #2c3e50;
+      --border-color: #bdc3c7;
     }
+
     body {
-      font-family: 'Roboto', Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif;
+      line-height: 1.3;
       color: var(--text-color);
-      background-color: var(--background-color);
-      font-size: 12px;
-      line-height: 1.2;
-    }
-    .container {
-      background-color: #ffffff;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      padding: 20px;
-      max-width: 750px;
+      width: 21cm;
+      height: 29.7cm;
       margin: 0 auto;
-      border-radius: 10px;
+      padding: 1.5cm 2cm;
+      font-size: 11pt;
+      background: white;
+      position: relative;
     }
+
+    .container {
+      height: 100%;
+      position: relative;
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--primary-color);
-      padding-bottom: 15px;
+      margin-bottom: 1cm;
+      border-bottom: 1px solid var(--primary-color);
+      padding-bottom: 0.3cm;
     }
+
     .logo-address {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      flex: 1;
     }
+
     .logo {
-      width: 100px;
+      width: 150px;
       height: auto;
-      margin-bottom: 15px;
+      margin-bottom: 0.3cm;
     }
+
     .company-info {
-      font-size: 11px;
-      color: var(--secondary-color);
+      font-size: 9pt;
+      color: var(--text-color);
+      line-height: 1.4;
     }
+
     .proposal-title {
+      flex: 1;
       text-align: right;
-      color: var(--primary-color);
     }
+
     .proposal-title h2 {
       margin: 0;
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 24pt;
+      font-weight: bold;
+      color: var(--primary-color);
     }
+
     .proposal-title p {
-      margin: 3px 0 0;
-      font-size: 14px;
+      margin: 0.2cm 0 0;
+      font-size: 12pt;
       color: var(--secondary-color);
     }
+
     .attention {
-      background-color: var(--accent-color);
+      background-color: var(--primary-color);
       color: white;
-      padding: 10px;
-      margin-bottom: 20px;
+      padding: 0.3cm;
+      margin-bottom: 0.5cm;
       font-weight: bold;
       text-align: center;
-      font-size: 14px;
-      border-radius: 5px;
+      font-size: 11pt;
+      border-radius: 3px;
     }
+
+    .client-info {
+      margin-bottom: 0.5cm;
+      line-height: 1.4;
+    }
+
+    .quote-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5cm;
+      font-size: 9pt;
+    }
+
     table {
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      margin-bottom: 20px;
-      font-size: 11px;
+      border-collapse: collapse;
+      margin-bottom: 0.5cm;
+      font-size: 9pt;
     }
+
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+      border: 1px solid var(--border-color);
+      padding: 0.2cm;
     }
+
     th {
       background-color: var(--primary-color);
       color: white;
       font-weight: bold;
     }
-    td {
-      background-color: #ffffff;
-    }
+
     .number-cell {
       text-align: right;
-      font-family: 'Courier New', monospace;
+      font-family: 'Calibri', monospace;
     }
+
     .total-row {
       font-weight: bold;
-      background-color: #e6f2ff;
+      background-color: #f8f9fa;
     }
-    .terms {
-      margin-bottom: 20px;
-      font-size: 11px;
-      background-color: #f9f9f9;
-      padding: 15px;
-      border-radius: 5px;
-    }
-    .signature {
-      margin-top: 20px;
-      border-top: 1px dashed var(--secondary-color);
-      padding-top: 15px;
-      font-size: 11px;
-    }
-    .signature p {
-      margin: 3px 0;
-    }
-    #clientName, #clientCompany {
-      font-weight: bold;
-      color: var(--primary-color);
-      font-size: 14px;
-    }
+
     #amountInWords {
       font-style: italic;
       color: var(--secondary-color);
-      font-size: 12px;
-      margin-top: 8px;
+      margin-bottom: 0.5cm;
+      font-size: 9pt;
     }
-    .quote-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
+
+    .terms {
+      margin-bottom: 0.5cm;
+      font-size: 9pt;
+      background-color: #f8f9fa;
+      padding: 0.3cm;
+      border-radius: 3px;
     }
-    .quote-info div {
-      flex: 1;
+
+    .terms h4 {
+      margin: 0 0 0.2cm 0;
+      color: var(--primary-color);
     }
-    @media (max-width: 600px) {
-      .header, .quote-info {
-        flex-direction: column;
+
+    .signature {
+      margin-top: 0.5cm;
+      border-top: 1px dashed var(--border-color);
+      padding-top: 0.3cm;
+      font-size: 9pt;
+    }
+
+    .signature p {
+      margin: 0.2cm 0;
+    }
+
+    #clientName, #clientCompany {
+      font-weight: bold;
+      color: var(--primary-color);
+      font-size: 11pt;
+    }
+
+    @media print {
+      body {
+        margin: 0;
+        padding: 1.5cm 2cm;
+        height: 29.7cm;
+        width: 21cm;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
-      .proposal-title {
-        text-align: left;
-        margin-top: 15px;
+
+      .attention {
+        background-color: var(--primary-color) !important;
+        color: white !important;
+      }
+
+      th {
+        background-color: var(--primary-color) !important;
+        color: white !important;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
       }
     }
   </style>
@@ -182,7 +246,7 @@
         <strong>DATE:</strong> {{currentDate}}
       </div>
       <div>
-        <strong>QUOTE #:</strong> {{quoteNumber}}
+        <strong>QUOTE #:</strong> {{referenceNumber}}
       </div>
       <div>
         <strong>VALID UNTIL:</strong> {{validUntil}}
@@ -205,7 +269,7 @@
         <td class="number-cell" id="amount">{{amount}}</td>
       </tr>
       <tr>
-        <td colspan="5">{{description}}</td>
+        <td colspan="5">FOR {{projectsubCategory}}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4">Taxable Amount</td>

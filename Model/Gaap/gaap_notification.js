@@ -13,10 +13,24 @@ const gaapnotificationSchema = new Schema({
   },
   department: {
     type: String,
+    required: true
   },
-  isRead: {
-    type: Boolean,
-    default: false
+  teamId: {
+    type: String
+  },
+  type: {
+    type: String,
+    enum: ['Project', 'Task', 'Payment', 'Other'],
+    default: 'Other'
+  },
+  projectId: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapProject'
+  },
+  status: {
+    type: String,
+    enum: ['read', 'unread'],
+    default: 'unread'
   },
   createdAt: {
     type: Date,

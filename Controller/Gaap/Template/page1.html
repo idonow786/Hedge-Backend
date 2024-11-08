@@ -4,131 +4,297 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Business Proposal - GAAP Associates</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+  <link href="https://fonts.cdnfonts.com/css/calibri" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      line-height: 1.2;
-      color: #333;
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 10px;
-      font-size: 12px;
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
     }
-    .header, .footer {
+
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri-Bold.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri-Bold.ttf') format('truetype');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Calibri';
+      src: url('https://fonts.cdnfonts.com/s/14992/Calibri-Italic.woff') format('woff'),
+           url('https://fonts.cdnfonts.com/s/14992/Calibri-Italic.ttf') format('truetype');
+      font-weight: normal;
+      font-style: italic;
+    }
+
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --text-color: #2c3e50;
+      --border-color: #bdc3c7;
+    }
+
+    body {
+      font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif;
+      line-height: 1.3;
+      color: var(--text-color);
+      width: 21cm;
+      height: 29.7cm;
+      margin: 0 auto;
+      padding: 1.5cm 2cm;
+      font-size: 11pt;
+      background: white;
+      position: relative;
+    }
+
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 1cm;
+      border-bottom: 1px solid #2c3e50;
+      padding-bottom: 0.3cm;
     }
-    .logo { width: 100px; }
+
+    .logo-container {
+      flex: 1;
+    }
+
+    .logo {
+      width: 150px;
+      height: auto;
+    }
+
     .proposal-title {
-      font-size: 18px;
+      flex: 1;
+      font-size: 24pt;
       font-weight: bold;
       text-align: right;
+      color: #2c3e50;
     }
-    .reference, .recipient, .content, .signature { margin-bottom: 10px; }
+
+    .reference {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5cm;
+      font-size: 9pt;
+      color: #34495e;
+    }
+
     .service-title {
       text-align: center;
       font-weight: bold;
-      margin: 10px 0;
-      font-size: 14px;
+      margin: 0.5cm 0;
+      font-size: 14pt;
+      text-transform: uppercase;
+      color: #2c3e50;
+      border-bottom: 1px solid #bdc3c7;
+      padding-bottom: 0.2cm;
     }
+
+    .recipient {
+      margin-bottom: 0.5cm;
+      line-height: 1.4;
+      font-size: 10pt;
+    }
+
+    .content {
+      margin-bottom: 0.5cm;
+      text-align: justify;
+      font-size: 10pt;
+      line-height: 1.4;
+    }
+
+    .content p {
+      margin: 0.3cm 0;
+    }
+
+    .scope {
+      margin: 0.5cm 0;
+      background-color: #f8f9fa;
+      padding: 0.5cm;
+      border-radius: 5px;
+    }
+
     .scope h3 {
       text-transform: uppercase;
-      margin-bottom: 5px;
-      font-size: 13px;
+      margin-bottom: 0.3cm;
+      font-size: 12pt;
+      color: #2c3e50;
+      border-bottom: 1px solid #3498db;
+      padding-bottom: 0.2cm;
     }
+
+    .scope h4 {
+      font-size: 11pt;
+      color: #2c3e50;
+      margin: 0.3cm 0 0.2cm 0;
+      text-transform: uppercase;
+    }
+
     .scope ul {
-      list-style-type: disc;
-      padding-left: 15px;
-      margin: 5px 0;
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0.3cm 0;
     }
+
+    .scope ul li {
+      margin-bottom: 0.2cm;
+      padding-left: 0.5cm;
+      position: relative;
+    }
+
+    .scope ul li:before {
+      content: "•";
+      color: #3498db;
+      position: absolute;
+      left: 0.2cm;
+    }
+
+    .footer {
+      margin-top: 0.5cm;
+      border-top: 1px solid #bdc3c7;
+      padding-top: 0.3cm;
+    }
+
+    .signature {
+      text-align: right;
+      margin-top: 0.5cm;
+      font-size: 10pt;
+    }
+
+    .signature p {
+      margin: 0.1cm 0;
+    }
+
     .contact-info {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      background-color: #f0f0f0;
-      padding: 5px;
-      margin-top: 20px;
-      font-size: 10px;
+      position: absolute;
+      bottom: 1.5cm;
+      left: 2cm;
+      right: 2cm;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.3cm;
+      background-color: #2c3e50;
+      color: white;
+      padding: 0.5cm;
+      border-radius: 5px;
+      font-size: 9pt;
     }
+
     .contact-info div {
       display: flex;
       align-items: center;
-      margin-bottom: 5px;
-      flex: 1 1 30%;
     }
+
     .contact-info i {
-      margin-right: 5px;
-      font-size: 12px;
+      margin-right: 0.2cm;
+      font-size: 10pt;
+      color: #3498db;
     }
-    @media (max-width: 600px) {
-      .header, .footer {
-        flex-direction: column;
-        align-items: flex-start;
+
+    .highlight {
+      color: #3498db;
+      font-weight: 500;
+    }
+
+    .company-name {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    @media print {
+      body {
+        margin: 0;
+        padding: 1.5cm 2cm;
+        height: 29.7cm;
+        width: 21cm;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
-      .proposal-title {
-        text-align: left;
-        margin-top: 5px;
+      
+      .scope {
+        background-color: #f8f9fa !important;
       }
+      
       .contact-info {
-        flex-direction: column;
+        background-color: #2c3e50 !important;
+        color: white !important;
       }
-      .contact-info div { flex: 1 1 100%; }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Header section -->
   <div class="header">
-    <img src="https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media" alt="GAAP Associates Logo" class="logo">
+    <div class="logo-container">
+      <img src="https://firebasestorage.googleapis.com/v0/b/tempproject-4cb9b.appspot.com/o/logo.png?alt=media" alt="GAAP Associates Logo" class="logo">
+    </div>
     <div class="proposal-title">Business Proposal</div>
   </div>
   
+  <!-- Reference section -->
   <div class="reference">
-    <div>Ref: {{referenceNumber}}</div>
-    <div>Date: {{currentDate}}</div>
+    <div>Reference No: <span class="highlight">{{referenceNumber}}</span></div>
+    <div>Date: <span class="highlight">{{currentDate}}</span></div>
   </div>
   
+  <!-- Service title -->
   <div class="service-title">
-    FOR {{projectsubCategory}}
+    {{projectsubCategory}}
   </div>
   
+  <!-- Recipient details -->
   <div class="recipient">
-    <p>To,<br>
-    {{contactPerson}}<br>
-    {{customerName}}<br>
+    <p><strong>To,</strong><br>
+    <span class="highlight">{{contactPerson}}</span><br>
     {{customerAddress}}</p>
   </div>
   
+  <!-- Main content -->
   <div class="content">
-    <p>Dear Sir,</p>
-    <p>We are pleased to present this proposal for {{projectType}}. Our aim is to provide expert guidance and support in managing your {{projectType}} requirements efficiently while ensuring compliance with all relevant regulations.</p>
+    <p><strong>Dear Sir/Mam,</strong></p>
+    <p>We are pleased to present this proposal for <span class="highlight">{{projectType}}</span>. Our aim is to provide expert guidance and support in managing your {{projectType}} requirements efficiently while ensuring compliance with all relevant regulations.</p>
   </div>
   
+  <!-- Scope section -->
   <div class="scope">
-    <h3>SCOPE OF THE WORKS</h3>
+    <h3>Scope of Services</h3>
     <ul>
       <li>{{projectsubCategory}}</li>
     </ul>
-    <h4>Additional Services:</h4>
-    <p>We offer supplementary services including internal audit, bookkeeping, tax audit support, tax dispute resolution, and representation before tax authorities, providing comprehensive support for various corporate services.</p>
+    <h4>Additional Services</h4>
+    <p><span class="company-name">GAAP ASSOCIATES AUDITING LLC</span> is led by qualified professionals from various Chartered Institutes. Our team consists of <span class="highlight">CA, ACCA, CMA certified</span> professionals with expertise in various industries including financial, FMCG, contracting, transporting, travel and tourism, retail, trading, and various service sectors.</p>
   </div>
   
+  <!-- Closing content -->
   <div class="content">
     <p>Our engagement will be on a retainer basis, allowing for ongoing support and timely advice. We are confident our expertise will add significant value to your business by ensuring compliance and internal MIS for a brighter future.</p>
-    <p>We look forward to hearing from you.</p>
+    <p>We look forward to your positive response.</p>
   </div>
   
+  <!-- Footer section -->
   <div class="footer">
-    <p>Please refer to proposal No# {{referenceNumber}} Dated {{currentDate}}</p>
-    <p>For GAAP ASSOCIATES AUDITING LLC</p>
+    <p>Please reference: Proposal No# <span class="highlight">{{referenceNumber}}</span> | Date: <span class="highlight">{{currentDate}}</span></p>
     <div class="signature">
-      <p>Abdul Akbar<br>
-      Audit Partner</p>
+      <p><strong>For GAAP ASSOCIATES AUDITING LLC</strong></p>
+      <p style="margin-top: 1cm;">
+        <strong>Abdul Akbar</strong><br>
+        Audit Partner
+      </p>
     </div>
   </div>
   
+  <!-- Contact information -->
   <div class="contact-info">
     <div><i class="fas fa-map-marker-alt"></i> P.O. Box 27544 Abu Dhabi - U.A.E</div>
     <div><i class="fas fa-phone-alt"></i> +971 2 650 2924</div>
