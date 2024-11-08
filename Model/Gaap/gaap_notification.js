@@ -5,15 +5,12 @@ const gaapnotificationSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',  
-    required: true
   },
   message: {
     type: String,
-    required: true
   },
   department: {
     type: String,
-    required: true
   },
   //hh
   teamId: {
