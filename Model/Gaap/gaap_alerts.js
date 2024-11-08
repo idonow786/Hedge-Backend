@@ -24,6 +24,14 @@ const gaapalertSchema = new Schema({
   },
   updatedAt: {
     type: Date
+  },
+  lastSentAt: {
+    type: Date,
+    default: Date.now
+  },
+  sendCount: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
