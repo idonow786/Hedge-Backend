@@ -777,7 +777,7 @@ const signin = async (req, res) => {
 
     // Check payment status for non-superadmin and non-vendor users
     if (user.role !== 'superadmin' && user.role !== 'vendor' && 
-        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser' && user.constructor.modelName !== 'AccountingUser') {
+        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser' && user.constructor.modelName !== 'AccountingUser' && user.constructor.modelName !== 'ATISUser') {
       const payment = await Payment.findOne({ UserID: user._id });
       
       // Uncomment the following lines if you want to enforce payment check
@@ -809,7 +809,7 @@ const signin = async (req, res) => {
     );
 
     // Update last login for GAAP, Staffing, and Accounting users
-    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser') {
+    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser' || user.constructor.modelName === 'ATISUser' ) {
       user.lastLogin = new Date();
       await user.save();
     }
@@ -830,6 +830,7 @@ const signin = async (req, res) => {
         CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : 
                          user.constructor.modelName === 'StaffingUser' ? 'Staffing' : 
                          user.constructor.modelName === 'AccountingUser' ? 'Accounting' :
+                         user.constructor.modelName === 'ATISUser' ? 'atis' :
                          (user.companyActivity || '')
       }
     };
