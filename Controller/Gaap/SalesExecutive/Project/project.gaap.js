@@ -493,10 +493,6 @@ const updateProject = async (req, res) => {
       recurring,
       RecurringDate,
       RecurringPaymentMethod,
-      meetingDate,
-      meetingTime,
-      meetingVenue,
-      meetingComment,
     } = req.body;
 
     const existingProject = await GaapProject.findById(projectId);
@@ -558,113 +554,163 @@ const updateProject = async (req, res) => {
       ...(recurring !== undefined && { recurring }),
       ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
       ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
-      ...(meetingDate || meetingTime || meetingVenue || meetingComment ? {
-        meetingDetails: {
-          ...(existingProject.meetingDetails || {}),
-          ...(meetingDate && { meetingDate: new Date(meetingDate) }),
-          ...(meetingTime && { meetingTime }),
-          ...(meetingVenue && { meetingVenue }),
-          ...(meetingComment && { meetingComment })
-        }
-      } : {}),
     };
 
     const notificationsToCreate = [];
 
-    // Update customer approval notification
+    // Check for important changes and create notifications
     if (customerApproval !== existingProject.customerApproval) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Customer ${customerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update sales manager approval notification
     if (salesManagerApproval !== existingProject.salesManagerApproval) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Sales Manager ${salesManagerApproval ? 'approved' : 'unapproved'} project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update progress notification
     if (Progress !== existingProject.Progress) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Project ${projectName} progress updated to ${Progress}%.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Project ${projectName} progress updated to ${Progress}%.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update status notification
     if (status !== existingProject.status) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Project ${projectName} status changed to ${status}.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Project ${projectName} status changed to ${status}.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update approval comments notification
     if (approvalComments) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Sales Manager added approval comments for project ${projectName}.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      updateData.approvals = [
+        ...existingProject.approvals,
+        {
+          stage: 'Update Approval',
+          approvedBy: req.adminId,
+          approvedDate: new Date(),
+          comments: approvalComments
+        }
+      ];
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Sales Manager added approval comments for project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update discount notification
     if (appliedDiscount >= 0) {
-        notificationsToCreate.push({
-            user: req.adminId,
-            message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
-            teamId: existingProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
-        });
+      updateData.appliedDiscount = appliedDiscount;
+      updateData.discountApprovedBy = req.adminId;
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
     }
 
-    // Update tasks creation notification
-    if (tasksToCreate && tasksToCreate.length > 0) {
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    const updatedProject = await GaapProject.findByIdAndUpdate(projectId, updateData, { new: true, runValidators: true });
+
+    // Check if financial approval and operational manager approval have changed from false to true
+    if (
+      existingProject.financialApproval &&
+      !existingProject.operationsManagerApproval &&
+      operationsManagerApproval
+    ) {
+      const tasksToCreate = [];
+      const existingTasks = await GaapTask.find({ project: projectId });
+      const existingTaskTitles = existingTasks.map(task => task.title);
+
+      if (updatedProject.projectType === 'ICV' || updatedProject.projectType === 'ICV+external Audit') {
+        const icvTasks = [
+          { title: 'Doc Collection', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Nafis Registeration', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'ICV Registration', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Ledger Reconciliation', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'ICV Submitted', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Draft', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Client Response Yes Or No', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Final Release', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+          { title: 'Dispatch Details', project: projectId, teamId: updatedProject.teamId, department: 'ICV' },
+        ];
+        tasksToCreate.push(...icvTasks.filter(task => !existingTaskTitles.includes(task.title)));
+      }
+
+      if (updatedProject.projectType === 'External Audit' || updatedProject.projectType === 'ICV+external Audit' || updatedProject.projectType === 'Audit & Assurance') {
+        const auditTasks = [
+          { title: 'KYC', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Doc Collection', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Ledger Reconciliation', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Bank Reconciliation', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Asset Register', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'FS Preparation', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Draft', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Client Response Yes Or No', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Final Release', project: projectId, teamId: updatedProject.teamId, department: 'Audit' },
+          { title: 'Dispatch Details', project: projectId, teamId: updatedProject.teamId, department: 'Audit' }
+        ];
+        tasksToCreate.push(...auditTasks.filter(task => !existingTaskTitles.includes(task.title)));
+      }
+
+      if (tasksToCreate.length > 0) {
+        const createdTasks = await GaapTask.insertMany(tasksToCreate);
+        updatedProject.tasks = [...(updatedProject.tasks || []), ...createdTasks.map(task => task._id)];
+        updatedProject.status = 'In Progress';
+        await updatedProject.save();
+
         notificationsToCreate.push({
-            user: req.adminId,
-            message: `Tasks created for project ${updatedProject.projectName} based on project type.`,
-            teamId: updatedProject.teamId,
-            department: existingProject.department,
-            type: 'Project',
-            projectId: projectId,
-            status: 'unread'
+          user: req.adminId,
+          message: `Tasks created for project ${updatedProject.projectName} based on project type.`,
+          teamId: updatedProject.teamId
         });
+      }
+    }
+
+    if (products && Array.isArray(products)) {
+      await GaapProjectProduct.deleteMany({ project: projectId });
+      const projectProducts = await Promise.all(products.map(async (product) => {
+        const projectProduct = new GaapProjectProduct({
+          project: projectId,
+          name: product.name,
+          category: product.category,
+          subCategory: product.subCategory,
+          department: product.department,
+          priceType: product.priceType,
+          price: product.price,
+          quantity: product.quantity,
+          timeDeadline: product.timeDeadline,
+          turnoverRange: product.turnoverRange,
+          isVatProduct: product.isVatProduct
+        });
+        await projectProduct.save();
+        return projectProduct._id;
+      }));
+      updatedProject.products = projectProducts;
+      await updatedProject.save();
+
+      if (req.role === 'Sales Manager') {
+        notificationsToCreate.push({
+          user: req.adminId,
+          message: `Products updated for project ${projectName}.`,
+          teamId: existingProject.teamId
+        });
+      }
     }
 
     // Create all notifications if the role is Sales Manager
     if (req.role === 'Sales Manager' && notificationsToCreate.length > 0) {
-        await GaapNotification.insertMany(notificationsToCreate);
+      await GaapNotification.insertMany(notificationsToCreate);
     }
 
     res.json(updatedProject);
@@ -673,7 +719,6 @@ const updateProject = async (req, res) => {
     res.status(500).json({ message: 'Error updating project', error: error.message });
   }
 };
-
 
 
 
