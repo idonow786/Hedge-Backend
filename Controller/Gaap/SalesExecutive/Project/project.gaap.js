@@ -111,7 +111,7 @@ const createProject = async (req, res) => {
 
         // Get the last project to determine the next number
         const lastProject = await GaapProject.findOne({}, {}, { sort: { 'createdAt': -1 } });
-        let nextNumber = 10001;
+        let nextNumber = 100001;
 
         if (lastProject && lastProject.projectGaapId) {
             // Extract the number from the last project ID
@@ -119,8 +119,8 @@ const createProject = async (req, res) => {
             nextNumber = lastNumber + 1;
         }
 
-        // Create the project ID format: Gaap/UserFullName/10001
-        const projectGaapId = `Gaap/${user.fullName}/${nextNumber}`;
+        // Create the project ID format with larger number: GAAP/UserFullName/100001
+        const projectGaapId = `GAAP/${user.fullName.toUpperCase()}/${nextNumber}`;
 
         const newProject = new GaapProject({
             projectGaapId,
