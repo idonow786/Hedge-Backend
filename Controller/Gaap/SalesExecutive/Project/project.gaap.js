@@ -34,6 +34,10 @@ const createProject = async (req, res) => {
             recurring,
             RecurringDate,
             RecurringPaymentMethod,
+            meetingDate,
+            meetingTime,
+            meetingVenue,
+            meetingComment,
         } = req.body;
 
         console.log(req.body);
@@ -129,6 +133,12 @@ const createProject = async (req, res) => {
             ...(recurring && { recurring }),
             ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
             ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
+            meetingDetails: {
+                ...(meetingDate && { meetingDate: new Date(meetingDate) }),
+                ...(meetingTime && { meetingTime }),
+                ...(meetingVenue && { meetingVenue }),
+                ...(meetingComment && { meetingComment })
+            },
         });
 
         // If the user is a Sales Manager, add approval and handle discount
@@ -456,6 +466,10 @@ const updateProject = async (req, res) => {
       recurring,
       RecurringDate,
       RecurringPaymentMethod,
+      meetingDate,
+      meetingTime,
+      meetingVenue,
+      meetingComment,
     } = req.body;
 
     const existingProject = await GaapProject.findById(projectId);
@@ -517,6 +531,15 @@ const updateProject = async (req, res) => {
       ...(recurring !== undefined && { recurring }),
       ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
       ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
+      ...(meetingDate || meetingTime || meetingVenue || meetingComment ? {
+        meetingDetails: {
+          ...(existingProject.meetingDetails || {}),
+          ...(meetingDate && { meetingDate: new Date(meetingDate) }),
+          ...(meetingTime && { meetingTime }),
+          ...(meetingVenue && { meetingVenue }),
+          ...(meetingComment && { meetingComment })
+        }
+      } : {}),
     };
 
     const notificationsToCreate = [];

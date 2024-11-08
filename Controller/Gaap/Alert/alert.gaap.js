@@ -7,10 +7,27 @@ const GaapUser = require('../../../Model/Gaap/gaap_user');
 const getUserAlerts = async (req, res) => {
   try {
     const userId = req.adminId;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const alerts = await GaapAlert.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    // Get alerts that:
+    // 1. Haven't been sent today OR
+    // 2. Are unread from previous days
+    const alerts = await GaapAlert.find({
+      user: userId,
+      $or: [
+        { lastSentAt: { $lt: today } },
+        { isRead: false }
+      ]
+    }).sort({ createdAt: -1 }).lean();
+
+    // Update lastSentAt and sendCount for retrieved alerts
+    await Promise.all(alerts.map(alert => 
+      GaapAlert.findByIdAndUpdate(alert._id, {
+        lastSentAt: new Date(),
+        $inc: { sendCount: 1 }
+      })
+    ));
 
     res.status(200).json({
       message: 'Alerts fetched successfully',

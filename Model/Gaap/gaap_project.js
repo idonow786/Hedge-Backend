@@ -155,6 +155,26 @@ const gaapprojectSchema = new Schema({
   lastUpdatedBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser'
+  },
+
+  // Add new meeting fields
+  meetingDetails: {
+    meetingDate: {
+      type: Date,
+      required: false
+    },
+    meetingTime: {
+      type: String,  // Store time as string in format "HH:mm"
+      required: false
+    },
+    meetingVenue: {
+      type: String,
+      required: false
+    },
+    meetingComment: {
+      type: String,
+      required: false
+    }
   }
 }, {
   timestamps: true
