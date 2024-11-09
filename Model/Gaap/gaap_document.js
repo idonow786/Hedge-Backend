@@ -16,6 +16,10 @@ const gaapdocumentSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',  
   },
+  teamId: {
+    type: String,
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
