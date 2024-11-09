@@ -51,51 +51,84 @@ const getAllCustomersByAdmin = async (req, res) => {
         // Enhance customer data with financial information
         const enhancedCustomers = await Promise.all(customers.map(async (customer) => {
             // Get all projects for this customer
-            const projects = await GaapProject.find({ customer: customer._id });
+            const projects = await GaapProject.find({ 
+                customer: customer._id 
+            }).lean();
+            
             const projectIds = projects.map(project => project._id);
 
-            // Get all payments for these projects
-            const payments = await ProjectPayment.find({
-                project: { $in: projectIds }
+            // Get all payments and invoices
+            const [payments, invoices] = await Promise.all([
+                ProjectPayment.find({
+                    project: { $in: projectIds }
+                }).lean(),
+                GaapInvoice.find({
+                    project: { $in: projectIds }
+                }).lean()
+            ]);
+
+            // Calculate project totals
+            const projectTotals = projects.reduce((acc, project) => {
+                return {
+                    totalAmount: acc.totalAmount + (project.totalAmount || 0),
+                    totalProjects: acc.totalProjects + 1,
+                    completedProjects: acc.completedProjects + (project.status === 'Completed' ? 1 : 0),
+                    inProgressProjects: acc.inProgressProjects + (project.status === 'In Progress' ? 1 : 0),
+                    proposedProjects: acc.proposedProjects + (project.status === 'Proposed' ? 1 : 0)
+                };
+            }, {
+                totalAmount: 0,
+                totalProjects: 0,
+                completedProjects: 0,
+                inProgressProjects: 0,
+                proposedProjects: 0
             });
 
-            // Get all invoices for these projects
-            const invoices = await GaapInvoice.find({
-                project: { $in: projectIds }
+            // Calculate payment totals
+            const paymentTotals = payments.reduce((acc, payment) => {
+                return {
+                    totalPaid: acc.totalPaid + (payment.paidAmount || 0),
+                    totalApproved: acc.totalApproved + (payment.approvalAmount || 0)
+                };
+            }, {
+                totalPaid: 0,
+                totalApproved: 0
             });
 
-            // Calculate totals
-            const totalAmount = projects.reduce((sum, project) => sum + (project.totalAmount || 0), 0);
-            const totalPaid = payments.reduce((sum, payment) => sum + (payment.paidAmount || 0), 0);
-            const totalUnpaid = totalAmount - totalPaid;
-            const totalInvoiced = invoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-
-            // Calculate project statistics
-            const projectStats = {
-                total: projects.length,
-                completed: projects.filter(p => p.status === 'Completed').length,
-                inProgress: projects.filter(p => p.status === 'In Progress').length,
-                proposed: projects.filter(p => p.status === 'Proposed').length
-            };
+            // Calculate invoice totals
+            const invoiceTotals = invoices.reduce((acc, invoice) => {
+                return acc + (invoice.total || 0);
+            }, 0);
 
             // Get latest payment and invoice
-            const latestPayment = payments.sort((a, b) => b.createdAt - a.createdAt)[0];
-            const latestInvoice = invoices.sort((a, b) => b.createdAt - a.createdAt)[0];
+            const sortedPayments = payments.sort((a, b) => 
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            const sortedInvoices = invoices.sort((a, b) => 
+                new Date(b.issueDate) - new Date(a.issueDate)
+            );
+
+            const totalUnpaid = projectTotals.totalAmount - paymentTotals.totalPaid;
 
             return {
                 ...customer,
                 financials: {
-                    totalAmount,
-                    totalPaid,
-                    totalUnpaid,
-                    totalInvoiced,
-                    paymentStatus: totalPaid === totalAmount ? 'Fully Paid' : 
-                                 totalPaid === 0 ? 'Not Paid' : 'Partially Paid',
-                    lastPaymentDate: latestPayment?.createdAt || null,
-                    lastInvoiceDate: latestInvoice?.issueDate || null
+                    totalAmount: projectTotals.totalAmount,
+                    totalPaid: paymentTotals.totalPaid,
+                    totalUnpaid: totalUnpaid,
+                    totalInvoiced: invoiceTotals,
+                    totalApproved: paymentTotals.totalApproved,
+                    paymentStatus: getPaymentStatus(paymentTotals.totalPaid, projectTotals.totalAmount),
+                    lastPaymentDate: sortedPayments[0]?.createdAt || null,
+                    lastInvoiceDate: sortedInvoices[0]?.issueDate || null
                 },
-                projects: projectStats,
-                activeProjects: projects.filter(p => p.status === 'In Progress').length,
+                projects: {
+                    total: projectTotals.totalProjects,
+                    completed: projectTotals.completedProjects,
+                    inProgress: projectTotals.inProgressProjects,
+                    proposed: projectTotals.proposedProjects
+                },
+                activeProjects: projectTotals.inProgressProjects,
                 lastInteractionDate: customer.lastInteractionDate || customer.updatedAt
             };
         }));
@@ -107,16 +140,26 @@ const getAllCustomersByAdmin = async (req, res) => {
                 totalAmount: stats.totalAmount + customer.financials.totalAmount,
                 totalPaid: stats.totalPaid + customer.financials.totalPaid,
                 totalUnpaid: stats.totalUnpaid + customer.financials.totalUnpaid,
+                totalApproved: stats.totalApproved + customer.financials.totalApproved,
+                totalInvoiced: stats.totalInvoiced + customer.financials.totalInvoiced,
                 totalProjects: stats.totalProjects + customer.projects.total,
-                activeProjects: stats.activeProjects + customer.activeProjects
+                activeProjects: stats.activeProjects + customer.activeProjects,
+                fullyPaidCustomers: stats.fullyPaidCustomers + (customer.financials.paymentStatus === 'Fully Paid' ? 1 : 0),
+                partiallyPaidCustomers: stats.partiallyPaidCustomers + (customer.financials.paymentStatus === 'Partially Paid' ? 1 : 0),
+                unpaidCustomers: stats.unpaidCustomers + (customer.financials.paymentStatus === 'Not Paid' ? 1 : 0)
             };
         }, {
             totalCustomers: 0,
             totalAmount: 0,
             totalPaid: 0,
             totalUnpaid: 0,
+            totalApproved: 0,
+            totalInvoiced: 0,
             totalProjects: 0,
-            activeProjects: 0
+            activeProjects: 0,
+            fullyPaidCustomers: 0,
+            partiallyPaidCustomers: 0,
+            unpaidCustomers: 0
         });
 
         res.status(200).json({
@@ -134,6 +177,13 @@ const getAllCustomersByAdmin = async (req, res) => {
             error: error.message
         });
     }
+};
+
+// Helper function to determine payment status
+const getPaymentStatus = (paid, total) => {
+    if (paid === 0) return 'Not Paid';
+    if (paid >= total) return 'Fully Paid';
+    return 'Partially Paid';
 };
 
 module.exports = { getAllCustomersByAdmin };
