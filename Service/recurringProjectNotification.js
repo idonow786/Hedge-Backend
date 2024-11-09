@@ -82,36 +82,49 @@ const checkAndNotifyRecurringProjects = async () => {
         for (const project of recurringProjects) {
             console.log(`\nProcessing project: ${project.projectName}`);
             
-            // Get team information
+            // Get team information with null check
             const team = await GaapTeam.findOne({ _id: project.teamId });
-            if (!team) continue;
+            if (!team) {
+                console.log(`No team found for project: ${project.projectName}`);
+                continue;
+            }
 
-            // Get all relevant users to notify
-            const financeManager = await GaapUser.findOne({ 
-                _id: team.FinanceUser.userId,
-                role: 'Finance Manager'
-            });
-            const operationManager = await GaapUser.findOne({ 
-                _id: team.GeneralUser.userId,
-                role: 'Operation Manager'
-            });
-            const adminUser = await GaapUser.findOne({ 
-                _id: team.parentUser.userId,
-                role: 'admin'
-            });
-            
-            // Get additional managers based on project type
-            const additionalManagers = await getAdditionalManagersByProjectType(project.projectType, project.teamId);
+            // Find users by their _id in the team
+            const financeManager = team.members.find(member => 
+                member.role === 'Finance Manager'
+            )?.memberId;
+
+            const operationManager = team.GeneralUser?.userId;
+            const adminUser = team.parentUser?.userId;
+
+            // Get user objects if IDs exist
+            const [financeManagerUser, operationManagerUser, adminUserObj] = await Promise.all([
+                financeManager ? GaapUser.findOne({ 
+                    _id: financeManager,
+                    role: 'Finance Manager',
+                    isActive: true 
+                }) : null,
+                operationManager ? GaapUser.findOne({ 
+                    _id: operationManager,
+                    role: 'Operation Manager',
+                    isActive: true 
+                }) : null,
+                adminUser ? GaapUser.findOne({ 
+                    _id: adminUser,
+                    role: 'admin',
+                    isActive: true 
+                }) : null
+            ]);
 
             const formattedDate = new Date(project.RecurringDate).toLocaleDateString();
             const isPastDue = new Date(project.RecurringDate) < today;
             const urgencyPrefix = isPastDue ? "URGENT: Past due - " : "";
             const notificationMessage = `${urgencyPrefix}Recurring project "${project.projectName}" ${isPastDue ? 'was' : 'is'} due for renewal on ${formattedDate}`;
 
-            // Handle Finance Manager notifications (existing)
-            if (financeManager) {
+            // Handle Finance Manager notifications if exists
+            if (financeManagerUser) {
                 await sendRecurringProjectEmail(
-                    financeManager.email,
+                    financeManagerUser.email,
                     project.projectName,
                     project.RecurringDate,
                     project.customer.name || project.customer.companyName,
@@ -120,7 +133,7 @@ const checkAndNotifyRecurringProjects = async () => {
                 );
 
                 await GaapAlert.create({
-                    user: financeManager._id,
+                    user: financeManagerUser._id,
                     message: `${urgencyPrefix}Recurring project "${project.projectName}" requires financial review. Renewal date: ${formattedDate}`,
                     department: 'Finance',
                     lastSentAt: new Date(),
@@ -129,11 +142,50 @@ const checkAndNotifyRecurringProjects = async () => {
                 });
 
                 await GaapNotification.create({
-                    user: financeManager._id,
+                    user: financeManagerUser._id,
                     message: `${urgencyPrefix}Financial review required for project "${project.projectName}". Renewal date: ${formattedDate}`,
                     department: 'Finance'
                 });
             }
+
+            // Handle Operation Manager notifications
+            if (operationManagerUser) {
+                await GaapAlert.create({
+                    user: operationManagerUser._id,
+                    message: `${notificationMessage}. Please coordinate with the team for review.`,
+                    department: 'Operations',
+                    lastSentAt: new Date(),
+                    sendCount: 1,
+                    isRead: false
+                });
+
+                await GaapNotification.create({
+                    user: operationManagerUser._id,
+                    message: `${notificationMessage}. Please coordinate with the team for review.`,
+                    department: 'Operations'
+                });
+            }
+
+            // Handle Admin notifications
+            if (adminUserObj) {
+                await GaapAlert.create({
+                    user: adminUserObj._id,
+                    message: `${notificationMessage}. Team has been notified for review.`,
+                    department: 'Admin',
+                    lastSentAt: new Date(),
+                    sendCount: 1,
+                    isRead: false
+                });
+
+                await GaapNotification.create({
+                    user: adminUserObj._id,
+                    message: `${notificationMessage}. Team has been notified for review.`,
+                    department: 'Admin'
+                });
+            }
+
+            // Get additional managers based on project type
+            const additionalManagers = await getAdditionalManagersByProjectType(project.projectType, project.teamId);
 
             // Handle additional managers based on project type
             for (const manager of additionalManagers) {
@@ -159,42 +211,6 @@ const checkAndNotifyRecurringProjects = async () => {
                     user: manager._id,
                     message: `${urgencyPrefix}Review required for recurring ${project.projectType} project "${project.projectName}". Renewal date: ${formattedDate}`,
                     department: project.department
-                });
-            }
-
-            // Handle Operation Manager notifications (existing)
-            if (operationManager) {
-                await GaapAlert.create({
-                    user: operationManager._id,
-                    message: `${notificationMessage}. Please coordinate with the team for review.`,
-                    department: 'Operations',
-                    lastSentAt: new Date(),
-                    sendCount: 1,
-                    isRead: false
-                });
-
-                await GaapNotification.create({
-                    user: operationManager._id,
-                    message: `${notificationMessage}. Please coordinate with the team for review.`,
-                    department: 'Operations'
-                });
-            }
-
-            // Handle Admin notifications (existing)
-            if (adminUser) {
-                await GaapAlert.create({
-                    user: adminUser._id,
-                    message: `${notificationMessage}. Team has been notified for review.`,
-                    department: 'Admin',
-                    lastSentAt: new Date(),
-                    sendCount: 1,
-                    isRead: false
-                });
-
-                await GaapNotification.create({
-                    user: adminUser._id,
-                    message: `${notificationMessage}. Team has been notified for review.`,
-                    department: 'Admin'
                 });
             }
 

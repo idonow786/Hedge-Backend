@@ -333,6 +333,7 @@ const getProjects = async (req, res) => {
         createdAt: document.createdAt,
         updatedAt: document.updatedAt
       });
+  
     });
     // Format each project
     // Format each project
@@ -377,7 +378,6 @@ const getProjects = async (req, res) => {
 
         await notification.save();
       }
-
       return {
         ...project,
         totalAmount,
@@ -410,10 +410,15 @@ const getProjects = async (req, res) => {
         invoiceStatus: getInvoiceStatus(totalInvoicedAmount, totalAmount),
         taskProgress:progress,
         products: projectProducts, // Include the full product model here
-        documents: documentMap.get(project._id.toString()) || [] // Include documents
+        documents: documentMap.get(project._id.toString()) || [], // Include documents
+     
+        meetingDate: project.meetingDetails?.meetingDate || null,
+        meetingTime: project.meetingDetails?.meetingTime || null,
+        meetingVenue: project.meetingDetails?.meetingVenue || null,
+        meetingComment: project.meetingDetails?.meetingComment || null,
+        
       };
     }));
-
     // Sort projects based on status priority and startDate
     formattedProjects.sort((a, b) => {
       if (a.status === b.status) {
@@ -547,10 +552,12 @@ const updateProject = async (req, res) => {
       operationsManagerApproval,
       endDate,
       status,
-      meetingDate,
-      meetingTime,
-      meetingVenue,
-      meetingComment,
+      meetingDetails: {
+        meetingDate: meetingDate ? new Date(meetingDate) : undefined,
+        meetingTime: meetingTime || undefined,
+        meetingVenue: meetingVenue || undefined,
+        meetingComment: meetingComment || undefined
+      },
       pricingType,
       totalAmount,
       vatDetails: {
@@ -563,6 +570,11 @@ const updateProject = async (req, res) => {
       ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
       ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
     };
+
+    // Remove undefined meetingDetails if all fields are undefined
+    if (!Object.values(updateData.meetingDetails).some(value => value !== undefined)) {
+      delete updateData.meetingDetails;
+    }
 
     const notificationsToCreate = [];
 
