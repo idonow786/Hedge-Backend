@@ -75,6 +75,10 @@ const getAllProjectsWithPayments = async (req, res) => {
             return {
                 ...project,
                 totalAmount,
+                meetingDate: project.meetingDetails?.meetingDate || null,
+                meetingTime: project.meetingDetails?.meetingTime || null,
+                meetingVenue: project.meetingDetails?.meetingVenue || null,
+                meetingComment: project.meetingDetails?.meetingComment || null,
                 payment: payment ? {
                     totalAmount: payment.totalAmount || totalAmount,
                     paidAmount: payment.paidAmount || 0,
