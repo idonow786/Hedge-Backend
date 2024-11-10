@@ -9,15 +9,25 @@ const getUserAlerts = async (req, res) => {
     const userId = req.adminId;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const now = new Date();
 
     // Get alerts that:
     // 1. Haven't been sent today OR
-    // 2. Are unread from previous days
+    // 2. Are unread from previous days AND
+    // 3. Either have no remindAt date OR remindAt date is in the past
     const alerts = await GaapAlert.find({
       user: userId,
       $or: [
         { lastSentAt: { $lt: today } },
         { isRead: false }
+      ],
+      $and: [
+        {
+          $or: [
+            { remindAt: null },
+            { remindAt: { $lte: now } }
+          ]
+        }
       ]
     }).sort({ createdAt: -1 }).lean();
 
@@ -45,10 +55,28 @@ const markAlertAsRead = async (req, res) => {
   try {
     const userId = req.adminId;
     const { alertId } = req.query;
+    const { event } = req.body;
+
+    let updateData = {};
+    
+    if (event === 'done') {
+      updateData = { 
+        isRead: true,
+        remindAt: null  // Clear any reminder when marked as done
+      };
+    } else if (event === 'remind') {
+      // Set reminder for tomorrow at the same time
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      updateData = { 
+        lastSentAt: new Date(),
+        remindAt: tomorrow
+      };
+    }
 
     const updatedAlert = await GaapAlert.findOneAndUpdate(
       { _id: alertId, user: userId },
-      { isRead: true },
+      updateData,
       { new: true }
     );
 
