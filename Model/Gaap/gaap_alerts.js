@@ -32,6 +32,10 @@ const gaapalertSchema = new Schema({
   sendCount: {
     type: Number,
     default: 0
+  },
+  remindAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
