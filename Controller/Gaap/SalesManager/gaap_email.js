@@ -166,7 +166,7 @@ const generateAndSendProposal = async (req, res) => {
       projectName: project.projectName,
       description: project.description,
       customerName: customer.companyName,
-      contactPerson: customer.contactPerson1.name,
+      contactPerson: `${customer.contactPerson1.title || 'Mr'}. ${customer.contactPerson1.name}`,
       customerEmail: customer.contactPerson1.email,
       customerPhone: customer.contactPerson1.phoneNumber,
       projectType: project.projectType,
@@ -246,10 +246,9 @@ const generateAndSendProposal = async (req, res) => {
 
       const mailOptions = {
         from: sender.email,
-        // to: 'hashmiosama555@gmail.com',
         to: customer.contactPerson1.email,
         subject: "Business Proposal from GAAP",
-        text: `Dear Sir,
+        text: `Dear ${customer.contactPerson1.title || 'Mr'}. ${customer.contactPerson1.name},
 
 Greetings from GAAP
 

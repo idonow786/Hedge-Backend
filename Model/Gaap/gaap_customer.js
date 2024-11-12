@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const gaapcustomerContactSchema = new Schema({
+  title: {
+    type: String,
+    enum: ['Mr', 'Ms', 'Mrs', 'Dr'],
+    default: 'Mr'
+  },
   name: {
     type: String,
   },
@@ -81,6 +86,17 @@ const gaapcustomerSchema = new Schema({
 gaapcustomerSchema.virtual('fullAddress').get(function() {
   const { street, city, state, country, postalCode } = this.address;
   return `${street}, ${city}, ${state}, ${country} ${postalCode}`.trim();
+});
+
+// Virtual for formatted contact person names with titles
+gaapcustomerSchema.virtual('contactPerson1FullName').get(function() {
+  const { title, name } = this.contactPerson1;
+  return `${title}. ${name}`.trim();
+});
+
+gaapcustomerSchema.virtual('contactPerson2FullName').get(function() {
+  const { title, name } = this.contactPerson2;
+  return `${title}. ${name}`.trim();
 });
 
 // Static method to find customers by sales person

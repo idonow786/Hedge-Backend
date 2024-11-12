@@ -22,10 +22,10 @@ const getProjects = async (req, res) => {
         
         // Handle department query based on role
         if (['Tax Executive', 'Tax Supervisor'].includes(userRole)) {
-            // For Tax and ICV Executive, always show VAT Filing department
+            // For Tax and Tax Executive, always show VAT Filing department
             query.department = 'VAT Filing';
-        } else if (['ICV Manager', 'ICV Executive'].includes(userRole)) {
-            // For ICV Manager and Executive, show both their department and Compliance Manager
+        } else if (['Audit Manager', 'Audit Executive'].includes(userRole)) {
+            // For Audit Manager and Executive, show both their department and Compliance Manager
             query.department = { $in: [department, 'Compliance Manager'] };
         } else if (department) {
             // For other roles, use the department from query if provided
