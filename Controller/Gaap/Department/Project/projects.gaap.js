@@ -158,14 +158,14 @@ const getProjects = async (req, res) => {
             const tasksWithUser = await GaapTask.find({ assignedTo: adminId }).distinct('project');
             projects = await GaapProject.find({ ...query, _id: { $in: tasksWithUser } })
                 .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
-                .populate('customer', 'name')
+                .populate('customer')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         } else {
             // Fetch all projects for other roles
             projects = await GaapProject.find(query)
                 .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
-                .populate('customer', 'name')
+                .populate('customer')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         }
