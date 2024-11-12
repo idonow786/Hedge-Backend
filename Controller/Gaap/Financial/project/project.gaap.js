@@ -31,7 +31,7 @@ const getAllProjectsWithPayments = async (req, res) => {
         }
 
         const projects = await GaapProject.find({ teamId: TeamId })
-            .populate('customer', 'name companyName')
+            .populate('customer')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')
             .lean();

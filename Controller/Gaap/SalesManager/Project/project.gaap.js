@@ -40,7 +40,7 @@ const getProjectsAll = async (req, res) => {
 
     // Populate necessary fields
     projects = await GaapProject.populate(projects, [
-      { path: 'customer', select: 'name companyName' },
+      { path: 'customer' },
       { path: 'assignedTo', select: 'fullName' },
       { path: 'salesPerson', select: 'fullName' },
       { path: 'tasks' },

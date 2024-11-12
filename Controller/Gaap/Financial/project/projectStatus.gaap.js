@@ -19,7 +19,7 @@ const quotationController = {
             }
 
             const project = await GaapProject.findById(projectId)
-                .populate('customer', 'name companyName')
+                .populate('customer')
                 .populate('assignedTo', 'name')
                 .populate('salesPerson', 'name')
                 .populate('products.product', 'name');
