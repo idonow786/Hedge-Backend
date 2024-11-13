@@ -9,7 +9,7 @@ const getProjects = async (req, res) => {
         const { department } = req.query;
         const adminId = req.adminId;
         const userRole = req.role;
-        console.log(userRole);
+        console.log('user role : ',userRole);
 
         // Fetch the user's team ID
         const user = await GaapUser.findById(adminId);
@@ -21,16 +21,17 @@ const getProjects = async (req, res) => {
         let query = { teamId, financialApproval: true, operationsManagerApproval: true };
         
         // Handle department query based on role
-        if (['Tax Executive', 'Tax Supervisor'].includes(userRole)) {
-            // For Tax and Tax Executive, always show VAT Filing department
-            query.department = 'VAT Filing';
-        } else if (['Audit Manager', 'Audit Executive'].includes(userRole)) {
-            // For Audit Manager and Executive, show both their department and Compliance Manager
-            query.department = { $in: [department, 'Compliance Manager'] };
-        } else if (department) {
-            // For other roles, use the department from query if provided
+        // if (['Tax Executive', 'Tax Supervisor'].includes(userRole)) {
+        //     // For Tax and Tax Executive, always show VAT Filing department
+        //     query.department = 'VAT Filing';
+        // } else if (['Audit Manager', 'Audit Executive'].includes(userRole)) {
+        //     // For Audit Manager and Executive, show both their department and Compliance Manager
+        //     query.department = { $in: [department, 'Compliance Manager'] };
+        // } else if (department) {
+        //     // For other roles, use the department from query if provided
+        //     query.department = department;
+        // }
             query.department = department;
-        }
 
         let projects;
         const executiveRoles = ['Accounting Executive', 'Audit Executive', 'Tax Executive', 'ICV Executive'];
