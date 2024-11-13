@@ -212,6 +212,31 @@
         margin: 0;
       }
     }
+
+    .client-details {
+      flex: 1;
+    }
+
+    .quote-info {
+      text-align: right;
+      margin-left: 2cm;
+    }
+
+    .quote-info table {
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    .quote-info table td {
+      border: none;
+      padding: 0;
+      padding-left: 15px;
+      white-space: nowrap;
+    }
+
+    .quote-info table td:first-child {
+      padding-left: 0;
+    }
   </style>
 </head>
 <body>
@@ -236,20 +261,29 @@
       ATTENTION
     </div>
     
-    <p id="clientName">{{contactPerson}}</p>
-    <p id="clientCompany">{{customerName}}</p>
-    <p>Mobile: {{customerPhone}}</p>
-    <p>Email: {{customerEmail}}</p>
-    
-    <div class="quote-info">
-      <div>
-        <strong>DATE:</strong> {{currentDate}}
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5cm;">
+      <div class="client-details">
+        <p id="clientName">{{contactPerson}}</p>
+        <p id="clientCompany">{{customerName}}</p>
+        <p>Mobile: {{customerPhone}}</p>
+        <p>Email: {{customerEmail}}</p>
       </div>
-      <div>
-        <strong>QUOTE #:</strong> {{referenceNumber}}
-      </div>
-      <div>
-        <strong>VALID UNTIL:</strong> {{validUntil}}
+      
+      <div class="quote-info">
+        <table style="border: none; width: auto;">
+          <tr>
+            <td><strong>DATE:</strong></td>
+            <td>{{currentDate}}</td>
+          </tr>
+          <tr>
+            <td><strong>QUOTE #:</strong></td>
+            <td>{{referenceNumber}}</td>
+          </tr>
+          <tr>
+            <td><strong>VALID UNTIL:</strong></td>
+            <td>{{validUntil}}</td>
+          </tr>
+        </table>
       </div>
     </div>
     
