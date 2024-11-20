@@ -162,7 +162,122 @@ const DeleteUser = async (req, res) => {
   }
 };
 
+const getAtisUsers = async (req, res) => {
+  try {
+    if (req.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmins can retrieve users.' });
+    }
 
+    const admins = await Admin.find();
+    const gaapUsers = await GaapUser.find({role: 'admin'});
+    const users = [...admins, ...gaapUsers];
 
+    const atisUsersWithData = await Promise.all(users.map(async (user) => {
+      const businesses = await Business.find({ 
+        CompanyActivity: 'atis'
+      });
+      console.log(businesses)
+      // Only include users who have atis businesses
+      if (businesses.length === 0) return null;
 
-module.exports={getAdminProfile,getAllUsersWithBusinesses,DeleteUser}
+      const payments = await Payment.find({ UserID: user._id });
+      let status = 'No Payments';
+      if (payments.length > 0) {
+        status = payments[0].Status;
+      }
+
+      let userObject = user.constructor.modelName === 'GaapUser' ? {
+        _id: user._id,
+        ID: Math.floor(Math.random() * 1000000),
+        Name: user.fullName,
+        Email: user.email,
+        PicUrl: user.profilePhoto,
+        companyActivity: 'gaap',
+        role: user.role,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin
+      } : user.toObject();
+
+      return {
+        ...userObject,
+        userType: user.constructor.modelName,
+        status,
+        payments,
+        businesses
+      };
+    }));
+
+    // Filter out null values and users without atis businesses
+    const filteredUsers = atisUsersWithData.filter(user => user !== null);
+
+    res.status(200).json({ 
+      message: 'Atis users retrieved successfully',
+      count: filteredUsers.length,
+      users: filteredUsers 
+    });
+  } catch (error) {
+    console.error('Error getting atis users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getAccountingUsers = async (req, res) => {
+  try {
+    if (req.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmins can retrieve users.' });
+    }
+
+    const admins = await Admin.find();
+    const gaapUsers = await GaapUser.find({role: 'admin'});
+    const users = [...admins, ...gaapUsers];
+
+    const accountingUsersWithData = await Promise.all(users.map(async (user) => {
+      const businesses = await Business.find({ 
+        CompanyActivity: 'accounting'
+      });
+
+      // Only include users who have accounting businesses
+      if (businesses.length === 0) return null;
+
+      const payments = await Payment.find({ UserID: user._id });
+      let status = 'No Payments';
+      if (payments.length > 0) {
+        status = payments[0].Status;
+      }
+
+      let userObject = user.constructor.modelName === 'GaapUser' ? {
+        _id: user._id,
+        ID: Math.floor(Math.random() * 1000000),
+        Name: user.fullName,
+        Email: user.email,
+        PicUrl: user.profilePhoto,
+        companyActivity: 'gaap',
+        role: user.role,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin
+      } : user.toObject();
+
+      return {
+        ...userObject,
+        userType: user.constructor.modelName,
+        status,
+        payments,
+        businesses
+      };
+    }));
+
+    // Filter out null values and users without accounting businesses
+    const filteredUsers = accountingUsersWithData.filter(user => user !== null);
+
+    res.status(200).json({ 
+      message: 'Accounting users retrieved successfully',
+      count: filteredUsers.length,
+      users: filteredUsers 
+    });
+  } catch (error) {
+    console.error('Error getting accounting users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports={getAdminProfile,getAllUsersWithBusinesses,DeleteUser,getAtisUsers,getAccountingUsers}
