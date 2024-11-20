@@ -596,7 +596,7 @@ const deleteUser = async (req, res) => {
         return res.status(404).json({ message: 'Super Admin not found' });
       }
     } else {
-      user = await GaapUser.findByIdAndDelete(id) || await Admin.findByIdAndDelete(id) || await StaffingUser.findByIdAndDelete(id);
+      user = await GaapUser.findByIdAndDelete(id) || await Admin.findByIdAndDelete(id) || await StaffingUser.findByIdAndDelete(id) || await AccountingUser.findByIdAndDelete(id) || await AtisUser.findByIdAndDelete(id);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
