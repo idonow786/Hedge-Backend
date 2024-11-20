@@ -2,11 +2,11 @@ const Customer = require('../../Model/Customer');
 const CustomerWallet = require('../../Model/CustomerWallet');
 const ProjectC = require('../../Model/projectConstruction');
 const Project = require('../../Model/Project');
+const AMCCustomer = require('../../Model/AMCCustomer');
 const getCustomers = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.adminId
-;
+    const adminId = req.adminId;
 
     let query = { AdminID: adminId };
 
@@ -34,7 +34,14 @@ const getCustomers = async (req, res) => {
       ];
     }
 
-    const customers = await Customer.find(query);
+    const [regularCustomers, amcCustomers] = await Promise.all([
+      Customer.find(query),
+      AMCCustomer.find(query)
+    ]);
+
+    const customers = [...regularCustomers, ...amcCustomers];
+
+    customers.sort((a, b) => new Date(b.DateJoined) - new Date(a.DateJoined));
 
     res.status(200).json({
       message: 'Customers retrieved successfully',
@@ -53,8 +60,11 @@ const getCustomerWalletData = async (req, res) => {
     const { customerId } = req.body;
     const adminId = req.adminId;
 
-    const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
+    let customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 
+    if (!customer) {
+      const customer = await AMCCustomer.findOne({ _id: customerId, AdminID: adminId });
+    }
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
