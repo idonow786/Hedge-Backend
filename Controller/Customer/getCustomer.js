@@ -1,13 +1,12 @@
 const Customer = require('../../Model/Customer');
-const AMCCustomer = require('../../Model/AMCCustomer');
 const CustomerWallet = require('../../Model/CustomerWallet');
 const ProjectC = require('../../Model/projectConstruction');
 const Project = require('../../Model/Project');
-
 const getCustomers = async (req, res) => {
   try {
     const { startDate, endDate, search } = req.body;
-    const adminId = req.adminId;
+    const adminId = req.adminId
+;
 
     let query = { AdminID: adminId };
 
@@ -35,35 +34,11 @@ const getCustomers = async (req, res) => {
       ];
     }
 
-    // Get both regular customers and AMC customers
-    const [customers, amcCustomers] = await Promise.all([
-      Customer.find(query),
-      AMCCustomer.find(query)
-    ]);
-
-    // Format the response
-    const formattedCustomers = customers.map(customer => ({
-      ...customer.toObject(),
-      customerType: 'regular'
-    }));
-
-    const formattedAMCCustomers = amcCustomers.map(customer => ({
-      ...customer.toObject(),
-      customerType: 'amc'
-    }));
-
-    // Combine both types of customers
-    const allCustomers = [...formattedCustomers, ...formattedAMCCustomers];
-
-    // Sort by DateJoined (newest first)
-    allCustomers.sort((a, b) => new Date(b.DateJoined) - new Date(a.DateJoined));
+    const customers = await Customer.find(query);
 
     res.status(200).json({
       message: 'Customers retrieved successfully',
-      totalCount: allCustomers.length,
-      regularCustomersCount: customers.length,
-      amcCustomersCount: amcCustomers.length,
-      customers: allCustomers
+      customers,
     });
   } catch (error) {
     console.error('Error retrieving customers:', error);
@@ -78,10 +53,7 @@ const getCustomerWalletData = async (req, res) => {
     const { customerId } = req.body;
     const adminId = req.adminId;
 
-    const customer = await Promise.any([
-      Customer.findOne({ _id: customerId, AdminID: adminId }),
-      AMCCustomer.findOne({ _id: customerId, AdminID: adminId })
-    ]);
+    const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
