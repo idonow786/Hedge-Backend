@@ -3,7 +3,7 @@ const router = express.Router();
 const {signup,signin, updateUser,deleteUser} = require('../Controller/Admin/Registration');
 const { verifyOtp,generateOtp,updatePassword } = require('../Controller/Admin/ForgetPassword');
 const {deletePayment,updatePayment,addPayment,getPayments} = require('../Controller/Admin/paymentController');
-const {getAdminProfile,getAllUsersWithBusinesses,DeleteUser} = require('../Controller/Admin/profile');
+const {getAdminProfile,getAllUsersWithBusinesses,DeleteUser,getAtisUsers,getAccountingUsers} = require('../Controller/Admin/profile');
 const {updateAdminProfile} = require('../Controller/Admin/updateProfile');
 const {verifyToken} = require('../Middleware/jwt');
 const multer = require('multer');
@@ -41,6 +41,8 @@ router.post('/update/password', updatePassword);                                
 router.post('/all/users',verifyToken, getAllUsersWithBusinesses);                                                                          //working
 router.delete('/users',verifyToken, DeleteUser);                                                                          //working
 
+router.get('/users/atis', verifyToken, getAtisUsers);
+router.get('/users/accounting', verifyToken, getAccountingUsers);
 
 router.post('/payment',verifyToken, addPayment);                                                                          //working
 router.put('/payment/update',verifyToken, updatePayment);                                                                          //working
