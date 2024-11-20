@@ -5,6 +5,8 @@ const Payment = require('../../Model/Payment');
 const Staff = require('../../Model/Staff');
 const Project = require('../../Model/Project');
 const GaapUser = require('../../Model/Gaap/gaap_user'); 
+const AccountingUser = require('../../Model/Accounting/accounting_user'); 
+const ATISUser = require('../../Model/ATIS/atis_user'); 
 
 const getAdminProfile = async (req, res) => {
   try {
@@ -169,7 +171,7 @@ const getAtisUsers = async (req, res) => {
     }
 
     const admins = await Admin.find();
-    const gaapUsers = await GaapUser.find({role: 'admin'});
+    const gaapUsers = await ATISUser.find({role: 'admin'});
     const users = [...admins, ...gaapUsers];
 
     const atisUsersWithData = await Promise.all(users.map(async (user) => {
@@ -186,13 +188,13 @@ const getAtisUsers = async (req, res) => {
         status = payments[0].Status;
       }
 
-      let userObject = user.constructor.modelName === 'GaapUser' ? {
+      let userObject = user.constructor.modelName === 'ATISUser' ? {
         _id: user._id,
         ID: Math.floor(Math.random() * 1000000),
         Name: user.fullName,
         Email: user.email,
         PicUrl: user.profilePhoto,
-        companyActivity: 'gaap',
+        companyActivity: 'atis',
         role: user.role,
         isActive: user.isActive,
         lastLogin: user.lastLogin
@@ -228,7 +230,7 @@ const getAccountingUsers = async (req, res) => {
     }
 
     const admins = await Admin.find();
-    const gaapUsers = await GaapUser.find({role: 'admin'});
+    const gaapUsers = await AccountingUser.find({role: 'admin'});
     const users = [...admins, ...gaapUsers];
 
     const accountingUsersWithData = await Promise.all(users.map(async (user) => {
@@ -245,13 +247,13 @@ const getAccountingUsers = async (req, res) => {
         status = payments[0].Status;
       }
 
-      let userObject = user.constructor.modelName === 'GaapUser' ? {
+      let userObject = user.constructor.modelName === 'AccountingUser' ? {
         _id: user._id,
         ID: Math.floor(Math.random() * 1000000),
         Name: user.fullName,
         Email: user.email,
         PicUrl: user.profilePhoto,
-        companyActivity: 'gaap',
+        companyActivity: 'accounting',
         role: user.role,
         isActive: user.isActive,
         lastLogin: user.lastLogin
