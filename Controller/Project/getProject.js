@@ -83,11 +83,11 @@ const getProjectsByCustomerId = async (req, res) => {
       };
     }));
 
-    const allProjects = [...projectsWithCost, ...projectsCWithCost];
-    console.log(allProjects)
+    const allProjects1 = [...projectsWithCost, ...projectsCWithCost];
+    console.log(allProjects1)
     res.status(200).json({
       message: 'Projects retrieved successfully',
-      projects: allProjects,
+      allProjects: allProjects1,
     });
   } catch (error) {
     console.error('Error retrieving projects:', error);

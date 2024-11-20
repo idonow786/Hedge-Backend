@@ -7,7 +7,6 @@ const customPropertySchema = new mongoose.Schema({
   },
   propertyType: {
     type: String,
-    enum: ['string', 'date'],
     required: true
   },
   propertyValue: {
