@@ -57,8 +57,8 @@ const getAtisBusinesses = async (req, res) => {
     const adminId = req.adminId;
 
     let query = { 
-      // AdminID: adminId,
-      CompanyActivity: 'atis'
+      AdminID: adminId,
+      CompanyActivity: { $regex: '^atis$', $options: 'i' }
     };
 
     if (startDate && endDate) {
@@ -69,7 +69,6 @@ const getAtisBusinesses = async (req, res) => {
     } else if (startDate) {
       query.Date = {
         $gte: new Date(startDate),
-        $lte: new Date(startDate),
       };
     } else if (endDate) {
       query.Date = {
@@ -88,15 +87,15 @@ const getAtisBusinesses = async (req, res) => {
       ];
     }
 
-    const businesses = await Business.find(query);
+    const businesses = await Business.find(query).sort({ Date: -1 });
 
     res.status(200).json({
-      message: 'Atis businesses retrieved successfully',
+      message: 'ATIS businesses retrieved successfully',
       count: businesses.length,
       businesses,
     });
   } catch (error) {
-    console.error('Error retrieving atis businesses:', error);
+    console.error('Error retrieving ATIS businesses:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -119,7 +118,6 @@ const getAccountingBusinesses = async (req, res) => {
     } else if (startDate) {
       query.Date = {
         $gte: new Date(startDate),
-        $lte: new Date(startDate),
       };
     } else if (endDate) {
       query.Date = {
@@ -138,7 +136,7 @@ const getAccountingBusinesses = async (req, res) => {
       ];
     }
 
-    const businesses = await Business.find(query);
+    const businesses = await Business.find(query).sort({ Date: -1 });
 
     res.status(200).json({
       message: 'Accounting businesses retrieved successfully',
