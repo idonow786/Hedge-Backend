@@ -1,9 +1,24 @@
 const mongoose = require('mongoose');
 
+const customPropertySchema = new mongoose.Schema({
+  propertyName: {
+    type: String,
+    required: true
+  },
+  propertyType: {
+    type: String,
+    enum: ['string', 'date'],
+    required: true
+  },
+  propertyValue: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  }
+});
+
 const amccustomerSchema = new mongoose.Schema({
   ID: {
     type: Number,
-    
   },
   Name: {
     type: String,
@@ -46,6 +61,23 @@ const amccustomerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
   },
+  customProperties: [customPropertySchema]
+});
+
+// Middleware to validate property values based on type
+amccustomerSchema.pre('save', function(next) {
+  if (this.customProperties) {
+    for (const prop of this.customProperties) {
+      if (prop.propertyType === 'date' && !(prop.propertyValue instanceof Date)) {
+        try {
+          prop.propertyValue = new Date(prop.propertyValue);
+        } catch (error) {
+          return next(new Error(`Invalid date value for property: ${prop.propertyName}`));
+        }
+      }
+    }
+  }
+  next();
 });
 
 const AMCCustomer = mongoose.model('AMCCustomer', amccustomerSchema);
