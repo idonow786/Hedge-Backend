@@ -5,8 +5,8 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addAMCCustomer = async (req, res) => {
   try {
-    const { Name, Email, PhoneNo, CompanyName, DateJoined, DateofBirth } = req.body;
-
+    const { Name, Email, PhoneNo, CompanyName, DateJoined, DateofBirth, customProperties } = req.body;
+    console.log(req.body)
     if (!Name || !Email || !PhoneNo || !CompanyName) {
       return res.status(400).json({ message: 'Name, Email, PhoneNo, and CompanyName are required' });
     }
@@ -42,6 +42,37 @@ const addAMCCustomer = async (req, res) => {
       }
     }
 
+    // Parse customProperties if it's a string
+    let parsedCustomProperties;
+    if (customProperties) {
+      try {
+        parsedCustomProperties = typeof customProperties === 'string' 
+          ? JSON.parse(customProperties) 
+          : customProperties;
+
+        if (!Array.isArray(parsedCustomProperties)) {
+          return res.status(400).json({ message: 'customProperties must be an array' });
+        }
+        
+        for (const prop of parsedCustomProperties) {
+          if (!prop.propertyName || !prop.propertyType || prop.propertyValue === undefined) {
+            return res.status(400).json({ 
+              message: 'Each custom property must have propertyName, propertyType, and propertyValue' 
+            });
+          }
+          if (!['string', 'date'].includes(prop.propertyType)) {
+            return res.status(400).json({ 
+              message: 'propertyType must be either "string" or "date"' 
+            });
+          }
+        }
+      } catch (error) {
+        return res.status(400).json({ 
+          message: 'Invalid customProperties format. Must be a valid JSON array' 
+        });
+      }
+    }
+
     const newAMCCustomer = new AMCCustomer({
       ID,
       Name,
@@ -52,7 +83,8 @@ const addAMCCustomer = async (req, res) => {
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       PicUrl: picUrl,
       DocumentsUrls: documentUrls,
-      AdminID: req.adminId
+      AdminID: req.adminId,
+      customProperties: parsedCustomProperties || []
     });
 
     const savedCustomer = await newAMCCustomer.save();

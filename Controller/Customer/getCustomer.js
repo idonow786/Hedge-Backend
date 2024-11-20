@@ -5,7 +5,7 @@ const Project = require('../../Model/Project');
 const AMCCustomer = require('../../Model/AMCCustomer');
 const getCustomers = async (req, res) => {
   try {
-    const { startDate, endDate, search } = req.body;
+    const { startDate, endDate, search, customPropertySearch } = req.body;
     const adminId = req.adminId;
 
     let query = { AdminID: adminId };
@@ -32,6 +32,18 @@ const getCustomers = async (req, res) => {
         { Email: { $regex: search, $options: 'i' } },
         { PhoneNo: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    if (customPropertySearch) {
+      const { propertyName, propertyValue } = customPropertySearch;
+      if (propertyName && propertyValue) {
+        query['customProperties'] = {
+          $elemMatch: {
+            propertyName,
+            propertyValue: { $regex: propertyValue, $options: 'i' }
+          }
+        };
+      }
     }
 
     const [regularCustomers, amcCustomers] = await Promise.all([
@@ -63,7 +75,7 @@ const getCustomerWalletData = async (req, res) => {
     let customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
 
     if (!customer) {
-      const customer = await AMCCustomer.findOne({ _id: customerId, AdminID: adminId });
+      customer = await AMCCustomer.findOne({ _id: customerId, AdminID: adminId });
     }
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
