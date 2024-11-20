@@ -84,7 +84,7 @@ const getProjectsByCustomerId = async (req, res) => {
     }));
 
     const allProjects = [...projectsWithCost, ...projectsCWithCost];
-
+    console.log(allProjects)
     res.status(200).json({
       message: 'Projects retrieved successfully',
       projects: allProjects,
