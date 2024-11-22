@@ -294,6 +294,14 @@ const signup = async (req, res) => {
 
       await newBusiness.save();
     }
+
+    let loginUrl = 'https://ido-crm.netlify.app/';
+    if (CompanyActivity === 'atis') {
+      loginUrl = 'https://atis-crm.netlify.app/';
+    } else if (CompanyActivity === 'accounting') {
+      loginUrl = 'https://accounting-ido.netlify.app/';
+    }
+
     const mailOptions = {
       from: process.env.Email_Sender,
       to: email,
@@ -374,7 +382,7 @@ const signup = async (req, res) => {
                 <p><strong>Password:</strong> ${password}</p>
               </div>
               
-              <a href="https://ido-crm.netlify.app/" class="btn">Log In to Your Account</a>
+              <a href="${loginUrl}" class="btn">Log In to Your Account</a>
               
               <h3>What You Can Expect:</h3>
               <ul>
