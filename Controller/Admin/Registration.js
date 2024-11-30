@@ -16,6 +16,7 @@ const AccountingUser = require('../../Model/Accounting/accounting_user');
 const AccountingTeam = require('../../Model/Accounting/accounting_team');
 const AtisUser = require('../../Model/ATIS/atis_user');
 const AtisTeam = require('../../Model/ATIS/atis_team');
+const AtisCustomer = require('../../Model/ATIS/atis_customer');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -722,45 +723,51 @@ const signin = async (req, res) => {
     let totals = null;
     let business = null;
 
-    // Check GAAP User
-    user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+    // First check if it's an ATIS customer
+    user = await AtisCustomer.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
     if (user) {
-      secretKey = user.role === 'admin' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
-      business = await Business.findOne({ AdminID: user._id });
+      secretKey = process.env.JWT_ATIS_CUSTOMER;
     } else {
-      // Check Staffing User
-      user = await StaffingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+      // Check GAAP User
+      user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
       if (user) {
-        secretKey = user.role === 'Admin' ? process.env.JWT_SECRET_STAFFING : process.env.JWT_SECRET_STAFFING_USER;
+        secretKey = user.role === 'admin' ? process.env.JWT_SECRET_GAAP : process.env.JWT_SECRET_GAAP_USER;
         business = await Business.findOne({ AdminID: user._id });
       } else {
-        // Check Accounting User
-        user = await AccountingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+        // Check Staffing User
+        user = await StaffingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
         if (user) {
-          secretKey = user.role === 'admin' ? process.env.JWT_ACCOUNTING : process.env.JWT_ACCOUNTING_USER;
+          secretKey = user.role === 'Admin' ? process.env.JWT_SECRET_STAFFING : process.env.JWT_SECRET_STAFFING_USER;
           business = await Business.findOne({ AdminID: user._id });
         } else {
-          // Check ATIS User
-          user = await AtisUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+          // Check Accounting User
+          user = await AccountingUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
           if (user) {
-            secretKey = user.role === 'admin' ? process.env.JWT_ATIS_USER : process.env.JWT_ATIS_USER;
+            secretKey = user.role === 'admin' ? process.env.JWT_ACCOUNTING : process.env.JWT_ACCOUNTING_USER;
             business = await Business.findOne({ AdminID: user._id });
           } else {
-            // Check SuperAdmin
-            user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+            // Check ATIS User
+            user = await AtisUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
             if (user) {
-              secretKey = process.env.JWT_SECRET_Super;
+              secretKey = user.role === 'admin' ? process.env.JWT_ATIS_USER : process.env.JWT_ATIS_USER;
+              business = await Business.findOne({ AdminID: user._id });
             } else {
-              // Check Admin
-              user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+              // Check SuperAdmin
+              user = await SuperAdmin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
               if (user) {
-                secretKey = process.env.JWT_SECRET;
-                business = await Business.findOne({ AdminID: user._id });
+                secretKey = process.env.JWT_SECRET_Super;
               } else {
-                // Check Vendor
-                user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+                // Check Admin
+                user = await Admin.findOne({ Email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
                 if (user) {
-                  secretKey = process.env.JWT_SECRET_VENDOR;
+                  secretKey = process.env.JWT_SECRET;
+                  business = await Business.findOne({ AdminID: user._id });
+                } else {
+                  // Check Vendor
+                  user = await Vendor.findOne({ 'contactInformation.email': { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+                  if (user) {
+                    secretKey = process.env.JWT_SECRET_VENDOR;
+                  }
                 }
               }
             }
@@ -778,14 +785,21 @@ const signin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user is active
-    if ((user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser') && !user.isActive) {
+    // Check if user is active (for ATIS customers as well)
+    if ((user.constructor.modelName === 'GaapUser' || 
+         user.constructor.modelName === 'StaffingUser' || 
+         user.constructor.modelName === 'AccountingUser' ||
+         user.constructor.modelName === 'Atis_Customer') && !user.isActive) {
       return res.status(403).json({ message: 'Account is inactive. Please contact an administrator.' });
     }
 
-    // Check payment status for non-superadmin and non-vendor users
+    // Payment check (excluding ATIS customers)
     if (user.role !== 'superadmin' && user.role !== 'vendor' && 
-        user.constructor.modelName !== 'GaapUser' && user.constructor.modelName !== 'StaffingUser' && user.constructor.modelName !== 'AccountingUser' && user.constructor.modelName !== 'ATISUser') {
+        user.constructor.modelName !== 'GaapUser' && 
+        user.constructor.modelName !== 'StaffingUser' && 
+        user.constructor.modelName !== 'AccountingUser' && 
+        user.constructor.modelName !== 'ATISUser' &&
+        user.constructor.modelName !== 'Atis_Customer') {
       const payment = await Payment.findOne({ UserID: user._id });
       
       // Uncomment the following lines if you want to enforce payment check
@@ -810,14 +824,18 @@ const signin = async (req, res) => {
         userId: user._id,
         username: user.username || user.Name || user.name,
         email: user.email || user.Email || user.contactInformation?.email,
-        role: user.role
+        role: user.constructor.modelName === 'Atis_Customer' ? 'client' : user.role,
+        customerType: user.constructor.modelName === 'Atis_Customer' ? user.customerType : undefined
       },
       secretKey,
       { expiresIn: '30d' }
     );
 
-    // Update last login for GAAP, Staffing, and Accounting users
-    if (user.constructor.modelName === 'GaapUser' || user.constructor.modelName === 'StaffingUser' || user.constructor.modelName === 'AccountingUser' || user.constructor.modelName === 'ATISUser' ) {
+    // Update last login time if needed
+    if (user.constructor.modelName === 'GaapUser' || 
+        user.constructor.modelName === 'StaffingUser' || 
+        user.constructor.modelName === 'AccountingUser' || 
+        user.constructor.modelName === 'ATISUser') {
       user.lastLogin = new Date();
       await user.save();
     }
@@ -825,26 +843,39 @@ const signin = async (req, res) => {
     const response = {
       message: 'Login successful',
       token,
-      role: user.role,
+      role: user.constructor.modelName === 'Atis_Customer' ? 'customer' : user.role,
       features,
       totals,
       user: {
         id: user._id,
         username: user.username || user.Name || user.name,
         email: user.email || user.Email || user.contactInformation?.email,
-        role: user.role,
+        role: user.constructor.modelName === 'Atis_Customer' ? 'customer' : user.role,
         fullName: user.fullName,
         department: user.department || '',
-        CompanyActivity: user.constructor.modelName === 'GaapUser' ? 'Gaap' : 
-                         user.constructor.modelName === 'StaffingUser' ? 'Staffing' : 
-                         user.constructor.modelName === 'AccountingUser' ? 'Accounting' :
-                         user.constructor.modelName === 'ATISUser' ? 'atis' :
-                         (user.companyActivity || '')
-      }
+        CompanyActivity: user.constructor.modelName === 'Atis_Customer' ? 'atis' :
+                        user.constructor.modelName === 'GaapUser' ? 'Gaap' : 
+                        user.constructor.modelName === 'StaffingUser' ? 'Staffing' : 
+                        user.constructor.modelName === 'AccountingUser' ? 'Accounting' :
+                        user.constructor.modelName === 'ATISUser' ? 'atis' :
+                        (user.companyActivity || '')
+        }
     };
 
     if (business) {
       response.business = business;
+    }
+
+    // Add customer-specific information if it's an ATIS customer
+    if (user.constructor.modelName === 'Atis_Customer') {
+      response.user = {
+        ...response.user,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        corporateDetails: user.customerType === 'corporate' ? user.corporateDetails : undefined,
+        preferredLanguage: user.preferredLanguage,
+        currency: user.currency
+      };
     }
 
     res.status(200).json(response);
