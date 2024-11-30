@@ -723,10 +723,12 @@ const signin = async (req, res) => {
     let totals = null;
     let business = null;
 
-    // First check if it's an ATIS customer
-    user = await AtisCustomer.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
+    // First check if it's an ATIS customer - Modified to include password field
+    user = await AtisCustomer.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } })
+      .select('+password'); // Explicitly include password field
+    
     if (user) {
-      secretKey = process.env.JWT_ATIS_CUSTOMER;
+      secretKey = process.env.JWT_ATIS_USER;
     } else {
       // Check GAAP User
       user = await GaapUser.findOne({ email: { $regex: new RegExp(`^${lowercaseEmail}$`, 'i') } });
@@ -843,14 +845,14 @@ const signin = async (req, res) => {
     const response = {
       message: 'Login successful',
       token,
-      role: user.constructor.modelName === 'Atis_Customer' ? 'customer' : user.role,
+      role: user.constructor.modelName === 'Atis_Customer' ? 'client' : user.role,
       features,
       totals,
       user: {
         id: user._id,
         username: user.username || user.Name || user.name,
         email: user.email || user.Email || user.contactInformation?.email,
-        role: user.constructor.modelName === 'Atis_Customer' ? 'customer' : user.role,
+        role: user.constructor.modelName === 'Atis_Customer' ? 'client' : user.role,
         fullName: user.fullName,
         department: user.department || '',
         CompanyActivity: user.constructor.modelName === 'Atis_Customer' ? 'atis' :
