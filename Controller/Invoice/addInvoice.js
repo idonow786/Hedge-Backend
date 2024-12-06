@@ -29,6 +29,7 @@ const createInvoice = async (req, res) => {
       Vat,
       InvoiceTotal,
       Description,
+      customProperties
     } = req.body;
     const adminId = req.adminId;
 
@@ -74,6 +75,17 @@ const createInvoice = async (req, res) => {
       }
     }
 
+    let validatedCustomProperties = [];
+    if (customProperties && Array.isArray(customProperties)) {
+      validatedCustomProperties = customProperties
+        .map(prop => ({
+          propertyName: prop.propertyName,
+          propertyType: prop.propertyType,
+          value: prop.value
+        }))
+        .filter(prop => prop.propertyName && prop.propertyType);
+    }
+
     const newInvoice = new Invoice({
       ID,
       OrderNumber,
@@ -90,6 +102,7 @@ const createInvoice = async (req, res) => {
       InvoiceTotal,
       Description,
       AdminID: adminId,
+      customProperties: validatedCustomProperties
     });
 
     const savedInvoice = await newInvoice.save();
@@ -128,6 +141,20 @@ const createInvoice = async (req, res) => {
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
     sendSmtpEmail.subject = 'Invoice Details';
+    const customPropertiesHtml = validatedCustomProperties.length > 0 
+      ? `
+        <tr>
+          <th colspan="2" style="background-color: #f5f5f5;">Custom Properties</th>
+        </tr>
+        ${validatedCustomProperties.map(prop => `
+          <tr>
+            <th>${prop.propertyName}</th>
+            <td>${prop.value}</td>
+          </tr>
+        `).join('')}
+      `
+      : '';
+
     sendSmtpEmail.htmlContent = `
     <html>
     <head>
@@ -219,6 +246,7 @@ const createInvoice = async (req, res) => {
             <th>Description</th>
             <td>${savedInvoice.Description}</td>
           </tr>
+          ${customPropertiesHtml}
         </table>
         <div class="footer">
           Thank you for your business!

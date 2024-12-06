@@ -59,6 +59,20 @@ const invoiceSchema = new mongoose.Schema({
   Description: {
     type: String,
   },
+  customProperties: [{
+    propertyName: {
+      type: String,
+      required: true
+    },
+    propertyType: {
+      type: String,
+      enum: ['string', 'number', 'boolean'],
+      required: true
+    },
+    value: {
+      type: mongoose.Schema.Types.Mixed
+    }
+  }]
 });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);

@@ -4,8 +4,18 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const updateCustomer = async (req, res) => {
     try {
-        const customerId = req.body.id; 
-        const { Name, Email, PhoneNo, Number, CompanyName, DateJoined, DateofBirth } = req.body;
+        const customerId = req.body.id;
+        const { 
+            Name, 
+            Email, 
+            PhoneNo, 
+            Number, 
+            CompanyName, 
+            DateJoined, 
+            DateofBirth,
+            customProperties,
+            removeDocuments
+        } = req.body;
         const adminId = req.adminId;
 
         const customer = await Customer.findOne({ _id: customerId, AdminID: adminId });
@@ -37,7 +47,24 @@ const updateCustomer = async (req, res) => {
             }
         }
 
-        // Update other fields if provided
+        if (removeDocuments && Array.isArray(removeDocuments)) {
+            customer.DocumentsUrls = customer.DocumentsUrls.filter(
+                url => !removeDocuments.includes(url)
+            );
+        }
+
+        if (customProperties && Array.isArray(customProperties)) {
+            const validatedCustomProperties = customProperties
+                .map(prop => ({
+                    propertyName: prop.propertyName,
+                    propertyType: prop.propertyType,
+                    value: prop.value
+                }))
+                .filter(prop => prop.propertyName && prop.propertyType);
+
+            customer.customProperties = validatedCustomProperties;
+        }
+
         if (Name) customer.Name = Name;
         if (Email) customer.Email = Email;
         if (PhoneNo) customer.PhoneNo = PhoneNo;
