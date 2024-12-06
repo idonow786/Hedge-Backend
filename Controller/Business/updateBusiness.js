@@ -1,4 +1,5 @@
 const Business = require('../../Model/Business');
+const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 const updateBusiness = async (req, res) => {
   try {
@@ -16,7 +17,6 @@ const updateBusiness = async (req, res) => {
       Services,
       Products,
       ServiceandProduct,
-      features 
     } = req.body;
 
     const adminId = req.adminId;
@@ -31,6 +31,23 @@ const updateBusiness = async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
+    // Handle logo upload if file is present
+    if (req.file) {
+      try {
+        // Convert buffer to base64
+        const base64Image = req.file.buffer.toString('base64');
+        const contentType = req.file.mimetype;
+
+        // Upload to Firebase
+        const logoUrl = await uploadImageToFirebase(base64Image, contentType);
+        business.LogoURL = logoUrl;
+      } catch (uploadError) {
+        console.error('Error uploading logo:', uploadError);
+        return res.status(500).json({ message: 'Error uploading logo' });
+      }
+    }
+
+    // Update other fields
     business.BusinessName = BusinessName || business.BusinessName;
     business.BusinessAddress = BusinessAddress || business.BusinessAddress;
     business.BusinessPhoneNo = BusinessPhoneNo || business.BusinessPhoneNo;
@@ -42,15 +59,23 @@ const updateBusiness = async (req, res) => {
     business.YearofEstablishment = YearofEstablishment || business.YearofEstablishment;
     business.BusinessType = BusinessType || business.BusinessType;
 
+    // Update business type specific fields
     if (BusinessType === 'Services') {
       business.Services = Services || business.Services;
+      // Clear other fields
+      business.Products = [];
+      business.ServiceandProduct = [];
     } else if (BusinessType === 'Product') {
       business.Products = Products || business.Products;
+      // Clear other fields
+      business.Services = [];
+      business.ServiceandProduct = [];
     } else if (BusinessType === 'ServicesNProducts') {
       business.ServiceandProduct = ServiceandProduct || business.ServiceandProduct;
+      // Clear other fields
+      business.Services = [];
+      business.Products = [];
     }
-
-
 
     const updatedBusiness = await business.save();
 

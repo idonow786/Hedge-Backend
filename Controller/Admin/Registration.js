@@ -14,6 +14,9 @@ const StaffingTeam = require('../../Model/Staffing/staffing_team');
 const StaffingUser = require('../../Model/Staffing/staffing_user');
 const AccountingUser = require('../../Model/Accounting/accounting_user');
 const AccountingTeam = require('../../Model/Accounting/accounting_team');
+const SalesUser = require('../../Model/Sales/Sales_user');
+const SalesTeam = require('../../Model/Sales/Sales_team');
+
 const AtisUser = require('../../Model/ATIS/atis_user');
 const AtisTeam = require('../../Model/ATIS/atis_team');
 const AtisCustomer = require('../../Model/ATIS/atis_customer');
@@ -93,6 +96,57 @@ const signup = async (req, res) => {
       console.log(savedBusiness)
 
       const newTeam = new GaapTeam({
+        teamName: `${businessName} Team`,
+        businessId: savedBusiness._id,
+        parentUser: {
+          userId: savedUser._id,
+          name: username,
+          role: 'admin'
+        },
+        members: []
+      });
+      newUser.teamId = newTeam._id
+      await newUser.save()
+      await newTeam.save();
+
+      console.log("team ", newTeam)
+    }
+    else if (CompanyActivity === 'sales') {
+      console.log('working sales')
+      existingUser = await SalesUser.findOne({ email: email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Sales User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      newUser = new SalesUser({
+        username: username,
+        email: email,
+        password: hashedPassword,
+        fullName: username,
+        role: 'admin',
+      });
+
+      savedUser = await newUser.save();
+
+      const newBusiness = new Business({
+        AdminID: savedUser._id,
+        BusinessName: businessName,
+        BusinessAddress: BusinessAddress,
+        BusinessPhoneNo: BusinessPhoneNo,
+        BusinessEmail: BusinessEmail,
+        OwnerName: OwnerName,
+        YearofEstablishment: YearofEstablishment,
+        BusinessType: BusinessType,
+        CompanyType: CompanyType,
+        CompanyActivity: CompanyActivity
+      });
+
+      const savedBusiness = await newBusiness.save();
+      console.log(savedBusiness)
+
+      const newTeam = new SalesTeam({
         teamName: `${businessName} Team`,
         businessId: savedBusiness._id,
         parentUser: {

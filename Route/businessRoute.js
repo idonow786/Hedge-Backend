@@ -7,18 +7,27 @@ const {getBusinesss, getAtisBusinesses, getAccountingBusinesses} = require('../C
 const {verifyToken} = require('../Middleware/jwt');
 const multer = require('multer');
 
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not an image! Please upload an image.'), false);
+    }
+  }
+});
 
-
-
-  
-
-
-router.post('/add', verifyToken, addBusiness);                                                      //working
-router.put('/update', verifyToken, updateBusiness);                                                //working
-router.delete('/remove', verifyToken, deleteBusiness);                                                //working
-router.get('/get', verifyToken, getBusinesss);                                                        //working
-router.get('/get-atis', verifyToken, getAtisBusinesses);                                            //new route
-router.get('/get-accounting', verifyToken, getAccountingBusinesses);                                //new route
+router.post('/add', verifyToken, addBusiness);
+router.put('/update', verifyToken, upload.single('logo'), updateBusiness);
+router.delete('/remove', verifyToken, deleteBusiness);
+router.get('/get', verifyToken, getBusinesss);
+router.get('/get-atis', verifyToken, getAtisBusinesses);
+router.get('/get-accounting', verifyToken, getAccountingBusinesses);
  
 module.exports = router;
 
