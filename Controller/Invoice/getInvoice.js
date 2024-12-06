@@ -60,6 +60,7 @@ const getInvoices = async (req, res) => {
         BusinessDetails: business ? {
           ID: business.ID,
           BusinessName: business.BusinessName,
+          BusinessLogo: business.LogoURL,
           BusinessEmail: business.BusinessEmail,
         } : null,
       };

@@ -11,6 +11,9 @@ const businessSchema = new mongoose.Schema({
   BusinessName: {
     type: String,
   },
+  LogoURL: {
+    type: String,
+  },
   BusinessAddress: {
     type: String,
   },
