@@ -46,6 +46,20 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
   },
+  customProperties: [{
+    propertyName: {
+      type: String,
+      required: true
+    },
+    propertyType: {
+      type: String,
+      enum: ['string', 'number', 'boolean'],
+      required: true
+    },
+    value: {
+      type: mongoose.Schema.Types.Mixed
+    }
+  }]
 });
 
 const Customer = mongoose.model('Customer', customerSchema);

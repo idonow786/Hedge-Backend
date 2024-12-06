@@ -6,7 +6,15 @@ const { uploadFileToFirebase } = require('../../Firebase/uploadFileToFirebase');
 
 const addCustomer = async (req, res) => {
   try {
-    const { Name, Email, PhoneNo, CompanyName, DateJoined, DateofBirth } = req.body;
+    const { 
+      Name, 
+      Email, 
+      PhoneNo, 
+      CompanyName, 
+      DateJoined, 
+      DateofBirth,
+      customProperties
+    } = req.body;
 
     if (!Name || !Email || !PhoneNo || !CompanyName) {
       return res.status(400).json({ message: 'Name, Email, PhoneNo, and CompanyName are required' });
@@ -43,6 +51,15 @@ const addCustomer = async (req, res) => {
       }
     }
 
+    let validatedCustomProperties = [];
+    if (customProperties && Array.isArray(customProperties)) {
+      validatedCustomProperties = customProperties.map(prop => ({
+        propertyName: prop.propertyName,
+        propertyType: prop.propertyType,
+        value: prop.value
+      })).filter(prop => prop.propertyName && prop.propertyType);
+    }
+
     const newCustomer = new Customer({
       ID,
       Name,
@@ -53,7 +70,8 @@ const addCustomer = async (req, res) => {
       DateofBirth: DateofBirth ? new Date(DateofBirth) : undefined,
       PicUrl: picUrl,
       DocumentsUrls: documentUrls,
-      AdminID: req.adminId
+      AdminID: req.adminId,
+      customProperties: validatedCustomProperties
     });
 
     const savedCustomer = await newCustomer.save();

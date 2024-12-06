@@ -18,9 +18,8 @@ function generateInvoiceNumber() {
 
 const updateInvoice = async (req, res) => {
   try {
-    const { invoiceId } = req.body;
-    const adminId = req.adminId;
-    const {
+    const { 
+      invoiceId,
       CustomerId,
       InvoiceDate,
       ProjectId,
@@ -31,7 +30,9 @@ const updateInvoice = async (req, res) => {
       Vat,
       InvoiceTotal,
       Description,
+      customProperties
     } = req.body;
+    const adminId = req.adminId;
 
     if (!invoiceId) {
       return res.status(400).json({ message: 'Invoice ID is required' });
@@ -71,6 +72,19 @@ const updateInvoice = async (req, res) => {
     if (Vat !== undefined) invoice.Vat = Vat;
     if (InvoiceTotal !== undefined) invoice.InvoiceTotal = InvoiceTotal;
     if (Description) invoice.Description = Description;
+
+    // Update custom properties if provided
+    if (customProperties && Array.isArray(customProperties)) {
+      const validatedCustomProperties = customProperties
+        .map(prop => ({
+          propertyName: prop.propertyName,
+          propertyType: prop.propertyType,
+          value: prop.value
+        }))
+        .filter(prop => prop.propertyName && prop.propertyType);
+
+      invoice.customProperties = validatedCustomProperties;
+    }
 
     // Handle file upload if a new image is provided
     if (req.file) {
@@ -228,6 +242,19 @@ const updateInvoice = async (req, res) => {
             <th>Description</th>
             <td>${updatedInvoice.Description}</td>
           </tr>
+          ${invoice.customProperties.length > 0 
+            ? `
+              <tr>
+                <th colspan="2" style="background-color: #f5f5f5;">Custom Properties</th>
+              </tr>
+              ${invoice.customProperties.map(prop => `
+                <tr>
+                  <th>${prop.propertyName}</th>
+                  <td>${prop.value}</td>
+                </tr>
+              `).join('')}
+            `
+            : ''}
         </table>
         <div class="footer">
           Thank you for your business!
