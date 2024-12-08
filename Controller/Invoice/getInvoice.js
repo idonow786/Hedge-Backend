@@ -3,6 +3,18 @@ const Project = require('../../Model/Project');
 const ProjectC = require('../../Model/projectConstruction');
 const Customer = require('../../Model/Customer');
 const Business = require('../../Model/Business');
+const axios = require('axios');
+
+async function convertImageToBase64(url) {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const base64 = Buffer.from(response.data, 'binary').toString('base64');
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    return null;
+  }
+}
 
 const getInvoices = async (req, res) => {
   try {
@@ -30,6 +42,11 @@ const getInvoices = async (req, res) => {
 
       if (businessId) {
         business = await Business.findById(businessId);
+      }
+
+      let businessLogoBase64 = null;
+      if (business && business.LogoURL) {
+        businessLogoBase64 = await convertImageToBase64(business.LogoURL);
       }
 
       return {
@@ -63,7 +80,7 @@ const getInvoices = async (req, res) => {
         BusinessDetails: business ? {
           ID: business.ID,
           BusinessName: business.BusinessName,
-          BusinessLogo: business.LogoURL,
+          BusinessLogo: businessLogoBase64,
           BusinessEmail: business.BusinessEmail,
         } : null,
       };
