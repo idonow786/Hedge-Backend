@@ -138,18 +138,32 @@ const dsrController = {
                 };
             }
     
-            const dsrs = await GaapDsr.find(query)
-                .sort({ date: -1 })
-                .populate({
-                    path: 'user',
-                    select: 'fullName',
-                });
-    
+            // 🔍 Get DSRs without populate
+            const dsrs = await GaapDsr.find(query).sort({ date: -1 });
+
             if (dsrs.length === 0) {
                 return res.status(404).json({ message: 'No DSRs found' });
             }
-    
-            res.json(dsrs);
+
+            // 🧑 Get all unique user IDs from DSRs
+            const userIds = [...new Set(dsrs.map(dsr => dsr.user))];
+            
+            // 👥 Fetch all users in one query
+            const users = await GaapUser.find({ _id: { $in: userIds } }, 'fullName');
+            
+            // 📝 Create a map of userId to fullName
+            const userMap = {};
+            users.forEach(user => {
+                userMap[user._id] = user.fullName;
+            });
+
+            // 🔄 Transform DSRs to include fullName at root level
+            const dsrsWithNames = dsrs.map(dsr => ({
+                ...dsr.toObject(),
+                fullName: userMap[dsr.user]
+            }));
+
+            res.json(dsrsWithNames);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching DSRs', error: error.message });
         }
