@@ -350,7 +350,7 @@ const signup = async (req, res) => {
       await newBusiness.save();
     }
 
-    let loginUrl = 'https://ido-construction.netlify.app';
+    let loginUrl = 'https://ido-crm.netlify.app';
     if (CompanyActivity === 'atis') {
       loginUrl = 'https://atis-crm.netlify.app/';
     } else if (CompanyActivity === 'accounting') {
