@@ -355,6 +355,8 @@ const signup = async (req, res) => {
       loginUrl = 'https://atis-crm.netlify.app/';
     } else if (CompanyActivity === 'accounting') {
       loginUrl = 'https://accountsido.netlify.app/';
+    }else if (CompanyActivity === 'gaap'){
+      loginUrl = 'https://ido-crm.netlify.app/';
     }
 
     const mailOptions = {
