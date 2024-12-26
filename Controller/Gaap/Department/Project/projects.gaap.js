@@ -3,7 +3,7 @@ const GaapComment = require('../../../../Model/Gaap/gaap_comment');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapProjectProduct=require('../../../../Model/Gaap/gaap_product')
-const ProjectPayment=require('../../../../Model/Gaap/gaap_payment')
+const ProjectPayment=require('../../../../Model/Gaap/gaap_projectPayment')
 const getProjects = async (req, res) => {
     try {
         const { department } = req.query;
