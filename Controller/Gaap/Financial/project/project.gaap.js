@@ -34,6 +34,7 @@ const getAllProjectsWithPayments = async (req, res) => {
             .populate('customer')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')
+            .populate('createdBy')
             .lean();
 
         const projectIds = projects.map(p => p._id);

@@ -42,6 +42,7 @@ const getProjects = async (req, res) => {
             projects = await GaapProject.find({ ...query, _id: { $in: tasksWithUser } })
                 .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
                 .populate('customer')
+                .populate('createdBy')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         } else {
@@ -49,6 +50,7 @@ const getProjects = async (req, res) => {
             projects = await GaapProject.find(query)
                 .select('projectName customer assignedTo startDate endDate status projectType department totalAmount')
                 .populate('customer')
+                .populate('createdBy')
                 .populate('assignedTo', 'name')
                 .sort({ createdAt: -1 });
         }
