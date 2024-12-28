@@ -28,8 +28,11 @@ const getDashboardData = async (req, res) => {
         // 2. Get member IDs
         const memberIds = team.members.map(member => member.memberId);
 
-        // 3. Get projects for these members
-        const projects = await GaapProject.find({ createdBy: { $in: memberIds } });
+        // 3. Get projects for these members - add filter for non-cancelled projects
+        const projects = await GaapProject.find({ 
+            createdBy: { $in: memberIds },
+            status: { $ne: 'Cancelled' }  // 🚫 exclude cancelled projects
+        });
 
         // 4. Process project data
         const projectStats = {

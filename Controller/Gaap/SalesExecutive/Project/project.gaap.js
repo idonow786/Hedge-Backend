@@ -488,6 +488,8 @@ const updateProject = async (req, res) => {
       status,
       pricingType,
       totalAmount,
+      semicancel,
+      finalcancel,
       appliedDiscount,
       description,
       discountApprovedById,
@@ -534,6 +536,7 @@ const updateProject = async (req, res) => {
         });
       }
     }
+    
 
     const updateData = {
       projectName,
@@ -547,6 +550,8 @@ const updateProject = async (req, res) => {
       startDate,
       financialApproval,
       paymentPlan,
+      semicancel,
+      finalcancel,
       customerApproval,
       salesManagerApproval,
       operationsManagerApproval,
@@ -634,6 +639,16 @@ const updateProject = async (req, res) => {
       notificationsToCreate.push({
         user: req.adminId,
         message: `Discount of ${appliedDiscount}% applied to project ${projectName}.`,
+        teamId: existingProject.teamId
+      });
+    }
+
+    if (semicancel && finalcancel) {
+      updateData.status = 'Cancelled';
+      
+      notificationsToCreate.push({
+        user: req.adminId,
+        message: `Project ${projectName} has been cancelled.`,
         teamId: existingProject.teamId
       });
     }

@@ -33,7 +33,8 @@ const getDashboardDataDepartment = async (req, res) => {
 };
 
 const getRelevantProjects = async (userId, teamId, userDepartment, userRole) => {
-    let query = { teamId, financialApproval: true };
+    let query = { teamId, financialApproval: true,        status: { $ne: 'Cancelled' }  // 🚫 exclude cancelled projects only
+};
 
     if (userDepartment) {
         const departmentRegex = new RegExp(userDepartment, 'i');

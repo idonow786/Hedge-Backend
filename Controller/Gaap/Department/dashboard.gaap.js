@@ -41,8 +41,11 @@ const getDashboardData = async (req, res) => {
 
 const getProjectsOverview = async (teamId) => {
     try {
-        const allProjects = await GaapProject.find({ teamId })
-            .select('-totalAmount') // Exclude price information
+        const allProjects = await GaapProject.find({ 
+            teamId,
+            status: { $ne: 'Cancelled' }
+        })
+            .select('-totalAmount')
             .populate('customer', 'name')
             .populate('assignedTo', 'fullName')
             .lean();

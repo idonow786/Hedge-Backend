@@ -73,7 +73,10 @@ const generateDashboard = async (req, res) => {
         }
 
         // 2. Projects Overview
-        const projects = await GaapProject.find({ createdBy: adminId });
+        const projects = await GaapProject.find({ 
+            createdBy: adminId,
+            status: { $ne: 'Cancelled' }
+        });
         const projectsOverview = {
             total: projects.length,
             ongoing: projects.filter(p => p.status === 'In Progress').length,

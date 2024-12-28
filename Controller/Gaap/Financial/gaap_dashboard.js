@@ -32,7 +32,7 @@ const getDashboardData = async (req, res) => {
 
     // 2. Overview of all projects
     const projectOverviewRaw = await GaapProject.aggregate([
-      { $match: { teamId: teamId } },
+      { $match: { teamId: teamId, status: { $ne: 'Cancelled' } } },
       {
         $group: {
           _id: '$status',
