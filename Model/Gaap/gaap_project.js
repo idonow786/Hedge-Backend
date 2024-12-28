@@ -51,6 +51,14 @@ const gaapprojectSchema = new Schema({
     type: Boolean,
     default: false
   },
+  semicancel: {
+    type: Boolean,
+    default: false
+  },
+  finalcancel: {
+    type: Boolean,
+    default: false
+  },
   customerApproval: {
     type: Boolean,
     default: false
