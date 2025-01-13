@@ -1,26 +1,38 @@
 const mongoose = require('mongoose');
 
-const moduleAllowSchema = new mongoose.Schema({
-  moduleName: {
-    type: [String],
+const moduleSchema = new mongoose.Schema({
+  name: {
+    type: String,
     required: true
   },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User' 
+  link: {
+    type: String,
+    default: ''
+  },
+  picUrl: {
+    type: String,
+    default: ''
   },
   permission: {
     type: Boolean,
-    default: false  
+    default: false
+  }
+});
+
+const moduleAllowSchema = new mongoose.Schema({
+  modules: [moduleSchema],
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User'
   },
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: 'Admin' 
+    ref: 'Admin'
   }
 }, {
-  timestamps: true  
+  timestamps: true
 });
 
 const ModuleAllow = mongoose.model('ModuleAllow', moduleAllowSchema);

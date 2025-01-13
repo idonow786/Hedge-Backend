@@ -1,9 +1,10 @@
 const ModuleAllow = require('../../Model/ModuleAllow');
+const { uploadImageToFirebase } = require('../../Firebase/uploadImage');
 
 // 📝 Create new module permission
 const createModuleAllow = async (req, res) => {
   try {
-    const { moduleName, userId, permission } = req.body;
+    const { userId, modules } = req.body;
     
     // 🔍 Check if entry already exists
     const existingModule = await ModuleAllow.findOne({ userId });
@@ -11,10 +12,26 @@ const createModuleAllow = async (req, res) => {
       return res.status(400).json({ message: '❌ Module permissions already exist for this user' });
     }
 
+    // 🖼️ Process images for each module if provided
+    const processedModules = await Promise.all(modules.map(async (module) => {
+      if (module.picBase64) {
+        try {
+          const picUrl = await uploadImageToFirebase(
+            module.picBase64, 
+            module.contentType || 'image/jpeg'
+          );
+          return { ...module, picUrl };
+        } catch (error) {
+          console.error('Error uploading image for module:', module.name, error);
+          return module;
+        }
+      }
+      return module;
+    }));
+
     const newModuleAllow = new ModuleAllow({
-      moduleName,
+      modules: processedModules,
       userId,
-      permission,
       adminId: req.adminId
     });
 
@@ -46,19 +63,72 @@ const getModuleAllow = async (req, res) => {
 // 🔄 Update module permissions
 const updateModuleAllow = async (req, res) => {
   try {
-    const { userId, moduleName, permission } = req.body;
+    const { userId, moduleUpdates } = req.body;
     
-    const updatedModule = await ModuleAllow.findOneAndUpdate(
-      { userId },
-      { moduleName, permission },
-      { new: true }
-    );
-
-    if (!updatedModule) {
+    const existingModuleAllow = await ModuleAllow.findOne({ userId });
+    if (!existingModuleAllow) {
       return res.status(404).json({ message: '❌ Module permissions not found' });
     }
 
-    res.status(200).json({ message: '✅ Module permissions updated', data: updatedModule });
+    // 🔄 Process updates for each module
+    const updatedModules = await Promise.all(existingModuleAllow.modules.map(async (existingModule) => {
+      const updateData = moduleUpdates.find(update => update.name === existingModule.name);
+      
+      if (!updateData) return existingModule;
+
+      // 🖼️ Handle image upload if new image is provided
+      let picUrl = existingModule.picUrl;
+      if (updateData.picBase64) {
+        try {
+          picUrl = await uploadImageToFirebase(
+            updateData.picBase64,
+            updateData.contentType || 'image/jpeg'    
+          );
+        } catch (error) {
+          console.error('Error uploading new image for module:', existingModule.name, error);
+        }
+      }
+
+      return {
+        name: existingModule.name,
+        link: updateData.link || existingModule.link,
+        picUrl: picUrl,
+        permission: updateData.permission !== undefined ? updateData.permission : existingModule.permission
+      };
+    }));
+
+    // 🔄 Add any new modules
+    const existingModuleNames = existingModuleAllow.modules.map(m => m.name);
+    const newModules = await Promise.all(moduleUpdates
+      .filter(update => !existingModuleNames.includes(update.name))
+      .map(async (newModule) => {
+        let picUrl = '';
+        if (newModule.picBase64) {
+          try {
+            picUrl = await uploadImageToFirebase(
+              newModule.picBase64,
+              newModule.contentType || 'image/jpeg'
+            );
+          } catch (error) {
+            console.error('Error uploading image for new module:', newModule.name, error);
+          }
+        }
+
+        return {
+          name: newModule.name,
+          link: newModule.link || '',
+          picUrl: picUrl,
+          permission: newModule.permission || false
+        };
+      }));
+
+    const updatedModuleAllow = await ModuleAllow.findOneAndUpdate(
+      { userId },
+      { modules: [...updatedModules, ...newModules] },
+      { new: true }
+    );
+
+    res.status(200).json({ message: '✅ Module permissions updated', data: updatedModuleAllow });
   } catch (error) {
     console.error('Error updating module permissions:', error);
     res.status(500).json({ message: '❌ Internal server error' });
