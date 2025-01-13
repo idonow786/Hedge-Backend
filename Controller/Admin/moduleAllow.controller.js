@@ -82,7 +82,7 @@ const updateModuleAllow = async (req, res) => {
         try {
           picUrl = await uploadImageToFirebase(
             updateData.picBase64,
-            updateData.contentType || 'image/jpeg'
+            updateData.contentType || 'image/jpeg'    
           );
         } catch (error) {
           console.error('Error uploading new image for module:', existingModule.name, error);
