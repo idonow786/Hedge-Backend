@@ -45,7 +45,7 @@ const businessRoute=require('./Route/businessRoute')
 const whatsappRoute=require('./Route/whatsappRoute') 
 const vendorRoute=require('./Route/vendorRoute') 
 const taskRoute=require('./Route/taskRoute') 
-
+const moduleAllowRoutes = require('./Route/moduleAllowRoute');
 
 //GAAP
 const userGaapRoute=require('./Route/Gaap/user.gaap') 
@@ -130,6 +130,7 @@ app.use('/api/gaap/sales/manager',salesManagerGaapRoute)
 app.use('/api/gaap/sales/finance',FinanceGaapRoute)
 app.use('/api/gaap/sales/department',departmentGaapRoute)
 app.use('/api/gaap/comment',CommentGaapRoute)
+app.use('/api/module', moduleAllowRoutes);
 
 
 // Error handling middleware

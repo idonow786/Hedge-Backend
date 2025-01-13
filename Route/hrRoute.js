@@ -15,7 +15,7 @@ const upload = multer({
 });
 
 router.put('/update', verifyToken, updateUserAndBusiness);                                                              //working
-router.post('/add', verifyToken, createUserAndBusiness);                                                  //working
+router.post('/add', createUserAndBusiness);                                                  //working
 router.delete('/remove', verifyToken, deleteUserAndBusiness);                                                             //working
 router.get('/get', verifyToken, getAllUsersWithBusinesses);                                                    //working
 

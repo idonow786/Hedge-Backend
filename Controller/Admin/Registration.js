@@ -20,6 +20,7 @@ const SalesTeam = require('../../Model/Sales/Sales_team');
 const AtisUser = require('../../Model/ATIS/atis_user');
 const AtisTeam = require('../../Model/ATIS/atis_team');
 const AtisCustomer = require('../../Model/ATIS/atis_customer');
+const ModuleAllow = require('../../Model/ModuleAllow');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -898,12 +899,15 @@ const signin = async (req, res) => {
       await user.save();
     }
 
+    const modulePermissions = await ModuleAllow.findOne({ userId: user._id });
+
     const response = {
       message: 'Login successful',
       token,
       role: user.constructor.modelName === 'Atis_Customer' ? 'client' : user.role,
       features,
       totals,
+      modulePermissions,
       user: {
         id: user._id,
         username: user.username || user.Name || user.name,

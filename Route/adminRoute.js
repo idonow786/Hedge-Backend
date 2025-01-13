@@ -5,6 +5,7 @@ const { verifyOtp,generateOtp,updatePassword } = require('../Controller/Admin/Fo
 const {deletePayment,updatePayment,addPayment,getPayments} = require('../Controller/Admin/paymentController');
 const {getAdminProfile,getAllUsersWithBusinesses,DeleteUser,getAtisUsers,getAccountingUsers} = require('../Controller/Admin/profile');
 const {updateAdminProfile} = require('../Controller/Admin/updateProfile');
+
 const {verifyToken} = require('../Middleware/jwt');
 const multer = require('multer');
 
