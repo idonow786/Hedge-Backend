@@ -46,6 +46,7 @@ const whatsappRoute=require('./Route/whatsappRoute')
 const vendorRoute=require('./Route/vendorRoute') 
 const taskRoute=require('./Route/taskRoute') 
 const moduleAllowRoutes = require('./Route/moduleAllowRoute');
+const loginResponseRoute = require('./Route/loginResponseRoute');
 
 //GAAP
 const userGaapRoute=require('./Route/Gaap/user.gaap') 
@@ -110,6 +111,7 @@ app.use('/api/business',businessRoute)
 app.use('/api/whatsapp',whatsappRoute)
 app.use('/api/vendor',vendorRoute)
 app.use('/api/task',taskRoute)
+app.use('/api/login',loginResponseRoute)
 
 
 

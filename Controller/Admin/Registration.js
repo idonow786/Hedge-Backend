@@ -21,6 +21,7 @@ const AtisUser = require('../../Model/ATIS/atis_user');
 const AtisTeam = require('../../Model/ATIS/atis_team');
 const AtisCustomer = require('../../Model/ATIS/atis_customer');
 const ModuleAllow = require('../../Model/ModuleAllow');
+const LoginResponse = require('../../Model/LoginResponse');
 
 dotenv.config();
 const transporter = nodemailer.createTransport(
@@ -921,7 +922,7 @@ const signin = async (req, res) => {
                         user.constructor.modelName === 'AccountingUser' ? 'Accounting' :
                         user.constructor.modelName === 'ATISUser' ? 'atis' :
                         (user.companyActivity || '')
-        }
+      }
     };
 
     if (business) {
@@ -938,6 +939,22 @@ const signin = async (req, res) => {
         preferredLanguage: user.preferredLanguage,
         currency: user.currency
       };
+    }
+
+    // 💾 Save login response
+    try {
+      await LoginResponse.findOneAndUpdate(
+        { userId: user._id }, 
+        response,
+        { 
+          new: true,
+          upsert: true,
+          runValidators: true
+        }
+      );
+    } catch (error) {
+      console.error('Error saving login response:', error);
+      // Continue with login even if saving response fails
     }
 
     res.status(200).json(response);
