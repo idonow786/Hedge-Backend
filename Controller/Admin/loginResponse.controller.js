@@ -87,7 +87,45 @@ const getLoginResponseByToken = async (req, res) => {
   }
 };
 
+// 🚪 Logout and delete login response
+const logoutUser = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // 🔐 Decode token to get userId
+    const decoded = jwt.decode(token);
+    
+    if (!decoded || !decoded.userId) {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    // 🗑️ Delete login response for this user
+    const result = await LoginResponse.findOneAndDelete({ userId: decoded.userId });
+
+    if (!result) {
+      return res.status(404).json({ message: 'No active session found' });
+    }
+
+    res.status(200).json({ 
+      message: 'Logged out successfully',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Error during logout:', error);
+    res.status(500).json({ 
+      message: 'Error during logout',
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   saveLoginResponse,
-  getLoginResponseByToken
+  getLoginResponseByToken,
+  logoutUser
 }; 
