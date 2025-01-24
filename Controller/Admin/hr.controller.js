@@ -64,7 +64,7 @@ const createUserAndBusiness = async (req, res) => {
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        apiResponse = await axios.post('https://chocolate-reindeer-649283.hostingersite.com/api/create-user', null, {
+        apiResponse = await axios.post('https://hrmapp.ido.company/api/create-user', null, {
           params: {
             email,
             password,
