@@ -610,7 +610,7 @@ const taskController = {
   // Get task logs for reporting
   getTaskLogs: async (req, res) => {
     try {
-      const { startDate, endDate, userId, taskId } = req.query;
+      const { startDate, endDate, taskId } = req.query;
       
       const query = {};
       
@@ -621,7 +621,7 @@ const taskController = {
         };
       }
       
-      if (userId) query.userId = userId;
+      // if (userId) query.userId = userId;
       if (taskId) query.taskId = taskId;
 
       const logs = await GaapLogSheet.find(query)
@@ -689,24 +689,64 @@ const taskController = {
   // Get KPI dashboard data
   getKPIData: async (req, res) => {
     try {
-      const { startDate, endDate, teamId } = req.query;
+      const { startDate, endDate } = req.query;
+      const adminId = req.adminId; // get adminId from req
+
+      // Find user's team
+      const user = await GaapUser.findById(adminId);
+      if (!user || !user.teamId) {
+        return res.status(400).json({ message: 'User not found or not associated with a team' });
+      }
+
+      const teamId = user.teamId; // get teamId from user
+
+      // Validate dates and convert to Date objects
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Add time to end date to include the entire day
+      end.setHours(23, 59, 59, 999);
 
       const dateQuery = {
         createdAt: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
+          $gte: start,
+          $lte: end
         }
       };
 
       // Get team members
-      const teamMembers = await GaapUser.find({ teamId });
+      const teamMembers = await GaapUser.find({ teamId }).lean();
+      console.log('Team Members:', teamMembers);
+      
+      if (!teamMembers || teamMembers.length === 0) {
+        return res.status(200).json({
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          pendingTasks: 0,
+          memberPerformance: {},
+          overtimeStats: {
+            totalOvertimeHours: 0,
+            overtimeInstances: 0
+          },
+          completionRate: 0
+        });
+      }
+
       const teamMemberIds = teamMembers.map(member => member._id);
 
-      // Get tasks for team members
+      // Get all tasks for team members within date range
       const tasks = await GaapTask.find({
         assignedTo: { $in: teamMemberIds },
+        teamId: teamId,
         ...dateQuery
-      });
+      }).lean();
+
+      // Get all log sheets for the team members within date range
+      const logSheets = await GaapLogSheet.find({
+        userId: { $in: teamMemberIds },
+        date: { $gte: start, $lte: end }
+      }).lean();
 
       // Calculate KPIs
       const kpiData = {
@@ -721,32 +761,55 @@ const taskController = {
         }
       };
 
-      // Calculate completion rate
-      kpiData.completionRate = (kpiData.completedTasks / kpiData.totalTasks) * 100;
+      // Calculate completion rate (avoid division by zero)
+      kpiData.completionRate = kpiData.totalTasks > 0 
+        ? ((kpiData.completedTasks / kpiData.totalTasks) * 100).toFixed(2)
+        : 0;
 
-      // Get detailed member performance
+      // Calculate member performance
       for (const member of teamMembers) {
-        const memberTasks = tasks.filter(task => task.assignedTo.equals(member._id));
-        const memberLogs = await GaapLogSheet.find({
-          userId: member._id,
-          ...dateQuery
-        });
+        const memberTasks = tasks.filter(task => 
+          task.assignedTo && task.assignedTo.toString() === member._id.toString()
+        );
+        
+        const memberLogs = logSheets.filter(log => 
+          log.userId && log.userId.toString() === member._id.toString()
+        );
+
+        // Calculate total hours worked (convert minutes to hours)
+        const totalMinutesWorked = memberLogs.reduce((acc, log) => {
+          if (log.timeSpent && log.endTime) { // Only count completed logs
+            return acc + (log.timeSpent || 0);
+          }
+          return acc;
+        }, 0);
+
+        // Calculate overtime hours
+        const overtimeLogs = memberLogs.filter(log => log.overtime && log.endTime);
+        const overtimeMinutes = overtimeLogs.reduce((acc, log) => acc + (log.timeSpent || 0), 0);
 
         kpiData.memberPerformance[member._id] = {
-          name: member.fullName,
+          name: member.fullName || 'Unknown',
           tasksCompleted: memberTasks.filter(task => task.status === 'Completed').length,
-          totalHoursWorked: memberLogs.reduce((acc, log) => acc + log.timeSpent, 0) / 60,
-          overtimeHours: memberLogs.filter(log => log.overtime)
-            .reduce((acc, log) => acc + log.timeSpent, 0) / 60
+          totalTasksAssigned: memberTasks.length,
+          totalHoursWorked: (totalMinutesWorked / 60).toFixed(2),
+          overtimeHours: (overtimeMinutes / 60).toFixed(2),
+          completionRate: memberTasks.length > 0 
+            ? ((memberTasks.filter(task => task.status === 'Completed').length / memberTasks.length) * 100).toFixed(2)
+            : 0
         };
 
-        // Update overtime stats
-        kpiData.overtimeStats.totalOvertimeHours += kpiData.memberPerformance[member._id].overtimeHours;
-        kpiData.overtimeStats.overtimeInstances += memberLogs.filter(log => log.overtime).length;
+        // Update overall overtime stats
+        kpiData.overtimeStats.totalOvertimeHours += Number(kpiData.memberPerformance[member._id].overtimeHours);
+        kpiData.overtimeStats.overtimeInstances += overtimeLogs.length;
       }
+
+      // Round total overtime hours to 2 decimal places
+      kpiData.overtimeStats.totalOvertimeHours = Number(kpiData.overtimeStats.totalOvertimeHours.toFixed(2));
 
       res.status(200).json(kpiData);
     } catch (error) {
+      console.error('Error in getKPIData:', error);
       res.status(500).json({ message: 'Error fetching KPI data', error: error.message });
     }
   }
