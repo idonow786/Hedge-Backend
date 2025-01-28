@@ -2,6 +2,7 @@ const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const GaapProject = require('../../../../Model/Gaap/gaap_project');
 const GaapUser = require('../../../../Model/Gaap/gaap_user');
 const GaapNotification = require('../../../../Model/Gaap/gaap_notification');
+const GaapLogSheet = require('../../../../Model/Gaap/gaap_logsheet');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
@@ -407,6 +408,346 @@ const taskController = {
       res.json(task);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching task', error: error.message });
+    }
+  },
+
+  // Start time tracking for a task
+  startTask: async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const { taskId } = req.query;
+      const task = await GaapTask.findById(taskId);
+
+      if (!task) {
+        return res.status(404).json({ message: 'Task not found' });
+      }
+
+      // Check if task is already started and not ended
+      const existingLog = await GaapLogSheet.findOne({
+        taskId: taskId,
+        userId: req.adminId,
+        endTime: { $exists: false }
+      });
+
+      if (existingLog) {
+        return res.status(400).json({ 
+          message: 'Task is already in progress',
+          startedAt: existingLog.date
+        });
+      }
+
+      const now = new Date();
+      
+      // Create new log entry with start time
+      const logSheet = new GaapLogSheet({
+        userId: req.adminId,
+        taskId: taskId,
+        date: now,
+        startTime: now,
+        timeSpent: 0,
+        status: 'Pending'
+      });
+      
+      await logSheet.save({ session });
+
+      // Update task status
+      task.status = 'In Progress';
+      task.startTime = now;
+      await task.save({ session });
+
+      await session.commitTransaction();
+      res.status(200).json({ 
+        message: 'Task started successfully', 
+        task,
+        logSheet
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      res.status(500).json({ message: 'Error starting task', error: error.message });
+    } finally {
+      session.endSession();
+    }
+  },
+
+  // End time tracking for a task
+  endTask: async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const { taskId } = req.query;
+      const { breakDuration = 0, notes } = req.body;
+      
+      // Find task and active log
+      const task = await GaapTask.findById(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Task not found' });
+      }
+
+      // Find the active log entry for this task
+      const activeLog = await GaapLogSheet.findOne({
+        taskId: taskId,
+        userId: req.adminId,
+        endTime: { $exists: false }
+      });
+
+      if (!activeLog) {
+        return res.status(400).json({ message: 'No active time tracking found for this task' });
+      }
+
+      const now = new Date();
+      const startTime = new Date(activeLog.startTime);
+      
+      // Ensure end time is after start time
+      if (now <= startTime) {
+        return res.status(400).json({ 
+          message: 'End time must be after start time',
+          startTime: startTime,
+          endTime: now
+        });
+      }
+
+      // Calculate total duration in milliseconds
+      const durationMs = now.getTime() - startTime.getTime();
+      
+      // Convert to minutes and round to 2 decimal places
+      const totalMinutes = Math.round((durationMs / (1000 * 60)) * 100) / 100;
+      console.log('Total minutes worked (before break):', totalMinutes);
+      
+      // Use the break duration provided by the user
+      const userBreakDuration = parseInt(breakDuration) || 0;
+      console.log('User provided break duration:', userBreakDuration);
+      
+      // Calculate actual working time by subtracting break
+      const actualMinutes = Math.max(0, totalMinutes);
+      console.log('Actual working minutes (before break deduction):', actualMinutes);
+
+      // Check for overtime (8 hours = 480 minutes)
+      const isOvertime = actualMinutes > 480;
+
+      // Update the log entry
+      const updatedLog = await GaapLogSheet.findByIdAndUpdate(
+        activeLog._id,
+        {
+          $set: {
+            endTime: now,
+            timeSpent: actualMinutes,
+            breakTime: userBreakDuration, // Use the user-provided break duration
+            overtime: isOvertime,
+            notes: notes,
+            workType: isOvertime ? 'Overtime' : 'Regular'
+          }
+        },
+        { new: true, session }
+      );
+
+      if (!updatedLog) {
+        throw new Error('Failed to update log entry');
+      }
+
+      // Calculate cumulative time for the task
+      const allTaskLogs = await GaapLogSheet.find({
+        taskId: taskId,
+        endTime: { $exists: true }
+      });
+
+      const totalTaskTime = allTaskLogs.reduce((total, log) => total + (log.timeSpent || 0), 0);
+      const totalTaskBreaks = allTaskLogs.reduce((total, log) => total + (log.breakTime || 0), 0);
+
+      // Update task with cumulative times
+      const updatedTask = await GaapTask.findByIdAndUpdate(
+        taskId,
+        {
+          $set: {
+            timeSpent: totalTaskTime,
+            breakDuration: totalTaskBreaks,
+            endTime: now,
+            isOvertime: isOvertime
+          }
+        },
+        { new: true, session }
+      );
+
+      if (!updatedTask) {
+        throw new Error('Failed to update task');
+      }
+
+      await session.commitTransaction();
+      
+      res.status(200).json({
+        message: 'Task ended successfully',
+        timeSpent: actualMinutes,
+        breakTime: userBreakDuration,
+        overtime: isOvertime,
+        logSheet: updatedLog,
+        task: updatedTask,
+        details: {
+          totalMinutes,
+          breakDuration: userBreakDuration,
+          startTime: startTime,
+          endTime: now,
+          calculationBreakdown: {
+            totalTimeInMinutes: totalMinutes,
+            breakDuration: userBreakDuration,
+            actualWorkingTime: actualMinutes,
+            isOvertime: isOvertime,
+            taskTotalTime: totalTaskTime,
+            taskTotalBreaks: totalTaskBreaks
+          }
+        }
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      console.error('Error in endTask:', error);
+      res.status(500).json({ message: 'Error ending task', error: error.message });
+    } finally {
+      session.endSession();
+    }
+  },
+
+  // Get task logs for reporting
+  getTaskLogs: async (req, res) => {
+    try {
+      const { startDate, endDate, userId, taskId } = req.query;
+      
+      const query = {};
+      
+      if (startDate && endDate) {
+        query.date = {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        };
+      }
+      
+      if (userId) query.userId = userId;
+      if (taskId) query.taskId = taskId;
+
+      const logs = await GaapLogSheet.find(query)
+        .populate('userId', 'fullName email')
+        .populate('taskId', 'title description')
+        .sort({ date: -1 });
+
+      // Calculate summary statistics
+      const summary = {
+        totalTime: 0,
+        totalBreakTime: 0,
+        overtimeHours: 0,
+        regularHours: 0,
+        totalTasks: new Set(logs.map(log => log.taskId._id)).size,
+        completedTasks: logs.filter(log => log.endTime).length,
+        inProgressTasks: logs.filter(log => !log.endTime).length
+      };
+
+      // Process each log entry
+      logs.forEach(log => {
+        if (log.endTime) {
+          // Recalculate time spent if needed
+          if (!log.timeSpent && log.startTime && log.endTime) {
+            const startTime = new Date(log.startTime);
+            const endTime = new Date(log.endTime);
+            const durationMs = endTime.getTime() - startTime.getTime();
+            log.timeSpent = Math.round((durationMs / (1000 * 60)) * 100) / 100;
+          }
+
+          const timeSpent = log.timeSpent || 0;
+          const breakTime = log.breakTime || 0;
+
+          summary.totalTime += timeSpent;
+          summary.totalBreakTime += breakTime;
+
+          if (log.overtime) {
+            summary.overtimeHours += timeSpent;
+          } else {
+            summary.regularHours += timeSpent;
+          }
+        }
+      });
+
+      // Convert minutes to hours for better readability
+      const hoursData = {
+        totalHours: (summary.totalTime / 60).toFixed(2),
+        totalBreakHours: (summary.totalBreakTime / 60).toFixed(2),
+        overtimeHours: (summary.overtimeHours / 60).toFixed(2),
+        regularHours: (summary.regularHours / 60).toFixed(2)
+      };
+
+      res.status(200).json({
+        logs,
+        summary: {
+          ...summary,
+          ...hoursData
+        }
+      });
+    } catch (error) {
+      console.error('Error in getTaskLogs:', error);
+      res.status(500).json({ message: 'Error fetching task logs', error: error.message });
+    }
+  },
+
+  // Get KPI dashboard data
+  getKPIData: async (req, res) => {
+    try {
+      const { startDate, endDate, teamId } = req.query;
+
+      const dateQuery = {
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        }
+      };
+
+      // Get team members
+      const teamMembers = await GaapUser.find({ teamId });
+      const teamMemberIds = teamMembers.map(member => member._id);
+
+      // Get tasks for team members
+      const tasks = await GaapTask.find({
+        assignedTo: { $in: teamMemberIds },
+        ...dateQuery
+      });
+
+      // Calculate KPIs
+      const kpiData = {
+        totalTasks: tasks.length,
+        completedTasks: tasks.filter(task => task.status === 'Completed').length,
+        inProgressTasks: tasks.filter(task => task.status === 'In Progress').length,
+        pendingTasks: tasks.filter(task => task.status === 'Pending').length,
+        memberPerformance: {},
+        overtimeStats: {
+          totalOvertimeHours: 0,
+          overtimeInstances: 0
+        }
+      };
+
+      // Calculate completion rate
+      kpiData.completionRate = (kpiData.completedTasks / kpiData.totalTasks) * 100;
+
+      // Get detailed member performance
+      for (const member of teamMembers) {
+        const memberTasks = tasks.filter(task => task.assignedTo.equals(member._id));
+        const memberLogs = await GaapLogSheet.find({
+          userId: member._id,
+          ...dateQuery
+        });
+
+        kpiData.memberPerformance[member._id] = {
+          name: member.fullName,
+          tasksCompleted: memberTasks.filter(task => task.status === 'Completed').length,
+          totalHoursWorked: memberLogs.reduce((acc, log) => acc + log.timeSpent, 0) / 60,
+          overtimeHours: memberLogs.filter(log => log.overtime)
+            .reduce((acc, log) => acc + log.timeSpent, 0) / 60
+        };
+
+        // Update overtime stats
+        kpiData.overtimeStats.totalOvertimeHours += kpiData.memberPerformance[member._id].overtimeHours;
+        kpiData.overtimeStats.overtimeInstances += memberLogs.filter(log => log.overtime).length;
+      }
+
+      res.status(200).json(kpiData);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching KPI data', error: error.message });
     }
   }
 };

@@ -114,6 +114,12 @@ router.get('/projects-get',verifyToken, taskController.getProjectTasks);
 router.get('/tasks-projects',verifyToken, taskController.getTask);
 router.post('/assign-tasks',verifyToken, taskController.assignTasks);
 
+// New task time tracking routes
+router.post('/tasks/start', verifyToken, taskController.startTask);
+router.post('/tasks/end', verifyToken, taskController.endTask);
+router.get('/tasks/logs', verifyToken, taskController.getTaskLogs);
+router.get('/tasks/kpi', verifyToken, taskController.getKPIData);
+
 router.get('/dsr/user',verifyToken, dsrController.getAllDsrForUser);
 
 //===========Dashboard

@@ -41,6 +41,40 @@ const gaaptaskSchema = new Schema({
   comments:{
     type: String,
   },
+  startTime: {
+    type: Date,
+  },
+  endTime: {
+    type: Date,
+  },
+  timeSpent: {
+    type: Number,
+    default: 0
+  },
+  breakDuration: {
+    type: Number,
+    default: 0
+  },
+  isOvertime: {
+    type: Boolean,
+    default: false
+  },
+  dailyLogs: [{
+    date: {
+      type: Date,
+      required: true
+    },
+    hoursWorked: {
+      type: Number,
+      default: 0
+    },
+    breaks: [{
+      startTime: Date,
+      endTime: Date,
+      duration: Number
+    }],
+    notes: String
+  }],
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'GaapUser',
