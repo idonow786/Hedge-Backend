@@ -610,18 +610,10 @@ const taskController = {
   // Get task logs for reporting
   getTaskLogs: async (req, res) => {
     try {
-      const { startDate, endDate, taskId } = req.query;
+      const { taskId } = req.query;
       
       const query = {};
       
-      if (startDate && endDate) {
-        query.date = {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        };
-      }
-      
-      // if (userId) query.userId = userId;
       if (taskId) query.taskId = taskId;
 
       const logs = await GaapLogSheet.find(query)
@@ -689,8 +681,8 @@ const taskController = {
   // Get KPI dashboard data
   getKPIData: async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
-      const adminId = req.adminId; // get adminId from req
+      const { executiveId } = req.query;
+      const adminId = req.adminId;
 
       // Find user's team
       const user = await GaapUser.findById(adminId);
@@ -698,25 +690,21 @@ const taskController = {
         return res.status(400).json({ message: 'User not found or not associated with a team' });
       }
 
-      const teamId = user.teamId; // get teamId from user
+      const teamId = user.teamId;
 
-      // Validate dates and convert to Date objects
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      // Add time to end date to include the entire day
-      end.setHours(23, 59, 59, 999);
-
-      const dateQuery = {
-        createdAt: {
-          $gte: start,
-          $lte: end
+      // Get team members based on executiveId or teamId
+      let teamMembers;
+      if (executiveId) {
+        // If executiveId is provided, only get that specific executive
+        const executive = await GaapUser.findById(executiveId).lean();
+        if (!executive || executive.teamId !== teamId) {
+          return res.status(400).json({ message: 'Executive not found or not in your team' });
         }
-      };
-
-      // Get team members
-      const teamMembers = await GaapUser.find({ teamId }).lean();
-      console.log('Team Members:', teamMembers);
+        teamMembers = [executive];
+      } else {
+        // Otherwise get all team members
+        teamMembers = await GaapUser.find({ teamId }).lean();
+      }
       
       if (!teamMembers || teamMembers.length === 0) {
         return res.status(200).json({
@@ -735,17 +723,15 @@ const taskController = {
 
       const teamMemberIds = teamMembers.map(member => member._id);
 
-      // Get all tasks for team members within date range
+      // Get all tasks for team members
       const tasks = await GaapTask.find({
         assignedTo: { $in: teamMemberIds },
-        teamId: teamId,
-        ...dateQuery
+        teamId: teamId
       }).lean();
 
-      // Get all log sheets for the team members within date range
+      // Get all log sheets for the team members
       const logSheets = await GaapLogSheet.find({
-        userId: { $in: teamMemberIds },
-        date: { $gte: start, $lte: end }
+        userId: { $in: teamMemberIds }
       }).lean();
 
       // Calculate KPIs
