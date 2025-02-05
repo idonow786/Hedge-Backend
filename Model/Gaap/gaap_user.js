@@ -30,6 +30,10 @@ const gappuserSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: Schema.Types.ObjectId,
+    ref: 'GaapBranch'
+  },
   role: {
     type: String,
     enum: ['Sales Executive', 'Sales Manager', 'Finance Manager', 'Department Manager', 'Operational Executive', 'Operation Manager', 'admin','Audit Manager','Accounting Manager','Tax Supervisor','ICV Manager','Accounting Executive','Audit Executive','Tax Executive','ICV Executive'],

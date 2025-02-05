@@ -1,4 +1,3 @@
-
 const GaapUser = require('../../../Model/Gaap/gaap_user');
 
 // Function to fetch GaapUsers
@@ -15,14 +14,31 @@ const fetchGaapUsers = async (req, res) => {
         let users;
 
         if (requester.role === 'admin') {
-            users = await GaapUser.find({}).select('-password');
+            // Get users with branch information
+            users = await GaapUser.find({})
+                .select('-password')
+                .populate('branchId', 'branchName location');
         } else {
-            users = await GaapUser.find({ createdBy: adminId }).select('-password');
+            // Get users with branch information for specific admin
+            users = await GaapUser.find({ createdBy: adminId })
+                .select('-password')
+                .populate('branchId', 'branchName location');
         }
+
+        // Maintain backward compatibility while adding branch info
+        const usersWithBranch = users.map(user => {
+            const userObj = user.toObject();
+            return {
+                ...userObj,
+                branchName: userObj.branchId ? userObj.branchId.branchName : null,
+                branchLocation: userObj.branchId ? userObj.branchId.location : null,
+                branchId: userObj.branchId ? userObj.branchId._id : null
+            };
+        });
 
         res.status(200).json({
             message: 'Users fetched successfully',
-            users: users
+            users: usersWithBranch
         });
 
     } catch (error) {

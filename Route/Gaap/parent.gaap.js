@@ -7,11 +7,9 @@ const { deleteUser} = require('../../Controller/Gaap/Parent/delete.gaap')
 const { fetchGaapUsers} = require('../../Controller/Gaap/Parent/get.gaap')
 const productController = require('../../Controller/Gaap/Parent/product.gaap');
 const gaapInvoiceController = require('../../Controller/Gaap/Parent/invoices.gaap');
+const branchController = require('../../Controller/Gaap/Parent/branch.gaap');
 const { verifyToken } = require('../../Middleware/jwt');
 const multer = require('multer');
-
-
-
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,22 +18,23 @@ const upload = multer({
   },
 });
 
+// User routes
+router.post('/add-users',verifyToken, registerUser);                                         
+router.put('/update-users',verifyToken, updateUser);                                         
+router.delete('/delete-users', verifyToken, deleteUser);                                     
+router.get('/get-users', verifyToken, fetchGaapUsers);                                      
 
+// Branch routes
+router.post('/branches', verifyToken, branchController.createBranch);
+router.get('/branches', verifyToken, branchController.getAllBranches);
+router.get('/branches/:branchId', verifyToken, branchController.getBranch);
+router.put('/branches/:branchId', verifyToken, branchController.updateBranch);
+router.delete('/branches/:branchId', verifyToken, branchController.deleteBranch);
 
-router.post('/add-users',verifyToken, registerUser);                                         //
-router.put('/update-users',verifyToken, updateUser);                                         //
-router.delete('/delete-users', verifyToken, deleteUser);                                     //
-router.get('/get-users', verifyToken, fetchGaapUsers);                                      //
+// Invoice routes
+router.get('/get-invoices', verifyToken, gaapInvoiceController.getAllInvoices);                                      
 
-
-
-
-router.get('/get-invoices', verifyToken, gaapInvoiceController.getAllInvoices);                                      //
-
-
-
-
-
+// Product routes
 router.post('/save-all-products',verifyToken, productController.saveAllProducts);
 router.get('/fixed-price-products',verifyToken, productController.getAllFixedPriceProducts);
 router.get('/variable-price-products',verifyToken, productController.getAllVariablePriceProducts);

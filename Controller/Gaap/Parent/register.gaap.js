@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
 const GaapTeam = require('../../../Model/Gaap/gaap_team');
+const GaapBranch = require('../../../Model/Gaap/gaap_branch');
 
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
@@ -26,7 +27,8 @@ const registerUser = async (req, res) => {
       fullName,
       role,
       department,
-      companyActivity
+      companyActivity,
+      branchId
     } = req.body;
     console.log("Body  ", req.body);
 
@@ -34,6 +36,14 @@ const registerUser = async (req, res) => {
     const existingUser = await GaapUser.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       return res.status(400).json({ message: 'Username or email already exists' });
+    }
+
+    // Check if branch exists
+    if (branchId) {
+      const branch = await GaapBranch.findOne({ _id: branchId, adminId: req.adminId });
+      if (!branch) {
+        return res.status(404).json({ message: 'Branch not found' });
+      }
     }
 
     // Check user limit
@@ -60,6 +70,7 @@ const registerUser = async (req, res) => {
       managerType,
       companyActivity,
       department,
+      branchId,
       createdBy: req.adminId
     });
 
@@ -68,6 +79,7 @@ const registerUser = async (req, res) => {
 
     // Find the GAAP team and update it
     const gaapTeam = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
+
     if (gaapTeam) {
       if (role === 'Operation Manager') {
         // Update the GeneralUser section
@@ -89,6 +101,14 @@ const registerUser = async (req, res) => {
       }
       await gaapTeam.save();
       newUser.teamId = gaapTeam._id;
+    }
+
+    // Update branch with new user
+    if (branchId) {
+      await GaapBranch.findByIdAndUpdate(
+        branchId,
+        { $push: { users: newUser._id } }
+      );
     }
 
     // Save user
@@ -165,7 +185,7 @@ const registerUser = async (req, res) => {
               <p>Best regards,<br>The IDO Team</p>
             </div>
             <div class="footer">
-              <p>&copy; 2024 IDO. All rights reserved.</p>
+              <p>&copy; 2025 IDO. All rights reserved.</p>
             </div>
           </div>
         </body>
