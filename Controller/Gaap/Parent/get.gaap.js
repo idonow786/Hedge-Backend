@@ -1,4 +1,5 @@
 const GaapUser = require('../../../Model/Gaap/gaap_user');
+const GaapBranch = require('../../../Model/Gaap/gaap_branch');
 
 // Function to fetch GaapUsers
 const fetchGaapUsers = async (req, res) => {
@@ -12,27 +13,33 @@ const fetchGaapUsers = async (req, res) => {
         }
 
         let users;
+        let branches;
+
+        // Get all branches first
+        branches = await GaapBranch.find({ adminId });
+        const branchMap = {};
+        branches.forEach(branch => {
+            branchMap[branch._id.toString()] = {
+                branchName: branch.branchName,
+                location: branch.location
+            };
+        });
 
         if (requester.role === 'admin') {
-            // Get users with branch information
-            users = await GaapUser.find({})
-                .select('-password')
-                .populate('branchId', 'branchName location');
+            users = await GaapUser.find({}).select('-password');
         } else {
-            // Get users with branch information for specific admin
-            users = await GaapUser.find({ createdBy: adminId })
-                .select('-password')
-                .populate('branchId', 'branchName location');
+            users = await GaapUser.find({ createdBy: adminId }).select('-password');
         }
 
-        // Maintain backward compatibility while adding branch info
+        // Manually add branch information
         const usersWithBranch = users.map(user => {
             const userObj = user.toObject();
+            const branchInfo = userObj.branchId ? branchMap[userObj.branchId] : null;
+            
             return {
                 ...userObj,
-                branchName: userObj.branchId ? userObj.branchId.branchName : null,
-                branchLocation: userObj.branchId ? userObj.branchId.location : null,
-                branchId: userObj.branchId ? userObj.branchId._id : null
+                branchName: branchInfo ? branchInfo.branchName : null,
+                branchLocation: branchInfo ? branchInfo.location : null
             };
         });
 

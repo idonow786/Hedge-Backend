@@ -31,8 +31,7 @@ const gappuserSchema = new Schema({
     type: String,
   },
   branchId: {
-    type: Schema.Types.ObjectId,
-    ref: 'GaapBranch'
+    type: String
   },
   role: {
     type: String,

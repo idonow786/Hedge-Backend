@@ -774,7 +774,7 @@ const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
     const lowercaseEmail = email.toLowerCase();
-
+    console.log(await GaapUser.find({email:email}))
     let user;
     let secretKey;
     let features = null;
