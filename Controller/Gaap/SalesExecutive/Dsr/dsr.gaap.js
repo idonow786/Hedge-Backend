@@ -15,6 +15,7 @@ const dsrController = {
                 officeVisits,
                 cardsCollected,
                 teamId:user.teamId,
+                branchId: user.branchId,
                 meetings,
                 proposals
             });
@@ -113,6 +114,7 @@ const dsrController = {
                 // Use the team's _id to filter DSRs
                 query.teamId = team._id;
             } else if (userRole === 'Sales Manager') {
+                query.branchId=user.branchId;
                 // For managers, find all members they manage
                 const team = await GaapTeam.findOne({
                     'members.managerId': userId

@@ -17,8 +17,9 @@ const getProjects = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         const teamId = user.teamId;
+        const branchId = user.branchId;
 
-        let query = { teamId, financialApproval: true, operationsManagerApproval: true };
+        let query = { branchId,teamId, financialApproval: true, operationsManagerApproval: true };
         
         // Handle department query based on role
         // if (['Tax Executive', 'Tax Supervisor'].includes(userRole)) {

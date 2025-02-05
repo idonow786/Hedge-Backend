@@ -11,6 +11,7 @@ const getAllProjectsWithPayments = async (req, res) => {
     try {
         const user = await GaapUser.findById(req.adminId);
         let TeamId;
+        let branchId;
         if (!user) {
             return res.status(400).json({ message: 'user not found' });
         }
@@ -28,9 +29,10 @@ const getAllProjectsWithPayments = async (req, res) => {
             TeamId = team._id;
         } else {
             TeamId = user.teamId;
+            branchId=user.branchId;
         }
 
-        const projects = await GaapProject.find({ teamId: TeamId })
+        const projects = await GaapProject.find({ teamId: TeamId,branchId:branchId })
             .populate('customer')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')

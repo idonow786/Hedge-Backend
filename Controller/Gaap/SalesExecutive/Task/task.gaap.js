@@ -41,6 +41,7 @@ const taskController = {
         status,
         priority,
         teamId: user.teamId,
+        branchId: user.branchId,
         dueDate,
         createdBy: req.adminId
       });

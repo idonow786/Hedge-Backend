@@ -179,6 +179,7 @@ const createProject = async (req, res) => {
             message: `New project "${projectName}" has been created.`,
             department: department,
             teamId: user.teamId,
+            branchId:user.branchId,
             type: 'Project',
             projectId: newProject._id,
             status: 'unread'

@@ -27,6 +27,7 @@ const addSalesTarget = async (req, res) => {
             targetPeriod: { startDate, endDate },
             targetDetails,
             teamId:user.teamId,
+            branchId: user.branchId,
             createdBy: req.adminId
         });
 

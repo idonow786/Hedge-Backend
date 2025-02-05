@@ -26,10 +26,10 @@ const getDashboardData = async (req, res) => {
         }
 
         const teamId = team._id;
-
+        const branchId=user.branchId;
         const dashboardData = {
-            projectsOverview: await getProjectsOverview(teamId),
-            departmentPerformance: await getDepartmentPerformance(teamId),
+            projectsOverview: await getProjectsOverview(teamId,branchId),
+            departmentPerformance: await getDepartmentPerformance(teamId,branchId),
         };
 
         res.json(dashboardData);
@@ -39,10 +39,11 @@ const getDashboardData = async (req, res) => {
     }
 };
 
-const getProjectsOverview = async (teamId) => {
+const getProjectsOverview = async (teamId,branchId) => {
     try {
         const allProjects = await GaapProject.find({ 
             teamId,
+            branchId,
             status: { $ne: 'Cancelled' }
         })
             .select('-totalAmount')
@@ -82,14 +83,14 @@ const getProjectsOverview = async (teamId) => {
     }
 };
 
-const getDepartmentPerformance = async (teamId) => {
+const getDepartmentPerformance = async (teamId,branchId) => {
     try {
         const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
         const departmentPerformance = await GaapProject.aggregate([
-            { $match: { teamId: teamId.toString() } }, // Convert ObjectId to string if necessary
+            { $match: { teamId: teamId.toString(),branchId:branchId } }, // Convert ObjectId to string if necessary
             {
                 $group: {
                     _id: "$department",

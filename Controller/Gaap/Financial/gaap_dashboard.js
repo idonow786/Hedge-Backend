@@ -1,10 +1,10 @@
 // Import required models
-const GaapProject = require('../../../Model/Gaap/gaap_project');
-const ProjectPayment = require('../../../Model/Gaap/gaap_projectPayment');
-const GaapInvoice = require('../../../Model/Gaap/gaap_invoice');
-const GaapDsr = require('../../../Model/Gaap/gaap_dsr');
-const GaapSalesTarget = require('../../../Model/Gaap/gaap_salestarget');
-const GaapUser = require('../../../Model/Gaap/gaap_user');
+const GaapProject = require("../../../Model/Gaap/gaap_project");
+const ProjectPayment = require("../../../Model/Gaap/gaap_projectPayment");
+const GaapInvoice = require("../../../Model/Gaap/gaap_invoice");
+const GaapDsr = require("../../../Model/Gaap/gaap_dsr");
+const GaapSalesTarget = require("../../../Model/Gaap/gaap_salestarget");
+const GaapUser = require("../../../Model/Gaap/gaap_user");
 
 /**
  * Utility function to replace spaces with underscores in a string.
@@ -12,7 +12,7 @@ const GaapUser = require('../../../Model/Gaap/gaap_user');
  * @returns {string} - The transformed string with underscores.
  */
 const replaceSpacesWithUnderscores = (str) => {
-  return str.replace(/\s+/g, '_');
+  return str.replace(/\s+/g, "_");
 };
 
 const getDashboardData = async (req, res) => {
@@ -22,31 +22,47 @@ const getDashboardData = async (req, res) => {
     const user = await GaapUser.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const teamId = user.teamId;
+    const branchId = user.branchId;
+
     const currentDate = new Date();
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0
+    );
 
     // 2. Overview of all projects
     const projectOverviewRaw = await GaapProject.aggregate([
-      { $match: { teamId: teamId, status: { $ne: 'Cancelled' } } },
+      {
+        $match: {
+          teamId: teamId,
+          branchId: branchId,
+          status: { $ne: "Cancelled" },
+        },
+      },
       {
         $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Define progress weights based on status
     const statusProgress = {
-      'Proposed': 0,
-      'In Progress': 50,
-      'Approved': 75,
-      'Completed': 100
+      Proposed: 0,
+      "In Progress": 50,
+      Approved: 75,
+      Completed: 100,
       // Add more statuses and their corresponding progress if needed
     };
 
@@ -61,25 +77,27 @@ const getDashboardData = async (req, res) => {
       acc[statusKey] = item.count;
 
       // Calculate total progress
-      const progress = statusProgress[item._id] !== undefined ? statusProgress[item._id] : 0;
+      const progress =
+        statusProgress[item._id] !== undefined ? statusProgress[item._id] : 0;
       totalProgress += progress * item.count;
       totalProjects += item.count;
 
       return acc;
     }, {});
 
-    const averageProgress = totalProjects > 0 ? totalProgress / totalProjects : 0;
+    const averageProgress =
+      totalProjects > 0 ? totalProgress / totalProjects : 0;
 
     // 3. Overview of all invoices
     const invoiceOverviewRaw = await GaapInvoice.aggregate([
-      { $match: { teamId: teamId } },
+      { $match: { teamId: teamId, branchId: branchId } },
       {
         $group: {
-          _id: '$status',
+          _id: "$status",
           count: { $sum: 1 },
-          totalAmount: { $sum: '$total' }
-        }
-      }
+          totalAmount: { $sum: "$total" },
+        },
+      },
     ]);
 
     // Transform invoiceOverview keys by replacing spaces with underscores (if needed)
@@ -88,7 +106,7 @@ const getDashboardData = async (req, res) => {
       const statusKey = replaceSpacesWithUnderscores(item._id);
       acc[statusKey] = {
         count: item.count,
-        totalAmount: item.totalAmount
+        totalAmount: item.totalAmount,
       };
       return acc;
     }, {});
@@ -98,24 +116,27 @@ const getDashboardData = async (req, res) => {
     today.setHours(0, 0, 0, 0); // Reset time to start of the day
 
     // Fetch distinct user IDs belonging to the team
-    const teamUserIds = await GaapUser.find({ teamId: teamId }).distinct('_id');
+    const teamUserIds = await GaapUser.find({
+      teamId: teamId,
+      branchId: branchId,
+    }).distinct("_id");
 
     const dsrSummaryRaw = await GaapDsr.aggregate([
       {
-        $match: { 
+        $match: {
           date: today,
-          userId: { $in: teamUserIds }
-        }
+          userId: { $in: teamUserIds },
+        },
       },
       {
         $group: {
           _id: null,
-          totalOfficeVisits: { $sum: '$officeVisits' },
-          totalCardsCollected: { $sum: '$cardsCollected' },
-          totalMeetings: { $sum: '$meetings' },
-          totalProposals: { $sum: '$proposals' }
-        }
-      }
+          totalOfficeVisits: { $sum: "$officeVisits" },
+          totalCardsCollected: { $sum: "$cardsCollected" },
+          totalMeetings: { $sum: "$meetings" },
+          totalProposals: { $sum: "$proposals" },
+        },
+      },
     ]);
 
     const dsrSummary = dsrSummaryRaw.length > 0 ? dsrSummaryRaw[0] : null;
@@ -124,48 +145,54 @@ const getDashboardData = async (req, res) => {
     const financialOverviewRaw = await ProjectPayment.aggregate([
       {
         $match: {
-          'paymentHistory.date': { $gte: startOfMonth, $lte: endOfMonth },
-          teamId: teamId
-        }
+          "paymentHistory.date": { $gte: startOfMonth, $lte: endOfMonth },
+          teamId: teamId,
+        },
       },
       {
-        $unwind: '$paymentHistory'
+        $unwind: "$paymentHistory",
       },
       {
         $group: {
           _id: null,
-          totalCashInflow: { $sum: '$paymentHistory.amount' },
-          totalPayments: { $sum: 1 }
-        }
-      }
+          totalCashInflow: { $sum: "$paymentHistory.amount" },
+          totalPayments: { $sum: 1 },
+        },
+      },
     ]);
 
     const financialOverview = {
-      totalCashInflow: financialOverviewRaw.length > 0 ? financialOverviewRaw[0].totalCashInflow : 0,
-      totalPayments: financialOverviewRaw.length > 0 ? financialOverviewRaw[0].totalPayments : 0,
+      totalCashInflow:
+        financialOverviewRaw.length > 0
+          ? financialOverviewRaw[0].totalCashInflow
+          : 0,
+      totalPayments:
+        financialOverviewRaw.length > 0
+          ? financialOverviewRaw[0].totalPayments
+          : 0,
       totalInvoicesCreated: await GaapInvoice.countDocuments({
         createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-        teamId: teamId
-      })
+        teamId: teamId,
+      }),
     };
 
     // 6. Sales targets summary
     const salesTargetsSummaryRaw = await GaapSalesTarget.aggregate([
       {
         $match: {
-          'targetPeriod.endDate': { $gte: currentDate },
-          teamId: teamId
-        }
+          "targetPeriod.endDate": { $gte: currentDate },
+          teamId: teamId,
+        },
       },
       {
         $group: {
-          _id: '$targetType',
-          totalOfficeVisitsTarget: { $sum: '$targetDetails.officeVisits' },
-          totalClosingsTarget: { $sum: '$targetDetails.closings' },
-          totalOfficeVisitsAchieved: { $sum: '$achievedValue.officeVisits' },
-          totalClosingsAchieved: { $sum: '$achievedValue.closings' }
-        }
-      }
+          _id: "$targetType",
+          totalOfficeVisitsTarget: { $sum: "$targetDetails.officeVisits" },
+          totalClosingsTarget: { $sum: "$targetDetails.closings" },
+          totalOfficeVisitsAchieved: { $sum: "$achievedValue.officeVisits" },
+          totalClosingsAchieved: { $sum: "$achievedValue.closings" },
+        },
+      },
     ]);
 
     // Transform salesTargetsSummary keys by replacing spaces with underscores (if needed)
@@ -176,17 +203,21 @@ const getDashboardData = async (req, res) => {
         officeVisits: {
           target: item.totalOfficeVisitsTarget,
           achieved: item.totalOfficeVisitsAchieved,
-          progressPercentage: item.totalOfficeVisitsTarget > 0 
-            ? (item.totalOfficeVisitsAchieved / item.totalOfficeVisitsTarget) * 100 
-            : 0
+          progressPercentage:
+            item.totalOfficeVisitsTarget > 0
+              ? (item.totalOfficeVisitsAchieved /
+                  item.totalOfficeVisitsTarget) *
+                100
+              : 0,
         },
         closings: {
           target: item.totalClosingsTarget,
           achieved: item.totalClosingsAchieved,
-          progressPercentage: item.totalClosingsTarget > 0 
-            ? (item.totalClosingsAchieved / item.totalClosingsTarget) * 100 
-            : 0
-        }
+          progressPercentage:
+            item.totalClosingsTarget > 0
+              ? (item.totalClosingsAchieved / item.totalClosingsTarget) * 100
+              : 0,
+        },
       };
       return acc;
     }, {});
@@ -198,20 +229,22 @@ const getDashboardData = async (req, res) => {
       dsrSummary,
       projectProgress: {
         averageProgress: parseFloat(averageProgress.toFixed(2)), // Rounded to 2 decimal places
-        totalProjects: totalProjects
+        totalProjects: totalProjects,
       },
       financialOverview,
-      salesTargetsSummary // Already transformed with underscores
+      salesTargetsSummary, // Already transformed with underscores
     };
 
     // Respond with the dashboard data
     res.status(200).json(dashboardData);
   } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    res.status(500).json({ message: 'Error fetching dashboard data', error: error.message });
+    console.error("Error fetching dashboard data:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching dashboard data", error: error.message });
   }
 };
 
 module.exports = {
-  getDashboardData
+  getDashboardData,
 };

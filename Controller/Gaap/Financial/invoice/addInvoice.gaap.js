@@ -35,7 +35,8 @@ const addInvoice = async (req, res) => {
       customer: project.customer,
       project: projectId,
       createdBy: req.adminId,
-      teamId: user.teamId
+      teamId: user.teamId,
+      branchId:user.branchId,
     });
 
     // Ensure that the total, subtotal, and taxTotal are set correctly
@@ -66,7 +67,8 @@ const addInvoice = async (req, res) => {
         customer: project.customer,
         totalAmount: project.totalAmount,
         createdBy: req.adminId,
-        teamId: user.teamId
+        teamId: user.teamId,
+        branchId:user.branchId,
       });
     }
 

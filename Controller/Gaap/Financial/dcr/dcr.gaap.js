@@ -18,6 +18,7 @@ const createReport = async (req, res) => {
       cashInflow,
       cashOutflow,
       teamId: user.teamId,
+      branchId:user.branchId,
       invoicesCreated,
       createdBy: req.adminId
     });
@@ -37,6 +38,7 @@ const getAllReports = async (req, res) => {
     if (req.role !== 'admin' && req.role !== 'Operation Manager') {
       reports = await DailyPerformanceReport.find({ createdBy: req.adminId }).sort({ date: -1 });
     } else {
+      const user = await GaapUser.findById(req.adminId)
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },
@@ -44,7 +46,7 @@ const getAllReports = async (req, res) => {
         ]
       });
       if (team) {
-        reports = await DailyPerformanceReport.find({ teamId: team._id }).sort({ date: -1 });
+        reports = await DailyPerformanceReport.find({ teamId: team._id,branchId:user.branchId}).sort({ date: -1 });
       }
     }
     res.status(200).json(reports);

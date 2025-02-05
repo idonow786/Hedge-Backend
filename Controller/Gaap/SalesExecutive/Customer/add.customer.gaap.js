@@ -54,6 +54,7 @@ const registerCustomer = async (req, res) => {
       contactPerson1,
       contactPerson2,
       teamId:user.teamId,
+      branchId:user.branchId,
       trNumber,
       documents,
       industryType,
