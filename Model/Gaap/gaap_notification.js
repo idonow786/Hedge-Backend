@@ -16,6 +16,9 @@ const gaapnotificationSchema = new Schema({
   teamId: {
     type: String
   },
+  branchId: {
+    type: String,
+  },
   type: {
     type: String,
     enum: ['Project', 'Task', 'Payment', 'Other'],

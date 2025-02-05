@@ -51,6 +51,9 @@ const gaapcustomerSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   address: {
     street: String,
     city: String,

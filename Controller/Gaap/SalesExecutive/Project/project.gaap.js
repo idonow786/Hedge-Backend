@@ -135,6 +135,7 @@ const createProject = async (req, res) => {
             status,
             description,
             teamId: user.teamId,
+            branchId:user.branchId,
             pricingType,
             totalAmount,
             appliedDiscount,

@@ -19,6 +19,9 @@ const dailyPerformanceReportSchema = new mongoose.Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   invoicesCreated: {
     type: Number,
     required: true,

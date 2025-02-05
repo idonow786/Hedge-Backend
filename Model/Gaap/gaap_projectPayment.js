@@ -27,6 +27,9 @@ const projectPaymentSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   paymentOption: {
     type: String,
   },

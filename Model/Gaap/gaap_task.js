@@ -19,6 +19,9 @@ const gaaptaskSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   department: {
     type: String,
   },

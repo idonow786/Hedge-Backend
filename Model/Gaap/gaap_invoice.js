@@ -49,6 +49,9 @@ const gaapInvoiceSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   dueDate: {
     type: Date,
   },

@@ -25,6 +25,9 @@ const gaappaymentSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   amount: {
     type: Number,
     required: true,

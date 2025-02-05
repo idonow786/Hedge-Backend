@@ -82,6 +82,9 @@ const gaapprojectSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   endDate: Date,
   status: {
     type: String,

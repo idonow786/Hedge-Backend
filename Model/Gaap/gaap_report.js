@@ -15,6 +15,9 @@ const gaapreportSchema = new Schema({
   teamId: {
     type: String,
   },
+  branchId: {
+    type: String,
+  },
   content: {
     type: String,
     required: true

@@ -18,6 +18,9 @@ const gaapCommentSchema = new mongoose.Schema({
     teamId: {
         type: String,
       },
+      branchId: {
+        type: String,
+      },
     type: {
         type: String,
         required: true

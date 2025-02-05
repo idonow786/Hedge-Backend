@@ -20,6 +20,9 @@ const gaapdocumentSchema = new Schema({
     type: String,
     required: true
   },
+  branchId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now

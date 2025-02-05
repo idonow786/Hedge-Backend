@@ -7,7 +7,8 @@ const gaapdsrSchema = new mongoose.Schema({
     cardsCollected: Number,
     meetings: Number,
     proposals: Number,
-    teamId:String
+    teamId:String,
+    branchId: String,
 });
 
 
