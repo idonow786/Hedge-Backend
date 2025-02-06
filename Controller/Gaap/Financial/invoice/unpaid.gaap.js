@@ -47,7 +47,6 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
     const projects = await GaapProject.find({
       // status: 'In Progress',
       teamId: teamId,
-      branchId:branchId,
     })
       .populate("customer")
       .populate("assignedTo")
