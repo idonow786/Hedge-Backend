@@ -24,6 +24,7 @@ const getProjectsAll = async (req, res) => {
       }
     } else {
       const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
+      console.log(managerTeam)
       if (managerTeam) {
         const teamMemberIds = managerTeam.members.map(member => member.memberId);
         teamMemberIds.push(adminId);

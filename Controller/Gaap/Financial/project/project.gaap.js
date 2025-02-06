@@ -15,6 +15,7 @@ const getAllProjectsWithPayments = async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: 'user not found' });
         }
+        console.log(req.role)
         if (req.role === 'admin' || req.role === 'Audit Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
@@ -22,7 +23,7 @@ const getAllProjectsWithPayments = async (req, res) => {
                     { 'GeneralUser.userId': req.adminId }
                 ]
             });
-
+            console.log(team)
             if (!team) {
                 return res.status(404).json({ message: 'Team not found for this admin/manager' });
             }
@@ -30,9 +31,10 @@ const getAllProjectsWithPayments = async (req, res) => {
         } else {
             TeamId = user.teamId;
             branchId=user.branchId;
+            
         }
 
-        const projects = await GaapProject.find({ teamId: TeamId,branchId:branchId })
+        const projects = await GaapProject.find({ teamId: TeamId })
             .populate('customer')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')
