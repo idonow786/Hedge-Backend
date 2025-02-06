@@ -482,7 +482,7 @@ const updateProject = async (req, res) => {
       assignedToId,
       salesPersonId,
       startDate,
-      financialApproval=true,
+      financialApproval,
       customerApproval=true,
       salesManagerApproval,
       paymentPlan,
