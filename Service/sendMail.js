@@ -114,7 +114,7 @@ const sendRecurringProjectEmail = async (receiverEmail, projectName, recurringDa
             </div>
             
             <div class="content">
-              <p>Dear Finance Manager,</p>
+              <p>Dear Audit Manager,</p>
               
               <p>This is a notification regarding an upcoming recurring project that requires your financial review and approval.</p>
               

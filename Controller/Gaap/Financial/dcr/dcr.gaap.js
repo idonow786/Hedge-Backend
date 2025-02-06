@@ -35,7 +35,7 @@ const getAllReports = async (req, res) => {
     let reports;
     console.log(req.role)
     console.log(await DailyPerformanceReport.find() )
-    if (req.role !== 'admin' && req.role !== 'Operation Manager') {
+    if (req.role !== 'admin' && req.role !== 'Audit Manager') {
       reports = await DailyPerformanceReport.find({ createdBy: req.adminId }).sort({ date: -1 });
     } else {
       const user = await GaapUser.findById(req.adminId)

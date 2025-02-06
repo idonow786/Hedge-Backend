@@ -17,7 +17,7 @@ const gaapTeamSchema = new mongoose.Schema({
     name: { type: String },
     role: { 
       type: String, 
-      default: 'Operation Manager',
+      default: 'Audit Manager',
     }
   },
 

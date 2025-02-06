@@ -91,7 +91,7 @@ const checkAndNotifyRecurringProjects = async () => {
 
             // Find users by their _id in the team
             const financeManager = team.members.find(member => 
-                member.role === 'Finance Manager'
+                member.role === 'Audit Manager'
             )?.memberId;
 
             const operationManager = team.GeneralUser?.userId;
@@ -101,12 +101,12 @@ const checkAndNotifyRecurringProjects = async () => {
             const [financeManagerUser, operationManagerUser, adminUserObj] = await Promise.all([
                 financeManager ? GaapUser.findOne({ 
                     _id: financeManager,
-                    role: 'Finance Manager',
+                    role: 'Audit Manager',
                     isActive: true 
                 }) : null,
                 operationManager ? GaapUser.findOne({ 
                     _id: operationManager,
-                    role: 'Operation Manager',
+                    role: 'Audit Manager',
                     isActive: true 
                 }) : null,
                 adminUser ? GaapUser.findOne({ 
@@ -121,7 +121,7 @@ const checkAndNotifyRecurringProjects = async () => {
             const urgencyPrefix = isPastDue ? "URGENT: Past due - " : "";
             const notificationMessage = `${urgencyPrefix}Recurring project "${project.projectName}" ${isPastDue ? 'was' : 'is'} due for renewal on ${formattedDate}`;
 
-            // Handle Finance Manager notifications if exists
+            // Handle Audit Manager notifications if exists
             if (financeManagerUser) {
                 await sendRecurringProjectEmail(
                     financeManagerUser.email,
@@ -148,7 +148,7 @@ const checkAndNotifyRecurringProjects = async () => {
                 });
             }
 
-            // Handle Operation Manager notifications
+            // Handle Audit Manager notifications
             if (operationManagerUser) {
                 await GaapAlert.create({
                     user: operationManagerUser._id,

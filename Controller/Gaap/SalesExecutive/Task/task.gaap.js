@@ -231,8 +231,8 @@ const taskController = {
         const project = await GaapProject.findById(updatedTask.project);
   
         if (project) {
-          // Find the Finance Manager using teamId
-          const financeManager = await GaapUser.findOne({ teamId: updatedTask.teamId, role: 'Finance Manager' });
+          // Find the Audit Manager using teamId
+          const financeManager = await GaapUser.findOne({ teamId: updatedTask.teamId, role: 'Audit Manager' });
           if (financeManager && financeManager.email) {
             console.log(financeManager.email);
             // Prepare HTML email content with CSS
@@ -370,7 +370,7 @@ const taskController = {
         console.log('executive so using assignTo')
         // For executive roles, only return tasks assigned to them
         tasksQuery['assignedTo'] = adminId;
-      } else if (['admin', 'Operation Manager', 'Sales Executive', 'Sales Manager','Finance Manager'].includes(userRole)) {
+      } else if (['admin', 'Audit Manager', 'Sales Executive', 'Sales Manager','Audit Manager'].includes(userRole)) {
         console.log('uperlevel so using teamId')
         tasksQuery.teamId = user.teamId;
       } else {

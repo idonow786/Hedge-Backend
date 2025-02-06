@@ -9,7 +9,7 @@ const getProjectsAll = async (req, res) => {
     const { adminId, role } = req;
     let projects = [];
 
-    if (role === 'admin' || role === 'Operation Manager') {
+    if (role === 'admin' || role === 'Audit Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': adminId },

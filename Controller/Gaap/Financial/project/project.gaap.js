@@ -15,7 +15,7 @@ const getAllProjectsWithPayments = async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: 'user not found' });
         }
-        if (req.role === 'admin' || req.role === 'Operation Manager') {
+        if (req.role === 'admin' || req.role === 'Audit Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
                     { 'parentUser.userId': req.adminId },

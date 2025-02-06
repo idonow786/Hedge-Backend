@@ -186,7 +186,7 @@ const generateAllStaffReports = async (startDate, endDate, teamId,branchId) => {
   const allStaff = await GaapUser.find({ 
     teamId, 
     branchId,
-    role: { $nin: ['Operation Manager', 'admin'] } 
+    role: { $nin: ['Audit Manager', 'admin'] } 
   });
   return Promise.all(allStaff.map(staff => generateStaffReport(staff._id, startDate, endDate, teamId,branchId)));
 };

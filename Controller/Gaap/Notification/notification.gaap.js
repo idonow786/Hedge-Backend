@@ -20,7 +20,7 @@ const getUserNotifications = async (req, res) => {
 
     let notifications = [];
 
-    if (role === 'admin' || role === 'Operation Manager') {
+    if (role === 'admin' || role === 'Audit Manager') {
       // Find the team where the user is the parentUser or GeneralUser
       const teams = await GaapTeam.find({
         $or: [
@@ -53,19 +53,19 @@ const getUserNotifications = async (req, res) => {
         .sort({ createdAt: -1 })
         .lean();
 
-    } else if (role === 'Finance Manager') {
-      // Find the team where the user is a member with role 'Finance Manager'
+    } else if (role === 'Audit Manager') {
+      // Find the team where the user is a member with role 'Audit Manager'
       const teams = await GaapTeam.find({
         'members': {
           $elemMatch: {
             memberId: userId,
-            role: 'Finance Manager'
+            role: 'Audit Manager'
           }
         }
       });
 
       if (teams.length === 0) {
-        return res.status(404).json({ message: 'No teams found for the Finance Manager' });
+        return res.status(404).json({ message: 'No teams found for the Audit Manager' });
       }
 
       // Get all user IDs from the team(s)

@@ -20,7 +20,7 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
   try {
     let teamId;
     let branchId;
-    if (req.role === "admin" || req.role === "Operation Manager") {
+    if (req.role === "admin" || req.role === "Audit Manager") {
       const team = await GaapTeam.findOne({
         $or: [
           { "parentUser.userId": req.adminId },
@@ -677,7 +677,7 @@ const getProjectsWithPaymentStatus = async (req, res) => {
     let teamId;
     let branchId;
 
-    if (req.role === "admin" || req.role === "Operation Manager") {
+    if (req.role === "admin" || req.role === "Audit Manager") {
       const team = await GaapTeam.findOne({
         $or: [
           { "parentUser.userId": req.adminId },

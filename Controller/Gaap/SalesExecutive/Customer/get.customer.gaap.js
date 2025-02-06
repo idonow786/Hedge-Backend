@@ -12,7 +12,7 @@ const getAllCustomersByAdmin = async (req, res) => {
     let query = {};
 
     // Determine the query based on role
-    if (role === "admin" || role === "Operation Manager") {
+    if (role === "admin" || role === "Audit Manager") {
       const parentTeam = await GaapTeam.findOne({
         $or: [
           { "parentUser.userId": adminId },
@@ -23,7 +23,7 @@ const getAllCustomersByAdmin = async (req, res) => {
       if (parentTeam) {
         query = { teamId: parentTeam._id };
       }
-    } else if (role === "Finance Manager") {
+    } else if (role === "Audit Manager") {
       const user = await GaapUser.findById(adminId);
       if (user) {
         query = { teamId: user.teamId, branchId: user.branchId };

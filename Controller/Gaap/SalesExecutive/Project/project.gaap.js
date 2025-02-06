@@ -246,7 +246,7 @@ const getProjects = async (req, res) => {
     let projects;
 
     // Determine the projects to fetch based on user role
-    if (req.role === 'admin' || req.role === 'Operation Manager') {
+    if (req.role === 'admin' || req.role === 'Audit Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },
@@ -482,8 +482,8 @@ const updateProject = async (req, res) => {
       assignedToId,
       salesPersonId,
       startDate,
-      financialApproval,
-      customerApproval,
+      financialApproval=true,
+      customerApproval=true,
       salesManagerApproval,
       paymentPlan,
       endDate,
