@@ -19,7 +19,12 @@ const getProjects = async (req, res) => {
         const teamId = user.teamId;
         const branchId = user.branchId;
 
-        let query = { branchId,teamId, financialApproval: true, operationsManagerApproval: true };
+        let query = { teamId, financialApproval: true, operationsManagerApproval: true };
+        
+        // Add branchId to query only if it exists
+        if (branchId) {
+            query.branchId = branchId;
+        }
         
         // Handle department query based on role
         // if (['Tax Executive', 'Tax Supervisor'].includes(userRole)) {

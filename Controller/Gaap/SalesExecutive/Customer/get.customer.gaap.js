@@ -26,7 +26,7 @@ const getAllCustomersByAdmin = async (req, res) => {
     } else if (role === "Audit Manager") {
       const user = await GaapUser.findById(adminId);
       if (user) {
-        query = { teamId: user.teamId, branchId: user.branchId };
+        query = { teamId: user.teamId};
       }
     } else {
       const managerTeam = await GaapTeam.findOne({

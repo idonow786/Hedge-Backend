@@ -44,10 +44,13 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
       console.log("teamID : ", teamId);
     }
 
-    const projects = await GaapProject.find({
-      // status: 'In Progress',
-      teamId: teamId,
-    })
+    // Build query object based on available filters
+    const queryObject = { teamId: teamId };
+    if (branchId) {
+      queryObject.branchId = branchId;
+    }
+
+    const projects = await GaapProject.find(queryObject)
       .populate("customer")
       .populate("assignedTo")
       .populate("salesPerson")
@@ -697,12 +700,12 @@ const getProjectsWithPaymentStatus = async (req, res) => {
       teamId = user.teamId;
       branchId=user.branchId;
     }
-
-    const projects = await GaapProject.find({
-      // status: { $in: ['Approved', 'In Progress'] },
-      teamId: teamId,
-      branchId:branchId,
-    })
+  // Build query object based on available filters
+  const queryObject = { teamId: teamId };
+  if (branchId) {
+    queryObject.branchId = branchId;
+  }
+    const projects = await GaapProject.find(queryObject)
       .populate("customer")
       .populate("assignedTo")
       .populate("salesPerson");

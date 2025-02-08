@@ -34,6 +34,13 @@ const createBranch = async (req, res) => {
 // Get all branches
 const getAllBranches = async (req, res) => {
   try {
+    const user = await GaapUser.findById(req.adminId);
+    let branchId;
+    
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
     // Find team where user is either parentUser or GeneralUser
     const team = await GaapTeam.findOne({
       $or: [
@@ -46,7 +53,17 @@ const getAllBranches = async (req, res) => {
       return res.status(404).json({ message: 'Team not found for this user' });
     }
 
-    const branches = await GaapBranch.find({ adminId: team.parentUser.userId })
+    if (req.role !== 'admin' && req.role !== 'Audit Manager') {
+      branchId = user.branchId;
+    }
+
+    // Create query object with optional branchId
+    const query = {
+      adminId: team.parentUser.userId,
+      ...(branchId && { _id: branchId })
+    };
+
+    const branches = await GaapBranch.find(query)
       .populate('users', 'fullName email role');
 
     res.status(200).json(branches);
