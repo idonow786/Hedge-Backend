@@ -30,11 +30,16 @@ const getAllProjectsWithPayments = async (req, res) => {
             TeamId = team._id;
         } else {
             TeamId = user.teamId;
-            branchId=user.branchId;
-            
+            branchId=user.branchId;   
         }
 
-        const projects = await GaapProject.find({ teamId: TeamId })
+        // Create query object with optional branchId
+        const query = {
+            teamId: TeamId,
+            ...(branchId && { branchId })
+        };
+
+        const projects = await GaapProject.find(query)
             .populate('customer')
             .populate('assignedTo', 'fullName')
             .populate('salesPerson', 'fullName')

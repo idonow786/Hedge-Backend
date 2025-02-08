@@ -1,5 +1,6 @@
 const GaapBranch = require('../../../Model/Gaap/gaap_branch');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
+const GaapTeam = require('../../../Model/Gaap/gaap_team');
 
 // Create a new branch
 const createBranch = async (req, res) => {
@@ -33,7 +34,19 @@ const createBranch = async (req, res) => {
 // Get all branches
 const getAllBranches = async (req, res) => {
   try {
-    const branches = await GaapBranch.find({ adminId: req.adminId })
+    // Find team where user is either parentUser or GeneralUser
+    const team = await GaapTeam.findOne({
+      $or: [
+        { 'parentUser.userId': req.adminId },
+        { 'GeneralUser.userId': req.adminId }
+      ]
+    });
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found for this user' });
+    }
+
+    const branches = await GaapBranch.find({ adminId: team.parentUser.userId })
       .populate('users', 'fullName email role');
 
     res.status(200).json(branches);
