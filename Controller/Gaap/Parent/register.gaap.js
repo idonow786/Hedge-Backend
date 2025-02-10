@@ -86,7 +86,8 @@ const registerUser = async (req, res) => {
         gaapTeam.GeneralUser = {
           userId: newUser._id,
           name: fullName,
-          role: role
+          role: role,
+          branchId: branchId
         };
       } else {
         // Add to members array for other roles

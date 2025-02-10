@@ -18,7 +18,8 @@ const gaapTeamSchema = new mongoose.Schema({
     role: { 
       type: String, 
       default: 'Audit Manager',
-    }
+    },
+    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapBranch' }
   },
 
   members: [{

@@ -5,6 +5,7 @@ const GaapBranch = require('../../../Model/Gaap/gaap_branch');
 const fetchGaapUsers = async (req, res) => {
     try {
         const adminId = req.adminId;
+        const { branchId } = req.body; // Get branchId from request body
 
         const requester = await GaapUser.find({createdBy:adminId});
 
@@ -25,11 +26,17 @@ const fetchGaapUsers = async (req, res) => {
             };
         });
 
-        if (requester.role === 'admin') {
-            users = await GaapUser.find({}).select('-password');
-        } else {
-            users = await GaapUser.find({ createdBy: adminId }).select('-password');
+        // Build query based on role and branchId
+        let query = {};
+        if (requester.role !== 'admin') {
+            query.createdBy = adminId;
         }
+        if (branchId) {
+            query.branchId = branchId;
+        }
+
+        // Fetch users with the constructed query
+        users = await GaapUser.find(query).select('-password');
 
         // Manually add branch information
         const usersWithBranch = users.map(user => {
