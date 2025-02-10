@@ -20,6 +20,7 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
   try {
     let teamId;
     let branchId;
+
     if (req.role === "admin" || req.role === "Audit Manager") {
       const team = await GaapTeam.findOne({
         $or: [
@@ -33,6 +34,13 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
       }
 
       teamId = team._id;
+      
+      // Only set branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === req.adminId;
+      if (!isParentUser) {
+        const user = await GaapUser.findById(req.adminId);
+        branchId = user.branchId;
+      }
     } else {
       const user = await GaapUser.findById(req.adminId);
       if (!user) {
@@ -40,11 +48,9 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
       }
       teamId = user.teamId;
       branchId = user.branchId;
-
-      console.log("teamID : ", teamId);
     }
 
-    // Build query object based on available filters
+    // Build query based on role and team
     const queryObject = { teamId: teamId };
     if (branchId) {
       queryObject.branchId = branchId;
@@ -55,7 +61,7 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
       .populate("assignedTo")
       .populate("salesPerson")
       .lean();
-    console.log(projects);
+
     const projectsWithInvoices = await Promise.all(
       projects.map(async (project) => {
         const payment = await ProjectPayment.findOne({ project: project._id })
@@ -104,12 +110,10 @@ const getProjectsWithInvoiceStatus = async (req, res) => {
     res.status(200).json(projectsWithInvoices);
   } catch (error) {
     console.error("Error fetching projects with invoice status:", error);
-    res
-      .status(500)
-      .json({
-        message: "Error fetching projects with invoice status",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error fetching projects with invoice status",
+      error: error.message,
+    });
   }
 };
 
@@ -692,19 +696,28 @@ const getProjectsWithPaymentStatus = async (req, res) => {
       }
 
       teamId = team._id;
+      
+      // Only set branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === req.adminId;
+      if (!isParentUser) {
+        const user = await GaapUser.findById(req.adminId);
+        branchId = user.branchId;
+      }
     } else {
       const user = await GaapUser.findById(req.adminId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       teamId = user.teamId;
-      branchId=user.branchId;
+      branchId = user.branchId;
     }
-  // Build query object based on available filters
-  const queryObject = { teamId: teamId };
-  if (branchId) {
-    queryObject.branchId = branchId;
-  }
+
+    // Build query based on role and team
+    const queryObject = { teamId: teamId };
+    if (branchId) {
+      queryObject.branchId = branchId;
+    }
+
     const projects = await GaapProject.find(queryObject)
       .populate("customer")
       .populate("assignedTo")

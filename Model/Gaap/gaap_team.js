@@ -12,16 +12,15 @@ const gaapTeamSchema = new mongoose.Schema({
       immutable: true 
     }
   },
-  GeneralUser: {
-    userId: { type: String},
+  GeneralUser: [{
+    userId: { type: String },
     name: { type: String },
+    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapBranch', required: true },
     role: { 
       type: String, 
-      default: 'Audit Manager',
-    },
-    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapBranch' }
-  },
-
+      default: 'Audit Manager'
+    }
+  }],
   members: [{
     memberId:{type:String},
     name: { type: String },

@@ -45,7 +45,8 @@ const getAllBranches = async (req, res) => {
     const team = await GaapTeam.findOne({
       $or: [
         { 'parentUser.userId': req.adminId },
-        { 'GeneralUser.userId': req.adminId }
+        { 'GeneralUser': { $elemMatch: { userId: req.adminId } } }
+
       ]
     });
 

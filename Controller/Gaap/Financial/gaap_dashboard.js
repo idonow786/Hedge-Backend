@@ -5,6 +5,7 @@ const GaapInvoice = require("../../../Model/Gaap/gaap_invoice");
 const GaapDsr = require("../../../Model/Gaap/gaap_dsr");
 const GaapSalesTarget = require("../../../Model/Gaap/gaap_salestarget");
 const GaapUser = require("../../../Model/Gaap/gaap_user");
+const GaapTeam = require("../../../Model/Gaap/gaap_team");
 
 /**
  * Utility function to replace spaces with underscores in a string.
@@ -25,8 +26,32 @@ const getDashboardData = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const teamId = user.teamId;
-    const branchId = user.branchId;
+    let teamId;
+    let branchId;
+
+    if (req.role === 'admin' || req.role === 'Audit Manager') {
+      const team = await GaapTeam.findOne({
+        $or: [
+          { 'parentUser.userId': req.adminId },
+          { 'GeneralUser': { $elemMatch: { userId: req.adminId } } }
+
+        ]
+      });
+
+      if (!team) {
+        return res.status(404).json({ message: "Team not found for this admin/manager" });
+      }
+      teamId = team._id;
+
+      // Only set branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === req.adminId;
+      if (!isParentUser) {
+        branchId = user.branchId;
+      }
+    } else {
+      teamId = user.teamId;
+      branchId = user.branchId;
+    }
 
     const currentDate = new Date();
     const startOfMonth = new Date(
@@ -40,12 +65,17 @@ const getDashboardData = async (req, res) => {
       0
     );
 
+    // Build base query for all aggregations
+    const baseQuery = { teamId };
+    if (branchId) {
+      baseQuery.branchId = branchId;
+    }
+
     // 2. Overview of all projects
     const projectOverviewRaw = await GaapProject.aggregate([
       {
         $match: {
-          teamId: teamId,
-          branchId: branchId,
+          ...baseQuery,
           status: { $ne: "Cancelled" },
         },
       },
@@ -90,7 +120,9 @@ const getDashboardData = async (req, res) => {
 
     // 3. Overview of all invoices
     const invoiceOverviewRaw = await GaapInvoice.aggregate([
-      { $match: { teamId: teamId, branchId: branchId } },
+      { 
+        $match: baseQuery
+      },
       {
         $group: {
           _id: "$status",
@@ -113,17 +145,19 @@ const getDashboardData = async (req, res) => {
 
     // 4. DSR (Daily Sales Report) summary for team users
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of the day
+    today.setHours(0, 0, 0, 0);
 
-    // Fetch distinct user IDs belonging to the team
-    const teamUserIds = await GaapUser.find({
-      teamId: teamId,
-      branchId: branchId,
-    }).distinct("_id");
+    // Fetch distinct user IDs belonging to the team with proper branch filtering
+    const teamUserQuery = { teamId };
+    if (branchId) {
+      teamUserQuery.branchId = branchId;
+    }
+    const teamUserIds = await GaapUser.find(teamUserQuery).distinct("_id");
 
     const dsrSummaryRaw = await GaapDsr.aggregate([
       {
         $match: {
+          ...baseQuery,
           date: today,
           userId: { $in: teamUserIds },
         },
@@ -145,8 +179,8 @@ const getDashboardData = async (req, res) => {
     const financialOverviewRaw = await ProjectPayment.aggregate([
       {
         $match: {
+          ...baseQuery,
           "paymentHistory.date": { $gte: startOfMonth, $lte: endOfMonth },
-          teamId: teamId,
         },
       },
       {
@@ -171,8 +205,8 @@ const getDashboardData = async (req, res) => {
           ? financialOverviewRaw[0].totalPayments
           : 0,
       totalInvoicesCreated: await GaapInvoice.countDocuments({
+        ...baseQuery,
         createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-        teamId: teamId,
       }),
     };
 
@@ -180,8 +214,8 @@ const getDashboardData = async (req, res) => {
     const salesTargetsSummaryRaw = await GaapSalesTarget.aggregate([
       {
         $match: {
+          ...baseQuery,
           "targetPeriod.endDate": { $gte: currentDate },
-          teamId: teamId,
         },
       },
       {

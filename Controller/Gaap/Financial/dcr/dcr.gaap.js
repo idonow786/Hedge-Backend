@@ -35,18 +35,33 @@ const getAllReports = async (req, res) => {
     let reports;
     console.log(req.role)
     console.log(await DailyPerformanceReport.find() )
+    
     if (req.role !== 'admin' && req.role !== 'Audit Manager') {
+      // For other roles, show only their own reports
       reports = await DailyPerformanceReport.find({ createdBy: req.adminId }).sort({ date: -1 });
     } else {
-      const user = await GaapUser.findById(req.adminId)
+      const user = await GaapUser.findById(req.adminId);
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },
-          { 'GeneralUser.userId': req.adminId }
+          { 'GeneralUser': { $elemMatch: { userId: req.adminId } } }
+
         ]
       });
+
       if (team) {
-        reports = await DailyPerformanceReport.find({ teamId: team._id,branchId:user.branchId}).sort({ date: -1 });
+        // Build query based on role and team
+        const query = { teamId: team._id };
+
+        // For admin (parent user), branchId is optional
+        const isParentUser = team.parentUser.userId === req.adminId;
+        
+        // Add branchId to query for Audit Manager or if admin has specific branch
+        if (!isParentUser || (isParentUser && user.branchId)) {
+          query.branchId = user.branchId;
+        }
+
+        reports = await DailyPerformanceReport.find(query).sort({ date: -1 });
       }
     }
     res.status(200).json(reports);

@@ -8,12 +8,15 @@ const getDashboardData = async (req, res) => {
     try {
         const adminId = req.adminId;
         const currentDate = new Date();
+        let teamId;
+        let branchId;
+        let query = {};
 
-        // 1. Get team information
+        // 1. Get team and user information
         const team = await GaapTeam.findOne({
             $or: [
                 { 'parentUser.userId': adminId },
-                { 'GeneralUser.userId': adminId },
+                { 'GeneralUser': { $elemMatch: { userId: adminId } } },
                 { 'members.managerId': adminId }
             ]
         });
@@ -25,14 +28,44 @@ const getDashboardData = async (req, res) => {
             });
         }
 
+        teamId = team._id;
+        query.teamId = teamId;
+
+        // Handle branchId based on role
+        if (req.role === 'admin' || req.role === 'Audit Manager') {
+            const isParentUser = team.parentUser.userId === adminId;
+            if (!isParentUser) {
+                const user = await GaapUser.findById(adminId);
+                branchId = user.branchId;
+                if (branchId) {
+                    query.branchId = branchId;
+                }
+            }
+        } else {
+            const user = await GaapUser.findById(adminId);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+            branchId = user.branchId;
+            if (branchId) {
+                query.branchId = branchId;
+            }
+        }
+
         // 2. Get member IDs
         const memberIds = team.members.map(member => member.memberId);
 
-        // 3. Get projects for these members - add filter for non-cancelled projects
-        const projects = await GaapProject.find({ 
+        // 3. Get projects with proper filtering
+        const projectQuery = { 
+            ...query,
             createdBy: { $in: memberIds },
-            status: { $ne: 'Cancelled' }  // 🚫 exclude cancelled projects
-        });
+            status: { $ne: 'Cancelled' }
+        };
+
+        const projects = await GaapProject.find(projectQuery);
 
         // 4. Process project data
         const projectStats = {
@@ -46,19 +79,23 @@ const getDashboardData = async (req, res) => {
             progress: p.Progress
         }));
 
-        // 5. Get DSR data
+        // 5. Get DSR data with proper filtering
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const dsrData = await GaapDsr.find({
+        const dsrQuery = {
+            ...query,
             user: { $in: memberIds },
-            date: { $gte: startOfMonth, $lte: currentDate },
-            teamId: team._id
-        });
+            date: { $gte: startOfMonth, $lte: currentDate }
+        };
 
-        // 6. Get targets
-        const targets = await GaapSalesTarget.find({
-            teamId: team._id,
+        const dsrData = await GaapDsr.find(dsrQuery);
+
+        // 6. Get targets with proper filtering
+        const targetQuery = {
+            ...query,
             'targetPeriod.endDate': { $gte: currentDate }
-        });
+        };
+
+        const targets = await GaapSalesTarget.find(targetQuery);
 
         // 7. Process DSR and target data
         const dsrSummary = {

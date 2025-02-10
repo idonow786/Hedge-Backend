@@ -10,34 +10,41 @@ const GaapTask = require('../../../../Model/Gaap/gaap_task');
 const getAllProjectsWithPayments = async (req, res) => {
     try {
         const user = await GaapUser.findById(req.adminId);
-        let TeamId;
+        let teamId;
         let branchId;
+
         if (!user) {
             return res.status(400).json({ message: 'user not found' });
         }
-        console.log(req.role)
+
         if (req.role === 'admin' || req.role === 'Audit Manager') {
             const team = await GaapTeam.findOne({
                 $or: [
                     { 'parentUser.userId': req.adminId },
-                    { 'GeneralUser.userId': req.adminId }
+                    { 'GeneralUser': { $elemMatch: { userId: req.adminId } } }
                 ]
             });
-            console.log(team)
+
             if (!team) {
                 return res.status(404).json({ message: 'Team not found for this admin/manager' });
             }
-            TeamId = team._id;
+            teamId = team._id;
+
+            // Only set branchId for Audit Manager or if admin has specific branch
+            const isParentUser = team.parentUser.userId === req.adminId;
+            if (!isParentUser) {
+                branchId = user.branchId;
+            }
         } else {
-            TeamId = user.teamId;
-            branchId=user.branchId;   
+            teamId = user.teamId;
+            branchId = user.branchId;
         }
 
-        // Create query object with optional branchId
-        const query = {
-            teamId: TeamId,
-            ...(branchId && { branchId })
-        };
+        // Build query based on role and team
+        const query = { teamId };
+        if (branchId) {
+            query.branchId = branchId;
+        }
 
         const projects = await GaapProject.find(query)
             .populate('customer')

@@ -17,7 +17,7 @@ const getDashboardData = async (req, res) => {
         const team = await GaapTeam.findOne({
             $or: [
                 { 'parentUser.userId': userId },
-                { 'GeneralUser.userId': userId }
+                { 'GeneralUser': { $elemMatch: { userId: userId } } }
             ]
         });
 
@@ -26,10 +26,14 @@ const getDashboardData = async (req, res) => {
         }
 
         const teamId = team._id;
-        const branchId=user.branchId;
+        
+        // Only use branchId for GeneralUser (Audit Manager)
+        const isParentUser = team.parentUser.userId === userId;
+        const branchId = isParentUser ? null : user.branchId;
+
         const dashboardData = {
-            projectsOverview: await getProjectsOverview(teamId,branchId),
-            departmentPerformance: await getDepartmentPerformance(teamId,branchId),
+            projectsOverview: await getProjectsOverview(teamId, branchId),
+            departmentPerformance: await getDepartmentPerformance(teamId, branchId),
         };
 
         res.json(dashboardData);
@@ -39,13 +43,20 @@ const getDashboardData = async (req, res) => {
     }
 };
 
-const getProjectsOverview = async (teamId,branchId) => {
+const getProjectsOverview = async (teamId, branchId) => {
     try {
-        const allProjects = await GaapProject.find({ 
+        // Build query based on available filters
+        const query = { 
             teamId,
-            branchId,
             status: { $ne: 'Cancelled' }
-        })
+        };
+        
+        // Only add branchId to query if it exists (for non-parent users)
+        if (branchId) {
+            query.branchId = branchId;
+        }
+
+        const allProjects = await GaapProject.find(query)
             .select('-totalAmount')
             .populate('customer', 'name')
             .populate('assignedTo', 'fullName')
@@ -83,14 +94,20 @@ const getProjectsOverview = async (teamId,branchId) => {
     }
 };
 
-const getDepartmentPerformance = async (teamId,branchId) => {
+const getDepartmentPerformance = async (teamId, branchId) => {
     try {
         const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
+        // Build match stage based on available filters
+        const matchStage = { teamId: teamId.toString() };
+        if (branchId) {
+            matchStage.branchId = branchId;
+        }
+
         const departmentPerformance = await GaapProject.aggregate([
-            { $match: { teamId: teamId.toString(),branchId:branchId } }, // Convert ObjectId to string if necessary
+            { $match: matchStage },
             {
                 $group: {
                     _id: "$department",

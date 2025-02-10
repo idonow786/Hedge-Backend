@@ -103,7 +103,7 @@ const dsrController = {
                 const team = await GaapTeam.findOne({
                     $or: [
                         { 'parentUser.userId': userId },
-                        { 'GeneralUser.userId': userId }
+                        { 'GeneralUser': { $elemMatch: { userId: userId } } }
                     ]
                 });
     

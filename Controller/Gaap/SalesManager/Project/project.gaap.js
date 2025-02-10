@@ -3,41 +3,67 @@ const GaapProjectProduct = require('../../../../Model/Gaap/gaap_product');
 const GaapTeam = require('../../../../Model/Gaap/gaap_team');
 const ProjectPayment = require('../../../../Model/Gaap/gaap_projectPayment');
 const GaapInvoice = require('../../../../Model/Gaap/gaap_invoice');
+const GaapUser = require('../../../../Model/Gaap/gaap_user');
 
 const getProjectsAll = async (req, res) => {
   try {
     const { adminId, role } = req;
-    let projects = [];
+    let teamId;
+    let branchId;
+    let query = {};
 
     if (role === 'admin' || role === 'Audit Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': adminId },
-          { 'GeneralUser.userId': adminId }
+          { 'GeneralUser': { $elemMatch: { userId: adminId } } }
         ]
       });
 
-      if (team) {
-        projects = await GaapProject.find({ teamId: team._id });
-      } else {
-        projects = await GaapProject.find({ createdBy: adminId });
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found for the user' });
+      }
+
+      teamId = team._id;
+      query.teamId = teamId;
+
+      // Only set branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === adminId;
+      if (!isParentUser) {
+        const user = await GaapUser.findById(adminId);
+        branchId = user.branchId;
+        if (branchId) {
+          query.branchId = branchId;
+        }
       }
     } else {
+      const user = await GaapUser.findById(adminId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      teamId = user.teamId;
+      branchId = user.branchId;
+      query.teamId = teamId;
+      if (branchId) {
+        query.branchId = branchId;
+      }
+
       const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
-      console.log(managerTeam)
       if (managerTeam) {
         const teamMemberIds = managerTeam.members.map(member => member.memberId);
         teamMemberIds.push(adminId);
-        projects = await GaapProject.find({
-          $or: [
-            { createdBy: { $in: teamMemberIds } },
-            { createdBy: adminId }
-          ]
-        });
+        query.$or = [
+          { createdBy: { $in: teamMemberIds } },
+          { createdBy: adminId }
+        ];
       } else {
-        projects = await GaapProject.find({ createdBy: adminId });
+        query.createdBy = adminId;
       }
     }
+
+    // Fetch projects with the constructed query
+    let projects = await GaapProject.find(query);
 
     // Populate necessary fields
     projects = await GaapProject.populate(projects, [

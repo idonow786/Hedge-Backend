@@ -244,44 +244,61 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
   try {
     let projects;
+    let teamId;
+    let branchId;
 
     // Determine the projects to fetch based on user role
     if (req.role === 'admin' || req.role === 'Audit Manager') {
       const team = await GaapTeam.findOne({
         $or: [
           { 'parentUser.userId': req.adminId },
-          { 'GeneralUser.userId': req.adminId }
+          { 'GeneralUser': { $elemMatch: { userId: req.adminId } } }
         ]
       });
 
-      if (team) {
-        projects = await GaapProject.find({ teamId: team._id })
-          .populate('customer')
-          .populate('assignedTo', 'fullName')
-          .populate('salesPerson', 'fullName')
-          .populate('tasks')
-          .populate('discountApprovedBy')
-          .populate('invoices')
-          .populate('payments')
-          .populate('createdBy')
-          .populate('lastUpdatedBy')
-          .lean();
-      } else {
-        projects = []; // No team found, return empty array
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found for the user' });
+      }
+
+      teamId = team._id;
+      
+      // Only set branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === req.adminId;
+      if (!isParentUser) {
+        const user = await GaapUser.findById(req.adminId);
+        branchId = user.branchId;
       }
     } else {
-      projects = await GaapProject.find({ createdBy: req.adminId })
-        .populate('customer')
-        .populate('assignedTo', 'fullName')
-        .populate('salesPerson', 'fullName')
-        .populate('tasks')
-        .populate('discountApprovedBy')
-        .populate('invoices')
-        .populate('payments')
-        .populate('createdBy')
-        .populate('lastUpdatedBy')
-        .lean();
+      const user = await GaapUser.findById(req.adminId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      teamId = user.teamId;
+      branchId = user.branchId;
     }
+
+    // Build query based on role and team
+    const queryObject = { teamId };
+    if (branchId) {
+      queryObject.branchId = branchId;
+    }
+    
+    // Add createdBy to query for non-admin/non-Audit Manager roles
+    if (req.role !== 'admin' && req.role !== 'Audit Manager') {
+      queryObject.createdBy = req.adminId;
+    }
+
+    projects = await GaapProject.find(queryObject)
+      .populate('customer')
+      .populate('assignedTo', 'fullName')
+      .populate('salesPerson', 'fullName')
+      .populate('tasks')
+      .populate('discountApprovedBy')
+      .populate('invoices')
+      .populate('payments')
+      .populate('createdBy')
+      .populate('lastUpdatedBy')
+      .lean();
 
     if (!projects || projects.length === 0) {
       // No projects found, return empty response

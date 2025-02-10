@@ -25,7 +25,7 @@ const getUserNotifications = async (req, res) => {
       const teams = await GaapTeam.find({
         $or: [
           { 'parentUser.userId': userId },
-          { 'GeneralUser.userId': userId }
+          { 'GeneralUser': { $elemMatch: { userId: userId } } }
         ]
       });
 

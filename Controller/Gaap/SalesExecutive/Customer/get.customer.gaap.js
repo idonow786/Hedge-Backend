@@ -13,20 +13,28 @@ const getAllCustomersByAdmin = async (req, res) => {
 
     // Determine the query based on role
     if (role === "admin" || role === "Audit Manager") {
-      const parentTeam = await GaapTeam.findOne({
+      const team = await GaapTeam.findOne({
         $or: [
           { "parentUser.userId": adminId },
-          { "GeneralUser.userId": adminId },
-          { "members.managerId": adminId },
+          { "GeneralUser": { $elemMatch: { userId: adminId } } }
+,
         ],
       });
-      if (parentTeam) {
-        query = { teamId: parentTeam._id };
+
+      if (!team) {
+        return res.status(404).json({ message: "Team not found for this admin/manager" });
       }
-    } else if (role === "Audit Manager") {
-      const user = await GaapUser.findById(adminId);
-      if (user) {
-        query = { teamId: user.teamId};
+
+      // Build query based on role
+      query = { teamId: team._id };
+
+      // Only add branchId for Audit Manager or if admin has specific branch
+      const isParentUser = team.parentUser.userId === adminId;
+      if (!isParentUser) {
+        const user = await GaapUser.findById(adminId);
+        if (user && user.branchId) {
+          query.branchId = user.branchId;
+        }
       }
     } else {
       const managerTeam = await GaapTeam.findOne({

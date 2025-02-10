@@ -38,11 +38,28 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
 
-    // Check if branch exists
+    // Check if branch exists and validate Audit Manager assignment
     if (branchId) {
       const branch = await GaapBranch.findOne({ _id: branchId, adminId: req.adminId });
       if (!branch) {
         return res.status(404).json({ message: 'Branch not found' });
+      }
+
+      // For Audit Manager role, check if branch already has an Audit Manager
+      if (role === 'Audit Manager') {
+        const team = await GaapTeam.findOne({ 'parentUser.userId': req.adminId });
+        if (!team) {
+          return res.status(404).json({ message: 'Team not found' });
+        }
+
+        const existingAuditManager = team.GeneralUser.find(
+          manager => manager.branchId.toString() === branchId
+        );
+        if (existingAuditManager) {
+          return res.status(400).json({ 
+            message: 'This branch already has an Audit Manager assigned' 
+          });
+        }
       }
     }
 
@@ -82,13 +99,13 @@ const registerUser = async (req, res) => {
 
     if (gaapTeam) {
       if (role === 'Audit Manager') {
-        // Update the GeneralUser section
-        gaapTeam.GeneralUser = {
+        // Add to GeneralUser array
+        gaapTeam.GeneralUser.push({
           userId: newUser._id,
           name: fullName,
-          role: role,
-          branchId: branchId
-        };
+          branchId: branchId,
+          role: role
+        });
       } else {
         // Add to members array for other roles
         const newMember = {
