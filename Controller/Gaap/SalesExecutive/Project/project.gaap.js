@@ -40,11 +40,33 @@ const createProject = async (req, res) => {
             meetingComment,
         } = req.body;
 
-        console.log(req.body);
-        console.log(req.files);
+        console.log('Request body:', req.body);
+        console.log('Files:', req.files);
 
-        if (!projectName || !customerId || !projectType || !pricingType || !totalAmount || !products) {
+        if (!projectName || !customerId || !projectType || !pricingType || !totalAmount) {
             return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Parse products from form data
+        let parsedProducts;
+        try {
+            parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
+            if (!Array.isArray(parsedProducts)) {
+                throw new Error('Products must be an array');
+            }
+        } catch (error) {
+            console.error('Error parsing products:', error);
+            return res.status(400).json({ message: 'Invalid products data format' });
+        }
+
+        // Parse VAT details if present
+        let parsedVatDetails = {};
+        if (vatDetails) {
+            try {
+                parsedVatDetails = typeof vatDetails === 'string' ? JSON.parse(vatDetails) : vatDetails;
+            } catch (error) {
+                console.error('Error parsing VAT details:', error);
+            }
         }
 
         const user = await GaapUser.findById(req.adminId);
@@ -114,12 +136,10 @@ const createProject = async (req, res) => {
         let nextNumber = 100001;
 
         if (lastProject && lastProject.projectGaapId) {
-            // Extract the number from the last project ID
             const lastNumber = parseInt(lastProject.projectGaapId.split('/').pop());
             nextNumber = lastNumber + 1;
         }
 
-        // Create the project ID format with larger number: GAAP/UserFullName/100001
         const projectGaapId = `GAAP/${user.fullName.toUpperCase()}/${nextNumber}`;
 
         const newProject = new GaapProject({
@@ -135,17 +155,17 @@ const createProject = async (req, res) => {
             status,
             description,
             teamId: user.teamId,
-            branchId:user.branchId,
+            branchId: user.branchId,
             pricingType,
             totalAmount,
             appliedDiscount,
             vatDetails: {
-                ...vatDetails,
+                ...parsedVatDetails,
                 vatCertificate: vatCertificateUrl
             },
             documents: documents,
             createdBy: req.adminId,
-            ...(recurring && { recurring }),
+            ...(recurring && { recurring: recurring === 'true' || recurring === true }),
             ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
             ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
             meetingDetails: {
@@ -156,7 +176,6 @@ const createProject = async (req, res) => {
             },
         });
 
-        // If the user is a Sales Manager, add approval and handle discount
         if (req.role === 'Sales Manager') {
             newProject.approvals.push({
                 stage: 'Initial Approval',
@@ -173,22 +192,20 @@ const createProject = async (req, res) => {
 
         await newProject.save();
 
-        // Create notification for new project
         const notification = new GaapNotification({
             user: req.adminId,
             message: `New project "${projectName}" has been created.`,
             department: department,
             teamId: user.teamId,
-            branchId:user.branchId,
+            branchId: user.branchId,
             type: 'Project',
             projectId: newProject._id,
             status: 'unread'
         });
         await notification.save();
 
-        console.log(newProject);
-
-        const projectProducts = await Promise.all(products.map(async (product) => {
+        // Create project products using parsed products
+        const projectProducts = await Promise.all(parsedProducts.map(async (product) => {
             const projectProduct = new GaapProjectProduct({
                 project: newProject._id,
                 name: product.name,
@@ -197,7 +214,7 @@ const createProject = async (req, res) => {
                 department: product.department,
                 priceType: product.priceType,
                 price: product.price,
-                quantity: product.quantity,
+                quantity: product.quantity || 1,
                 timeDeadline: product.timeDeadline,
                 turnoverRange: product.turnoverRange,
                 isVatProduct: product.isVatProduct
@@ -526,6 +543,9 @@ const updateProject = async (req, res) => {
       meetingComment,
     } = req.body;
 
+    console.log('Update request body:', req.body);
+    console.log('Update files:', req.files);
+
     const existingProject = await GaapProject.findById(projectId);
     if (!existingProject) {
       return res.status(404).json({ message: 'Project not found' });
@@ -535,6 +555,30 @@ const updateProject = async (req, res) => {
       const customer = await GaapCustomer.findById(customerId);
       if (!customer) {
         return res.status(404).json({ message: 'Customer not found' });
+      }
+    }
+
+    // Parse products if present
+    let parsedProducts;
+    if (products) {
+      try {
+        parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
+        if (!Array.isArray(parsedProducts)) {
+          throw new Error('Products must be an array');
+        }
+      } catch (error) {
+        console.error('Error parsing products:', error);
+        return res.status(400).json({ message: 'Invalid products data format' });
+      }
+    }
+
+    // Parse VAT details if present
+    let parsedVatDetails = {};
+    if (vatDetails) {
+      try {
+        parsedVatDetails = typeof vatDetails === 'string' ? JSON.parse(vatDetails) : vatDetails;
+      } catch (error) {
+        console.error('Error parsing VAT details:', error);
       }
     }
 
@@ -556,7 +600,6 @@ const updateProject = async (req, res) => {
         });
       }
     }
-    
 
     const updateData = {
       projectName,
@@ -573,9 +616,9 @@ const updateProject = async (req, res) => {
       semicancel,
       finalcancel,
       branchId,
-      customerApproval,
-      salesManagerApproval,
-      operationsManagerApproval,
+      customerApproval: customerApproval === 'true' || customerApproval === true,
+      salesManagerApproval: salesManagerApproval === 'true' || salesManagerApproval === true,
+      operationsManagerApproval: operationsManagerApproval === 'true' || operationsManagerApproval === true,
       endDate,
       status,
       meetingDetails: {
@@ -587,12 +630,12 @@ const updateProject = async (req, res) => {
       pricingType,
       totalAmount,
       vatDetails: {
-        ...vatDetails,
+        ...parsedVatDetails,
         vatCertificate: vatCertificateUrl
       },
       documents: updatedDocuments,
       lastUpdatedBy: req.adminId,
-      ...(recurring !== undefined && { recurring }),
+      ...(recurring !== undefined && { recurring: recurring === 'true' || recurring === true }),
       ...(RecurringDate && { RecurringDate: new Date(RecurringDate) }),
       ...(RecurringPaymentMethod && { RecurringPaymentMethod }),
     };
@@ -733,9 +776,9 @@ const updateProject = async (req, res) => {
       }
     }
 
-    if (products && Array.isArray(products)) {
+    if (parsedProducts && Array.isArray(parsedProducts)) {
       await GaapProjectProduct.deleteMany({ project: projectId });
-      const projectProducts = await Promise.all(products.map(async (product) => {
+      const projectProducts = await Promise.all(parsedProducts.map(async (product) => {
         const projectProduct = new GaapProjectProduct({
           project: projectId,
           name: product.name,
@@ -744,7 +787,7 @@ const updateProject = async (req, res) => {
           department: product.department,
           priceType: product.priceType,
           price: product.price,
-          quantity: product.quantity,
+          quantity: product.quantity || 1,
           timeDeadline: product.timeDeadline,
           turnoverRange: product.turnoverRange,
           isVatProduct: product.isVatProduct
