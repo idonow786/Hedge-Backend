@@ -15,7 +15,7 @@ const gaapTeamSchema = new mongoose.Schema({
   GeneralUser: [{
     userId: { type: String },
     name: { type: String },
-    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapBranch', required: true },
+    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'GaapBranch' },
     role: { 
       type: String, 
       default: 'Audit Manager'

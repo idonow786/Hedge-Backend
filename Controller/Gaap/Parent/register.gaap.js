@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const GaapUser = require('../../../Model/Gaap/gaap_user');
 const GaapTeam = require('../../../Model/Gaap/gaap_team');
 const GaapBranch = require('../../../Model/Gaap/gaap_branch');
+const mongoose = require('mongoose');
 
 const nodemailer = require('nodemailer');
 const sendinBlue = require('nodemailer-sendinblue-transport');
@@ -38,6 +39,11 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
 
+    // Validate branchId for Audit Manager role
+    if (role === 'Audit Manager' && !branchId) {
+      return res.status(400).json({ message: 'branchId is required for Audit Manager role' });
+    }
+
     // Check if branch exists and validate Audit Manager assignment
     if (branchId) {
       const branch = await GaapBranch.findOne({ _id: branchId, adminId: req.adminId });
@@ -53,7 +59,7 @@ const registerUser = async (req, res) => {
         }
 
         const existingAuditManager = team.GeneralUser.find(
-          manager => manager.branchId.toString() === branchId
+          manager => manager.branchId && manager.branchId.toString() === branchId.toString()
         );
         if (existingAuditManager) {
           return res.status(400).json({ 
@@ -99,13 +105,44 @@ const registerUser = async (req, res) => {
 
     if (gaapTeam) {
       if (role === 'Audit Manager') {
+        if (!branchId) {
+          return res.status(400).json({ message: 'branchId is required for Audit Manager role' });
+        }
+
+        // Initialize GeneralUser as array if it doesn't exist
+        if (!Array.isArray(gaapTeam.GeneralUser)) {
+          gaapTeam.GeneralUser = [];
+        }
+
         // Add to GeneralUser array
         gaapTeam.GeneralUser.push({
-          userId: newUser._id,
+          userId: newUser._id.toString(),
           name: fullName,
-          branchId: branchId,
+          branchId: branchId,  // MongoDB will convert this to ObjectId
           role: role
         });
+
+        try {
+          await gaapTeam.save();
+        } catch (saveError) {
+          console.error('Error saving team:', saveError);
+          // If save fails, try to update using updateOne
+          if (saveError.code === 2) {
+            await GaapTeam.updateOne(
+              { _id: gaapTeam._id },
+              { 
+                $set: { GeneralUser: [{ 
+                  userId: newUser._id.toString(),
+                  name: fullName,
+                  branchId: branchId,
+                  role: role
+                }] }
+              }
+            );
+          } else {
+            throw saveError;
+          }
+        }
       } else {
         // Add to members array for other roles
         const newMember = {
@@ -116,8 +153,8 @@ const registerUser = async (req, res) => {
           managerId: manager ? manager : ''
         };
         gaapTeam.members.push(newMember);
+        await gaapTeam.save();
       }
-      await gaapTeam.save();
       newUser.teamId = gaapTeam._id;
     }
 
