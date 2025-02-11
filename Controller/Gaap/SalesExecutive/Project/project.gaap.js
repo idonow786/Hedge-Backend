@@ -15,6 +15,17 @@ const mongoose = require('mongoose');
 const GaapDocument = require('../../../../Model/Gaap/gaap_document');
 const createProject = async (req, res) => {
     try {
+        // Get form data
+        let formData = req.body;
+        if (req.files && req.files.info) {
+            try {
+                const infoData = JSON.parse(req.files.info[0].buffer.toString());
+                formData = { ...formData, ...infoData };
+            } catch (error) {
+                console.error('Error parsing info data:', error);
+            }
+        }
+
         const {
             projectName,
             customerId,
@@ -38,9 +49,9 @@ const createProject = async (req, res) => {
             meetingTime,
             meetingVenue,
             meetingComment,
-        } = req.body;
+        } = formData;
 
-        console.log('Request body:', req.body);
+        console.log('Request body:', formData);
         console.log('Files:', req.files);
 
         if (!projectName || !customerId || !projectType || !pricingType || !totalAmount) {
@@ -506,7 +517,18 @@ const getStatusPriority = (status) => {
 
 const updateProject = async (req, res) => {
   try {
-    const projectId = req.body.projectId;
+    // Get form data
+    let formData = req.body;
+    if (req.files && req.files.info) {
+        try {
+            const infoData = JSON.parse(req.files.info[0].buffer.toString());
+            formData = { ...formData, ...infoData };
+        } catch (error) {
+            console.error('Error parsing info data:', error);
+        }
+    }
+
+    const projectId = formData.projectId;
     const {
       projectName,
       customerId,
@@ -541,9 +563,9 @@ const updateProject = async (req, res) => {
       meetingTime,
       meetingVenue,
       meetingComment,
-    } = req.body;
+    } = formData;
 
-    console.log('Update request body:', req.body);
+    console.log('Update request body:', formData);
     console.log('Update files:', req.files);
 
     const existingProject = await GaapProject.findById(projectId);

@@ -69,7 +69,8 @@ router.post(
 router.post('/add-project',
     upload.fields([
         { name: 'vatCertificate', maxCount: 1 },
-        { name: 'documents', maxCount: 5 }
+        { name: 'documents', maxCount: 5 },
+        { name: 'info', maxCount: 1 }
     ]),
     verifyToken,
     createProject
@@ -77,7 +78,8 @@ router.post('/add-project',
 router.put('/update-project',
     upload.fields([
         { name: 'vatCertificate', maxCount: 1 },
-        { name: 'documents', maxCount: 5 }
+        { name: 'documents', maxCount: 5 },
+        { name: 'info', maxCount: 1 }
     ]),
     verifyToken,
     updateProject
