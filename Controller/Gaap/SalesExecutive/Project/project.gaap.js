@@ -633,7 +633,7 @@ const updateProject = async (req, res) => {
       assignedTo: assignedToId,
       salesPerson: salesPersonId,
       startDate,
-      financialApproval,
+      financialApproval:true,
       paymentPlan,
       semicancel,
       finalcancel,
