@@ -49,10 +49,20 @@ const getProjectsAll = async (req, res) => {
         query.branchId = branchId;
       }
 
+      // Find team where user is a manager of other members
       const managerTeam = await GaapTeam.findOne({ 'members.managerId': adminId });
+      
+      // Find team members managed by this user
       if (managerTeam) {
-        const teamMemberIds = managerTeam.members.map(member => member.memberId);
+        // Get all team members managed by this user
+        const teamMemberIds = managerTeam.members
+          .filter(member => member.managerId === adminId)
+          .map(member => member.memberId);
+          
+        // Add the manager's ID to the list
         teamMemberIds.push(adminId);
+        
+        // Update query to find projects created by the manager or their team members
         query.$or = [
           { createdBy: { $in: teamMemberIds } },
           { createdBy: adminId }
