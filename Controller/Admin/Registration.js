@@ -31,7 +31,48 @@ const transporter = nodemailer.createTransport(
 );
 
 
+// Function to check if user's creator admin has business account paused
+const checkBusinessAccountStatus = async (user) => {
+  try {
+    // Skip check for super admin
+    if (
+      user.constructor.modelName === "SuperAdmin" ||
+      user.role === "superadmin"
+    ) {
+      return { isPaused: false };
+    }
 
+    let creatorAdminId = null;
+
+    // If user has createdBy field, use it
+    if (user.createdBy) {
+      creatorAdminId = user.createdBy;
+    } else {
+      // If user is admin themselves, check their own business
+      if (user.role === "admin" || user.role === "HR Personnel") {
+        creatorAdminId = user._id;
+      } else {
+        // For non-admin users without createdBy, skip check
+        return { isPaused: false };
+      }
+    }
+
+    // Check if the creator admin's business is paused
+    const business = await Business.findOne({ AdminID: creatorAdminId });
+    if (business && business.accountPaused === true) {
+      return {
+        isPaused: true,
+        businessName: business.BusinessName,
+        adminId: creatorAdminId,
+      };
+    }
+
+    return { isPaused: false };
+  } catch (error) {
+    console.error("Error checking business account status:", error);
+    return { isPaused: false }; // Default to allow login if check fails
+  }
+};
 const signup = async (req, res) => {
   try {
     const { username, email, password, role, businessName, BusinessAddress, BusinessPhoneNo, BusinessEmail, OwnerName, YearofEstablishment, BusinessType, CompanyType, CompanyActivity } = req.body;
@@ -844,7 +885,17 @@ const signin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
+    // Check if user's creator admin has business account paused
+    const businessStatus = await checkBusinessAccountStatus(user);
+    if (businessStatus.isPaused) {
+      return res.status(403).json({
+        message:
+          "Account access suspended. The business account has been paused by administration.",
+        businessName: businessStatus.businessName,
+        adminId: businessStatus.adminId,
+        accountPaused: true,
+      });
+    }
     // Check if user is active (for ATIS customers as well)
     if ((user.constructor.modelName === 'GaapUser' || 
          user.constructor.modelName === 'StaffingUser' || 

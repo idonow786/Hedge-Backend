@@ -62,7 +62,10 @@ const businessSchema = new mongoose.Schema({
       type: String,
     },
   ],
-
+    accountPaused: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const Business = mongoose.model('Business', businessSchema);
